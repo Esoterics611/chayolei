@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Code coverage report for contracts\MasimaRewards.sol</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../prettify.css" />
+    <link rel="stylesheet" href="../base.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+<body>
+<div class='wrapper'>
+  <div class='pad1'>
+    <h1>
+      <a href="../index.html">all files</a> / <a href="index.html">contracts/</a> MasimaRewards.sol
+    </h1>
+    <div class='clearfix'>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">0% </span>
+        <span class="quiet">Statements</span>
+        <span class='fraction'>0/14</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">0% </span>
+        <span class="quiet">Branches</span>
+        <span class='fraction'>0/20</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">0% </span>
+        <span class="quiet">Functions</span>
+        <span class='fraction'>0/5</span>
+      </div>
+      <div class='fl pad1y space-right2'>
+        <span class="strong">0% </span>
+        <span class="quiet">Lines</span>
+        <span class='fraction'>0/19</span>
+      </div>
+    </div>
+  </div>
+  <div class='status-line low'></div>
+<pre><table class="coverage">
+<tr><td class="line-count quiet">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+108</td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.24;
+&nbsp;
+import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "./TMIMToken.sol";
+&nbsp;
+/**
+ * @title MasimaRewards
+ * @notice Handles on-chain approval and token reward distribution for
+ *         Masimot (research assignments) and Tafkidim (sub-tasks).
+ *
+ *         The backend Cloud Function calls approveMasima() / approveTafkid()
+ *         after validating the off-chain state machine, ensuring the on-chain
+ *         record is authoritative for token issuance.
+ */
+contract MasimaRewards is AccessControl, ReentrancyGuard {
+    bytes32 public constant APPROVER_ROLE = keccak256("APPROVER_ROLE");
+&nbsp;
+    TMIMToken public immutable tmim;
+&nbsp;
+    struct ApprovalRecord {
+        address assignee;
+        uint256 reward;
+        uint256 approvedAt;
+        bool    onChain;
+    }
+&nbsp;
+    /// @notice masimaId (off-chain Firestore ID hash) → approval record
+    mapping(bytes32 =&gt; ApprovalRecord) public masimaApprovals;
+    mapping(bytes32 =&gt; ApprovalRecord) public tafkidApprovals;
+&nbsp;
+    uint256 public totalRewardsDistributed;
+&nbsp;
+    event MasimaApproved(bytes32 indexed masimaId, address indexed assignee, uint256 reward);
+    event TafkidApproved(bytes32 indexed tafkidId, address indexed assignee, uint256 reward);
+    event MasimaPublished(bytes32 indexed masimaId, address indexed assignee);
+&nbsp;
+<span class="fstat-no" title="function not covered" >    constructor(address admin, address tmimToken) {</span>
+<span class="cstat-no" title="statement not covered" >        _grantRole(DEFAULT_ADMIN_ROLE, admin)</span>;
+<span class="cstat-no" title="statement not covered" >        _grantRole(APPROVER_ROLE, admin)</span>;
+        tmim = TMIMToken(tmimToken);
+    }
+&nbsp;
+    /**
+     * @notice Approve a masima and mint TMIM to the assignee.
+     * @param masimaIdHash  keccak256 of the Firestore masima document ID
+     * @param assignee      Wallet address of the researcher
+     * @param reward        Number of TMIM to mint (already multiplied by rank multiplier off-chain)
+     */
+<span class="fstat-no" title="function not covered" >    function approveMasima(</span>
+        bytes32 masimaIdHash,
+        address assignee,
+        uint256 reward
+    ) external onlyRole(APPROVER_ROLE) nonReentrant {
+<span class="cstat-no" title="statement not covered" >        require(!masimaApprovals[masimaIdHash].onChain, "Already approved on-chain")</span>;
+<span class="cstat-no" title="statement not covered" >        require(assignee != address(0), "Invalid assignee")</span>;
+<span class="cstat-no" title="statement not covered" >        require(reward &gt; 0, "Reward must be positive")</span>;
+&nbsp;
+        masimaApprovals[masimaIdHash] = ApprovalRecord({
+            assignee:   assignee,
+            reward:     reward,
+            approvedAt: block.timestamp,
+            onChain:    true
+        });
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        tmim.mint(assignee, reward, "masima_approved")</span>;
+        totalRewardsDistributed += reward;
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        emit MasimaApproved(masimaIdHash, assignee, reward);</span>
+    }
+&nbsp;
+    /**
+     * @notice Approve a tafkid and mint TMIM to the assignee.
+     */
+<span class="fstat-no" title="function not covered" >    function approveTafkid(</span>
+        bytes32 tafkidIdHash,
+        address assignee,
+        uint256 reward
+    ) external onlyRole(APPROVER_ROLE) nonReentrant {
+<span class="cstat-no" title="statement not covered" >        require(!tafkidApprovals[tafkidIdHash].onChain, "Already approved on-chain")</span>;
+<span class="cstat-no" title="statement not covered" >        require(assignee != address(0), "Invalid assignee")</span>;
+<span class="cstat-no" title="statement not covered" >        require(reward &gt; 0, "Reward must be positive")</span>;
+&nbsp;
+        tafkidApprovals[tafkidIdHash] = ApprovalRecord({
+            assignee:   assignee,
+            reward:     reward,
+            approvedAt: block.timestamp,
+            onChain:    true
+        });
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        tmim.mint(assignee, reward, "tafkid_approved")</span>;
+        totalRewardsDistributed += reward;
+&nbsp;
+<span class="cstat-no" title="statement not covered" >        emit TafkidApproved(tafkidIdHash, assignee, reward);</span>
+    }
+&nbsp;
+    /// @notice Check if a masima has been approved on-chain
+<span class="fstat-no" title="function not covered" >    function isMasimaApproved(bytes32 masimaIdHash) external view returns (bool) {</span>
+<span class="cstat-no" title="statement not covered" >        return masimaApprovals[masimaIdHash].onChain;</span>
+    }
+&nbsp;
+    /// @notice Check if a tafkid has been approved on-chain
+<span class="fstat-no" title="function not covered" >    function isTafkidApproved(bytes32 tafkidIdHash) external view returns (bool) {</span>
+<span class="cstat-no" title="statement not covered" >        return tafkidApprovals[tafkidIdHash].onChain;</span>
+    }
+}
+&nbsp;</pre></td></tr>
+</table></pre>
+<div class='push'></div><!-- for sticky footer -->
+</div><!-- /wrapper -->
+<div class='footer quiet pad2 space-top1 center small'>
+  Code coverage
+  generated by <a href="http://istanbul-js.org/" target="_blank">istanbul</a> at Mon Apr 27 2026 08:21:40 GMT+0300 (Israel Daylight Time)
+</div>
+</div>
+<script src="../prettify.js"></script>
+<script>
+window.onload = function () {
+        if (typeof prettyPrint === 'function') {
+            prettyPrint();
+        }
+};
+</script>
+<script src="../sorter.js"></script>
+</body>
+</html>
