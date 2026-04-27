@@ -17,6 +17,9 @@ contracts/artifacts/
 contracts/cache/
 contracts/deployments/
 
+# Claude Code
+.claude/
+
 # Editor
 .vscode/
 .idea/
