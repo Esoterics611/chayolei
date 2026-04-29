@@ -39,7 +39,7 @@
   <div class="flex items-center justify-between flex-wrap gap-3">
     <div>
       <h1 class="text-2xl font-bold" style="color: var(--color-text-primary); font-family: var(--font-hebrew);">תפקידים</h1>
-      <p class="text-xs mt-0.5" style="color: var(--color-text-secondary);">מעקב תפקידים אישיים</p>
+      <p class="text-sm mt-1" style="color: var(--color-text-secondary);">מעקב תפקידים אישיים</p>
     </div>
     <div class="flex gap-2 flex-wrap">
       <a
@@ -131,11 +131,11 @@
                   ></div>
                   <p class="text-sm font-medium leading-snug" style="color: var(--color-text-primary);">{t.shem}</p>
                 </div>
-                <p class="text-xs" style="color: var(--color-text-tertiary);">{masima?.shem ?? ''}</p>
+                <p class="text-sm" style="color: var(--color-text-secondary);">{masima?.shem ?? ''}</p>
                 <div class="flex items-center justify-between">
-                  <span class="text-xs font-mono font-semibold" style="color: var(--color-accent-secondary);">{formatTmim(t.tokenReward)}</span>
+                  <span class="text-sm font-mono font-semibold" style="color: var(--color-accent-secondary);">{formatTmim(t.tokenReward)}</span>
                   {#if dl}
-                    <span class="text-[10px]" style="color: {dl.urgent ? 'var(--color-status-error)' : 'var(--color-text-tertiary)'};">{dl.text}</span>
+                    <span class="text-xs" style="color: {dl.urgent ? 'var(--color-status-error)' : 'var(--color-text-secondary)'};">{dl.text}</span>
                   {/if}
                 </div>
                 {#if t.status === 'todo' && t.assigneeId === app.currentUserId}
@@ -177,7 +177,7 @@
                 {/if}
               </div>
             {:else}
-              <div class="py-6 text-center text-xs" style="color: var(--color-text-tertiary);">ריק</div>
+              <div class="py-6 text-center text-sm" style="color: var(--color-text-secondary);">ריק</div>
             {/each}
           </div>
         </div>
@@ -224,13 +224,13 @@
           ></div>
           <span class="w-4 flex-shrink-0 text-center" style="color: var(--color-text-tertiary);">{tStatus[t.status]}</span>
           <div class="flex-1 min-w-0">
-            <p class="text-sm font-medium truncate" style="color: var(--color-text-primary);">{t.shem}</p>
-            <p class="text-xs" style="color: var(--color-text-tertiary);">{mivtza?.shem ?? ''} · {masima?.shem ?? ''}</p>
+            <p class="text-base font-medium truncate" style="color: var(--color-text-primary);">{t.shem}</p>
+            <p class="text-sm" style="color: var(--color-text-secondary);">{mivtza?.shem ?? ''} · {masima?.shem ?? ''}</p>
           </div>
           <StatusBadge status={t.status} />
           <span class="text-xs font-mono font-semibold flex-shrink-0" style="color: var(--color-accent-secondary);">{formatTmim(t.tokenReward)}</span>
           {#if dl}
-            <span class="text-[10px] flex-shrink-0" style="color: {dl.urgent ? 'var(--color-status-error)' : 'var(--color-text-tertiary)'};">{dl.text}</span>
+            <span class="text-xs flex-shrink-0" style="color: {dl.urgent ? 'var(--color-status-error)' : 'var(--color-text-secondary)'};">{dl.text}</span>
           {/if}
         </div>
       {:else}

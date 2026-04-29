@@ -108,9 +108,9 @@
             { icon: '⬡', label: 'TMIM טוקנים', desc: 'תגמול אמיתי' },
             { icon: '◑', label: 'ביקורת עמיתים', desc: 'למידה הדדית' },
           ] as f}
-            <div class="rounded-xl border backdrop-blur-sm p-3 space-y-1" style="
-              border-color: rgba(6, 182, 212, 0.5);
-              background-color: rgba(6, 182, 212, 0.05);
+            <div class="rounded-xl border p-3 space-y-1" style="
+              border-color: var(--color-border-primary);
+              background-color: var(--color-bg-tertiary);
             ">
               <span class="text-lg block" style="color: var(--color-accent-secondary);">{f.icon}</span>
               <span class="text-[10px] font-medium block" style="color: var(--color-text-primary);">{f.label}</span>
@@ -151,21 +151,22 @@
         <button
           onclick={() => { step = 'profile'; walletAddress = '0xdev' + Math.random().toString(16).slice(2,12); }}
           class="text-[10px] transition-colors"
-          style="color: rgba(var(--color-text-secondary), 0.4);"
+          style="color: var(--color-text-tertiary);"
           onmouseenter={(e) => {
             e.currentTarget.style.color = 'var(--color-text-secondary)';
           }}
           onmouseleave={(e) => {
-            e.currentTarget.style.color = 'rgba(var(--color-text-secondary), 0.4)';
+            e.currentTarget.style.color = 'var(--color-text-tertiary)';
           }}
         >דלג (מצב פיתוח) →</button>
       </div>
 
     {:else}
       <!-- ═══ STEP 2: Choose Your Path ═══ -->
-      <div class="rounded-2xl border backdrop-blur-sm p-8 space-y-6 shadow-2xl" style="
+      <div class="rounded-2xl border p-8 space-y-6" style="
         border-color: var(--color-border-primary);
-        background-color: rgba(6, 8, 15, 0.9);
+        background-color: var(--color-bg-secondary);
+        box-shadow: var(--shadow-lg);
       ">
 
         <!-- Codename reveal -->
@@ -179,7 +180,7 @@
           <div>
             <p class="text-[10px] uppercase tracking-widest mb-1" style="color: var(--color-text-secondary);">שם הקרב שלך</p>
             <h2 class="text-xl font-bold font-mono tracking-wide" style="color: var(--color-accent-secondary);" dir="rtl">{codename}</h2>
-            <p class="text-[10px] font-mono mt-1" style="color: rgba(var(--color-text-secondary), 0.6);">{walletAddress.slice(0,10)}...{walletAddress.slice(-6)}</p>
+            <p class="text-[10px] font-mono mt-1" style="color: var(--color-text-tertiary);">{walletAddress.slice(0,10)}...{walletAddress.slice(-6)}</p>
           </div>
         </div>
 

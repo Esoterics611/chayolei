@@ -21,7 +21,7 @@
 <div class="page-container space-y-6">
   <div>
     <h1 class="text-2xl font-bold" style="color: var(--color-text-primary); font-family: var(--font-hebrew);">פארבריינגען</h1>
-    <p class="text-xs mt-0.5" style="color: var(--color-text-secondary);">מאמרים, פגישות, ופעילות בית המדרש</p>
+    <p class="text-sm mt-1" style="color: var(--color-text-secondary);">מאמרים, פגישות, ופעילות בית המדרש</p>
   </div>
 
   <!-- Tabs -->
@@ -71,7 +71,7 @@
               {' '}{activity.description}{' '}
               <span class="font-medium">{activity.targetTitle}</span>
             </p>
-            <span class="text-[10px]" style="color: var(--color-text-tertiary);">{formatDate(activity.timestamp)}</span>
+            <span class="text-xs" style="color: var(--color-text-secondary);">{formatDate(activity.timestamp)}</span>
           </div>
         </div>
       {:else}
@@ -111,7 +111,7 @@
           </div>
           <p class="text-sm leading-relaxed mb-3" style="color: var(--color-text-secondary);">{m.summary}</p>
           {#if author}
-            <p class="text-xs mb-2" style="color: var(--color-text-tertiary);">מאת: <span style="color: var(--color-text-primary);">{author.shem}</span></p>
+            <p class="text-sm mb-2" style="color: var(--color-text-secondary);">מאת: <span style="color: var(--color-text-primary);">{author.shem}</span></p>
           {/if}
           <div class="flex flex-wrap gap-1">
             {#each m.topics as topic}
@@ -152,10 +152,10 @@
                     style="border-radius: 9999px; background-color: var(--color-bg-tertiary); color: var(--color-text-tertiary);"
                   >הסתיים</span>
                 {/if}
-                <h3 class="text-sm font-semibold" style="color: var(--color-text-primary);">{f.topic}</h3>
+                <h3 class="text-base font-semibold" style="color: var(--color-text-primary);">{f.topic}</h3>
               </div>
-              <p class="text-xs mb-2" style="color: var(--color-text-secondary);">{f.description}</p>
-              <div class="flex items-center gap-4 text-xs flex-wrap" style="color: var(--color-text-tertiary);">
+              <p class="text-sm mb-2" style="color: var(--color-text-secondary);">{f.description}</p>
+              <div class="flex items-center gap-4 text-sm flex-wrap" style="color: var(--color-text-secondary);">
                 <span class="font-mono">{new Date(f.date).toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
                 <span>⏱ {f.duration} דקות</span>
                 {#if f.location}<span>📍 {f.location}</span>{/if}

@@ -168,113 +168,6 @@
     </div>
   </div>
 
-  <!-- שורה אמצעית: לוח זמנים + תפקידים + פעילות -->
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-    <!-- לוח זמנים יומי -->
-    <div class="rounded-xl border" style="
-      border-color: var(--color-border-primary);
-      background-color: var(--color-bg-secondary);
-    ">
-      <div class="px-5 py-3 border-b" style="border-color: var(--color-border-primary);">
-        <h3 class="text-sm font-medium" style="color: var(--color-text-primary);">סדר היום</h3>
-      </div>
-      <div class="divide-y" style="--tw-divide-color: var(--color-border-primary);">
-        {#each app.sederSchedule as item}
-          <div class="px-5 py-3 flex items-center gap-3">
-            <div class="flex-shrink-0">
-              {#if item.status === 'active'}
-                <span class="inline-block w-2 h-2 rounded-full" style="background-color: var(--color-accent-secondary);"></span>
-              {:else if item.status === 'completed'}
-                <span class="inline-block w-2 h-2 rounded-full bg-emerald-400"></span>
-              {:else}
-                <span class="inline-block w-2 h-2 rounded-full bg-zinc-600"></span>
-              {/if}
-            </div>
-            <div class="flex-1 min-w-0">
-              <p class="text-sm font-medium" style="{
-                item.status === 'completed' ? 'color: #10b981;' :
-                item.status === 'active' ? 'color: var(--color-accent-secondary);' :
-                'color: var(--color-text-secondary);'
-              }">{item.label}</p>
-              <p class="text-[10px] font-mono" style="color: var(--color-text-secondary);">{item.startTime} – {item.endTime}</p>
-            </div>
-            {#if item.status === 'active'}
-              <span class="tag text-[10px]" style="
-                background-color: rgba(245, 200, 66, 0.15);
-                color: var(--color-accent-secondary);
-              ">עכשיו</span>
-            {:else if item.status === 'completed'}
-              <span class="text-[10px] text-emerald-400">✓</span>
-            {/if}
-          </div>
-        {/each}
-      </div>
-    </div>
-
-    <!-- התפקידים שלי -->
-    <div class="rounded-xl border" style="
-      border-color: var(--color-border-primary);
-      background-color: var(--color-bg-secondary);
-    ">
-      <div class="flex items-center justify-between px-5 py-3 border-b" style="border-color: var(--color-border-primary);">
-        <h3 class="text-sm font-medium" style="color: var(--color-text-primary);">התפקידים שלי</h3>
-        <a href="/tafkidim" class="text-xs hover:underline transition-colors" style="color: var(--color-accent-secondary);">הכל ←</a>
-      </div>
-      <div class="divide-y" style="--tw-divide-color: var(--color-border-primary);">
-        {#each activeTafkidim.slice(0, 5) as tafkid}
-          {@const masima = app.getMasima(tafkid.masimaId)}
-          <a
-            href="/masimot/{tafkid.masimaId}"
-            class="flex items-center gap-3 px-5 py-3.5 group transition-colors"
-            onmouseenter={() => tafkidHovers.set(tafkid.id, 'true')}
-            onmouseleave={() => tafkidHovers.delete(tafkid.id)}
-            style="background-color: {tafkidHovers.get(tafkid.id) ? 'rgba(6, 182, 212, 0.05)' : 'transparent'};"
-          >
-            <span class="flex-shrink-0 w-4 text-center" style="color: var(--color-text-secondary);">
-              {tafkidStatusIcon[tafkid.status]??'○'}
-            </span>
-            <div class="flex-1 min-w-0">
-              <div class="flex items-center gap-2">
-                <span class="text-sm truncate" style="color: {tafkidHovers.get(tafkid.id) ? 'var(--color-accent-secondary)' : 'var(--color-text-primary)'};">{tafkid.shem}</span>
-                <StatusBadge status={tafkid.status} />
-              </div>
-              <p class="text-xs mt-0.5 truncate" style="color: var(--color-text-secondary);">{masima?.shem??''}</p>
-            </div>
-            <span class="text-xs font-mono flex-shrink-0" style="color: var(--color-accent-secondary);">{formatTmim(tafkid.tokenReward)}</span>
-          </a>
-        {:else}
-          <div class="px-5 py-8 text-center text-xs" style="color: var(--color-text-secondary);">
-            אין תפקידים פעילים. עיין במבצעים למצוא עבודה.
-          </div>
-        {/each}
-      </div>
-    </div>
-
-    <!-- פעילות אחרונה -->
-    <div class="rounded-xl border" style="
-      border-color: var(--color-border-primary);
-      background-color: var(--color-bg-secondary);
-    ">
-      <div class="px-5 py-3 border-b" style="border-color: var(--color-border-primary);">
-        <h3 class="text-sm font-medium" style="color: var(--color-text-primary);">פעילות אחרונה</h3>
-      </div>
-      <div class="divide-y" style="--tw-divide-color: var(--color-border-primary);">
-        {#each recentActivities as activity}
-          <div class="px-5 py-3 flex gap-3">
-            <span class="text-sm mt-0.5 flex-shrink-0" style="color: var(--color-text-secondary);">{activityIcons[activity.type]??'·'}</span>
-            <div class="min-w-0">
-              <p class="text-xs" style="color: var(--color-text-primary);">
-                <span class="font-medium" style="color: var(--color-accent-secondary);">{activity.actorShem}</span>
-                {' '}{activity.description}
-              </p>
-              <span class="text-[10px]" style="color: var(--color-text-secondary);">{formatDate(activity.timestamp)}</span>
-            </div>
-          </div>
-        {/each}
-      </div>
-    </div>
-  </div>
-
   <!-- מבצעים פעילים -->
   <div class="rounded-xl border" style="
     border-color: var(--color-border-primary);
@@ -388,6 +281,113 @@
           </div>
         </a>
       {/each}
+    </div>
+  </div>
+
+  <!-- שורה תחתונה: לוח זמנים + תפקידים + פעילות -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- לוח זמנים יומי -->
+    <div class="rounded-xl border" style="
+      border-color: var(--color-border-primary);
+      background-color: var(--color-bg-secondary);
+    ">
+      <div class="px-5 py-3 border-b" style="border-color: var(--color-border-primary);">
+        <h3 class="text-sm font-medium" style="color: var(--color-text-primary);">סדר היום</h3>
+      </div>
+      <div class="divide-y" style="--tw-divide-color: var(--color-border-primary);">
+        {#each app.sederSchedule as item}
+          <div class="px-5 py-3 flex items-center gap-3">
+            <div class="flex-shrink-0">
+              {#if item.status === 'active'}
+                <span class="inline-block w-2 h-2 rounded-full" style="background-color: var(--color-accent-secondary);"></span>
+              {:else if item.status === 'completed'}
+                <span class="inline-block w-2 h-2 rounded-full bg-emerald-400"></span>
+              {:else}
+                <span class="inline-block w-2 h-2 rounded-full bg-zinc-600"></span>
+              {/if}
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-medium" style="{
+                item.status === 'completed' ? 'color: #10b981;' :
+                item.status === 'active' ? 'color: var(--color-accent-secondary);' :
+                'color: var(--color-text-secondary);'
+              }">{item.label}</p>
+              <p class="text-[10px] font-mono" style="color: var(--color-text-secondary);">{item.startTime} – {item.endTime}</p>
+            </div>
+            {#if item.status === 'active'}
+              <span class="tag text-[10px]" style="
+                background-color: rgba(245, 200, 66, 0.15);
+                color: var(--color-accent-secondary);
+              ">עכשיו</span>
+            {:else if item.status === 'completed'}
+              <span class="text-[10px] text-emerald-400">✓</span>
+            {/if}
+          </div>
+        {/each}
+      </div>
+    </div>
+
+    <!-- התפקידים שלי -->
+    <div class="rounded-xl border" style="
+      border-color: var(--color-border-primary);
+      background-color: var(--color-bg-secondary);
+    ">
+      <div class="flex items-center justify-between px-5 py-3 border-b" style="border-color: var(--color-border-primary);">
+        <h3 class="text-sm font-medium" style="color: var(--color-text-primary);">התפקידים שלי</h3>
+        <a href="/tafkidim" class="text-xs hover:underline transition-colors" style="color: var(--color-accent-secondary);">הכל ←</a>
+      </div>
+      <div class="divide-y" style="--tw-divide-color: var(--color-border-primary);">
+        {#each activeTafkidim.slice(0, 5) as tafkid}
+          {@const masima = app.getMasima(tafkid.masimaId)}
+          <a
+            href="/masimot/{tafkid.masimaId}"
+            class="flex items-center gap-3 px-5 py-3.5 group transition-colors"
+            onmouseenter={() => tafkidHovers.set(tafkid.id, 'true')}
+            onmouseleave={() => tafkidHovers.delete(tafkid.id)}
+            style="background-color: {tafkidHovers.get(tafkid.id) ? 'rgba(6, 182, 212, 0.05)' : 'transparent'};"
+          >
+            <span class="flex-shrink-0 w-4 text-center" style="color: var(--color-text-secondary);">
+              {tafkidStatusIcon[tafkid.status]??'○'}
+            </span>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2">
+                <span class="text-sm truncate" style="color: {tafkidHovers.get(tafkid.id) ? 'var(--color-accent-secondary)' : 'var(--color-text-primary)'};">{tafkid.shem}</span>
+                <StatusBadge status={tafkid.status} />
+              </div>
+              <p class="text-xs mt-0.5 truncate" style="color: var(--color-text-secondary);">{masima?.shem??''}</p>
+            </div>
+            <span class="text-xs font-mono flex-shrink-0" style="color: var(--color-accent-secondary);">{formatTmim(tafkid.tokenReward)}</span>
+          </a>
+        {:else}
+          <div class="px-5 py-8 text-center text-xs" style="color: var(--color-text-secondary);">
+            אין תפקידים פעילים. עיין במבצעים למצוא עבודה.
+          </div>
+        {/each}
+      </div>
+    </div>
+
+    <!-- פעילות אחרונה -->
+    <div class="rounded-xl border" style="
+      border-color: var(--color-border-primary);
+      background-color: var(--color-bg-secondary);
+    ">
+      <div class="px-5 py-3 border-b" style="border-color: var(--color-border-primary);">
+        <h3 class="text-sm font-medium" style="color: var(--color-text-primary);">פעילות אחרונה</h3>
+      </div>
+      <div class="divide-y" style="--tw-divide-color: var(--color-border-primary);">
+        {#each recentActivities as activity}
+          <div class="px-5 py-3 flex gap-3">
+            <span class="text-sm mt-0.5 flex-shrink-0" style="color: var(--color-text-secondary);">{activityIcons[activity.type]??'·'}</span>
+            <div class="min-w-0">
+              <p class="text-xs" style="color: var(--color-text-primary);">
+                <span class="font-medium" style="color: var(--color-accent-secondary);">{activity.actorShem}</span>
+                {' '}{activity.description}
+              </p>
+              <span class="text-[10px]" style="color: var(--color-text-secondary);">{formatDate(activity.timestamp)}</span>
+            </div>
+          </div>
+        {/each}
+      </div>
     </div>
   </div>
 </div>

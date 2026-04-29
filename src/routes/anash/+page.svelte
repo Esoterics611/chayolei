@@ -30,7 +30,7 @@
   <div class="flex items-center justify-between flex-wrap gap-3">
     <div>
       <h1 class="text-2xl font-bold" style="color: var(--color-text-primary); font-family: var(--font-hebrew);">אנ״ש</h1>
-      <p class="text-xs mt-0.5" style="color: var(--color-text-secondary);">כל חיילי הרשת</p>
+      <p class="text-sm mt-1" style="color: var(--color-text-secondary);">כל חיילי הרשת</p>
     </div>
     <div class="flex gap-2 flex-wrap">
       <!-- Location filter -->
@@ -78,7 +78,7 @@
         {@const members = getTalmidimByTier(tier.tiers)}
         {#if members.length > 0}
           <div>
-            <h3 class="text-[10px] uppercase tracking-wider mb-3 px-1" style="color: {tier.color};">
+            <h3 class="text-xs uppercase tracking-wider mb-3 px-1 font-semibold" style="color: {tier.color};">
               {tier.label} ({members.length})
             </h3>
             <div
@@ -102,7 +102,7 @@
                   <TalmidAvatar shem={t.shem} rank={t.rank} isOnline={t.isOnline} size="md" />
                   <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-2 mb-1 flex-wrap">
-                      <span class="text-sm font-semibold" style="color: var(--color-text-primary);">{t.shem}</span>
+                      <span class="text-base font-semibold" style="color: var(--color-text-primary);">{t.shem}</span>
                       <RankBadge rank={t.rank} size="sm" />
                       {#if makom}
                         <LocationBadge shem={makom.shem} status={makom.status} />
@@ -114,7 +114,7 @@
                         ></span>
                       {/if}
                     </div>
-                    <div class="flex items-center gap-4 text-xs flex-wrap" style="color: var(--color-text-tertiary);">
+                    <div class="flex items-center gap-4 text-sm flex-wrap" style="color: var(--color-text-secondary);">
                       <span>מסלול: {t.track}</span>
                       <span class="font-mono font-semibold" style="color: var(--color-accent-secondary);">{formatTmim(t.tokenBalance)}</span>
                       <span>{t.tafkidimCompleted} תפקידים · {t.papersPublished} מאמרים</span>
@@ -144,8 +144,8 @@
           <div class="flex items-center gap-3 mb-4">
             <span style="color: var(--color-accent-secondary);">◆</span>
             <div>
-              <p class="text-sm font-semibold" style="color: var(--color-text-primary);">{zal.name}</p>
-              <p class="text-xs" style="color: var(--color-text-tertiary);">{zal.memberIds.length} חיילים</p>
+              <p class="text-base font-semibold" style="color: var(--color-text-primary);">{zal.name}</p>
+              <p class="text-sm" style="color: var(--color-text-secondary);">{zal.memberIds.length} חיילים</p>
             </div>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mr-4">
@@ -160,7 +160,7 @@
               >
                 <div class="flex items-center gap-2 mb-2">
                   <span style="color: var(--color-accent-primary);">◈</span>
-                  <p class="text-xs font-semibold" style="color: var(--color-text-primary);">{shiurGroup.name}</p>
+                  <p class="text-sm font-semibold" style="color: var(--color-text-primary);">{shiurGroup.name}</p>
                 </div>
                 <div class="space-y-1.5">
                   {#each shiurGroup.memberIds as mid}
@@ -174,7 +174,7 @@
                         onmouseleave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; }}
                       >
                         <TalmidAvatar shem={m.shem} rank={m.rank} isOnline={m.isOnline} size="sm" />
-                        <span class="text-xs" style="color: var(--color-text-primary);">{m.shem}</span>
+                        <span class="text-sm" style="color: var(--color-text-primary);">{m.shem}</span>
                         <RankBadge rank={m.rank} size="sm" />
                       </a>
                     {/if}

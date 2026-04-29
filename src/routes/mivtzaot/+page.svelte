@@ -52,7 +52,7 @@
   <div class="flex items-center justify-between">
     <div>
       <h1 class="text-2xl font-bold" style="color: var(--color-text-primary); font-family: var(--font-hebrew);">מבצעים</h1>
-      <p class="text-xs mt-0.5" style="color: var(--color-text-secondary);">קמפיינים, קורסים, מחקרים ופרסומים</p>
+      <p class="text-sm mt-1" style="color: var(--color-text-secondary);">קמפיינים, קורסים, מחקרים ופרסומים</p>
     </div>
     {#if app.isOfficer}
       <a
@@ -159,34 +159,34 @@
               {/if}
             </div>
             {#if mivtza.researchQuestion}
-              <p class="text-xs italic mb-2" style="color: var(--color-accent-primary);">"{mivtza.researchQuestion}"</p>
+              <p class="text-sm italic mb-2" style="color: var(--color-accent-primary);">"{mivtza.researchQuestion}"</p>
             {:else}
               <p class="text-sm mb-2 line-clamp-2" style="color: var(--color-text-secondary);">{mivtza.description}</p>
             {/if}
             <div class="flex flex-wrap items-center gap-x-4 gap-y-1">
               {#if creator}
-                <span class="text-xs" style="color: var(--color-text-tertiary);">
-                  פתח: <span style="color: var(--color-text-secondary);">{creator.shem}</span>
+                <span class="text-sm" style="color: var(--color-text-secondary);">
+                  פתח: <span style="color: var(--color-text-primary);">{creator.shem}</span>
                 </span>
               {/if}
-              <span class="text-xs font-mono font-semibold" style="color: var(--color-accent-secondary);">{formatTmim(mivtza.tokenAllocation)}</span>
-              <span class="text-xs" style="color: var(--color-text-tertiary);">{masimot.length} משימות · {mivtza.enrolledIds.length} חיילים</span>
+              <span class="text-sm font-mono font-semibold" style="color: var(--color-accent-secondary);">{formatTmim(mivtza.tokenAllocation)}</span>
+              <span class="text-sm" style="color: var(--color-text-secondary);">{masimot.length} משימות · {mivtza.enrolledIds.length} חיילים</span>
               {#if mivtza.deadline}
                 {@const dl = formatDeadline(mivtza.deadline)}
-                <span class="text-xs" style="color: {dl.urgent ? 'var(--color-status-error)' : 'var(--color-text-tertiary)'};">{dl.text}</span>
+                <span class="text-sm" style="color: {dl.urgent ? 'var(--color-status-error)' : 'var(--color-text-secondary)'};">{dl.text}</span>
               {/if}
             </div>
             <div class="flex flex-wrap gap-1 mt-2">
               {#each mivtza.topics as tag}
-                <span class="badge" style="background-color: var(--color-bg-tertiary); color: var(--color-text-tertiary);">{tag}</span>
+                <span class="badge" style="background-color: var(--color-bg-tertiary); color: var(--color-text-secondary);">{tag}</span>
               {/each}
             </div>
           </div>
           <!-- Progress -->
-          <div class="flex-shrink-0 w-28 flex flex-col items-end gap-2">
-            <span class="text-xs font-mono" style="color: var(--color-text-tertiary);">{progress}%</span>
+          <div class="flex-shrink-0 w-32 flex flex-col items-end gap-2">
+            <span class="text-sm font-mono" style="color: var(--color-text-secondary);">{progress}%</span>
             <ProgressBar value={progress} max={100} showLabel={false} color="token" size="md" />
-            <span class="text-[10px]" style="color: var(--color-text-tertiary);">
+            <span class="text-xs" style="color: var(--color-text-secondary);">
               {masimot.filter(m => m.status === 'approved' || m.status === 'published').length}/{masimot.length} משימות
             </span>
           </div>

@@ -257,7 +257,7 @@
         {#if app.isOfficer && masima.status === 'open'}
           <div class="relative">
             <button
-              onclick={() => showAssignDropdown = !showAssignDropdown}
+              onclick={(e) => { e.stopPropagation(); showAssignDropdown = !showAssignDropdown; }}
               class="w-full px-4 py-2 text-xs text-right transition-colors duration-150"
               style="
                 background-color: var(--color-bg-tertiary);

@@ -83,20 +83,23 @@
       {@const progress   = app.getMasimaProgress(m.id)}
       <a
         href="/masimot/{m.id}"
-        class="flex items-center gap-4 px-6 py-4 transition-colors duration-150"
+        class="flex items-center gap-5 px-6 py-5 transition-colors duration-150"
         style="border-bottom: 1px solid var(--color-border-secondary); text-decoration: none; color: inherit;"
         onmouseenter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--color-bg-tertiary)'; }}
         onmouseleave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; }}
       >
-        <span class="text-lg w-5 text-center flex-shrink-0" style="color: var(--color-text-tertiary);">
+        <!-- Status glyph -->
+        <span class="text-xl w-6 text-center flex-shrink-0" style="color: var(--color-text-secondary);">
           {mStatus[m.status] ?? '○'}
         </span>
+
+        <!-- Title + metadata — now gets the full remaining width -->
         <div class="flex-1 min-w-0">
-          <div class="flex items-center gap-2 mb-1">
-            <span class="text-sm font-semibold" style="color: var(--color-text-primary);">{m.shem}</span>
+          <div class="flex items-center gap-2 mb-1.5 flex-wrap">
+            <span class="text-base font-semibold" style="color: var(--color-text-primary);">{m.shem}</span>
             <StatusBadge status={m.status} />
           </div>
-          <div class="flex items-center gap-3 text-xs flex-wrap" style="color: var(--color-text-tertiary);">
+          <div class="flex items-center gap-4 text-sm flex-wrap" style="color: var(--color-text-secondary);">
             {#if mivtza}
               <span>{mivtza.shem}</span>
             {/if}
@@ -111,13 +114,17 @@
             {/if}
           </div>
         </div>
-        <ProgressBar value={progress} color="primary" showLabel />
-        <div class="flex-shrink-0 text-left">
-          <span class="text-xs font-mono font-semibold block" style="color: var(--color-accent-secondary);">{formatTmim(m.tokenAllocation)}</span>
-          {#if m.deadline}
-            {@const dl = formatDeadline(m.deadline)}
-            <span class="text-[10px]" style="color: {dl.urgent ? 'var(--color-status-error)' : 'var(--color-text-tertiary)'};">{dl.text}</span>
-          {/if}
+
+        <!-- TMIM + progress + deadline in one fixed-width panel -->
+        <div class="flex-shrink-0 w-40 space-y-1.5">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-sm font-mono font-semibold" style="color: var(--color-accent-secondary);">{formatTmim(m.tokenAllocation)}</span>
+            {#if m.deadline}
+              {@const dl = formatDeadline(m.deadline)}
+              <span class="text-xs" style="color: {dl.urgent ? 'var(--color-status-error)' : 'var(--color-text-secondary)'};">{dl.text}</span>
+            {/if}
+          </div>
+          <ProgressBar value={progress} color="primary" showLabel />
         </div>
       </a>
     {:else}

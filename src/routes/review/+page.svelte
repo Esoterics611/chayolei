@@ -16,7 +16,7 @@
 <div class="page-container space-y-6">
   <div>
     <h1 class="text-2xl font-bold" style="color: var(--color-text-primary); font-family: var(--font-hebrew);">חדר המשפיע</h1>
-    <p class="text-xs mt-0.5" style="color: var(--color-text-secondary);">בדיקת עבודות ואישור תפקידים</p>
+    <p class="text-sm mt-1" style="color: var(--color-text-secondary);">בדיקת עבודות ואישור תפקידים</p>
   </div>
 
   <!-- Tabs -->
@@ -74,13 +74,13 @@
             <span style="color: var(--color-accent-primary); font-size: 1.125rem;">◑</span>
             <div class="flex-1 min-w-0 text-right">
               <div class="flex items-center gap-2 flex-wrap">
-                <span class="text-sm font-semibold" style="color: var(--color-text-primary);">{m.shem}</span>
+                <span class="text-base font-semibold" style="color: var(--color-text-primary);">{m.shem}</span>
                 <StatusBadge status={m.status} />
                 {#if reviews.length > 0}
-                  <span class="text-[10px]" style="color: var(--color-accent-primary);">{reviews.length} ביקורות עמיתים</span>
+                  <span class="text-xs" style="color: var(--color-accent-primary);">{reviews.length} ביקורות עמיתים</span>
                 {/if}
               </div>
-              <p class="text-xs" style="color: var(--color-text-tertiary);">{mivtza?.shem ?? ''} · {tafkidim.length} תפקידים</p>
+              <p class="text-sm" style="color: var(--color-text-secondary);">{mivtza?.shem ?? ''} · {tafkidim.length} תפקידים</p>
             </div>
             {#if assignee}
               <div class="flex items-center gap-2 flex-shrink-0">
@@ -126,7 +126,7 @@
                     <div class="flex items-center gap-2 text-xs mb-1">
                       <span style="color: var(--color-text-secondary);">{rv?.shem ?? 'מבקר'}</span>
                       <span style="color: var(--color-accent-secondary);">{'★'.repeat(r.rating)}</span>
-                      <span class="flex-1 truncate" style="color: var(--color-text-tertiary);">{r.comments}</span>
+                      <span class="flex-1 truncate" style="color: var(--color-text-secondary);">{r.comments}</span>
                     </div>
                   {/each}
                 </div>
@@ -211,10 +211,10 @@
           <div class="flex items-start justify-between gap-4">
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 mb-1">
-                <span class="text-sm font-semibold" style="color: var(--color-text-primary);">{t.shem}</span>
+                <span class="text-base font-semibold" style="color: var(--color-text-primary);">{t.shem}</span>
                 <StatusBadge status={t.status} />
               </div>
-              <p class="text-xs" style="color: var(--color-text-tertiary);">{mivtza?.shem ?? ''} · {masima?.shem ?? ''}</p>
+              <p class="text-sm" style="color: var(--color-text-secondary);">{mivtza?.shem ?? ''} · {masima?.shem ?? ''}</p>
               {#if t.submissionNotes}
                 <p class="text-sm mt-2" style="color: var(--color-text-secondary);">{t.submissionNotes}</p>
               {/if}
@@ -224,7 +224,7 @@
                 <TalmidAvatar shem={a.shem} rank={a.rank} isOnline={a.isOnline} size="md" />
                 <div>
                   <p class="text-sm font-semibold" style="color: var(--color-text-primary);">{a.shem}</p>
-                  <p class="text-xs" style="color: var(--color-text-tertiary);">{a.track}</p>
+                  <p class="text-sm" style="color: var(--color-text-secondary);">{a.track}</p>
                 </div>
               </div>
             {/if}

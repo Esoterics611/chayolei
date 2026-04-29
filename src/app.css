@@ -26,10 +26,10 @@
 
   /* --- Text --- */
   --color-text-primary: #1A1611;
-  --color-text-secondary: #5C5347;
-  --color-text-tertiary: #8A7F72;
+  --color-text-secondary: #3A3125;
+  --color-text-tertiary: #5C5347;
   --color-text-inverse: #FAF7F2;
-  --color-text-inverse-secondary: #C4B8A8;
+  --color-text-inverse-secondary: #D4C9BC;
   --color-text-link: #1B4F72;
   --color-text-link-hover: #154360;
 
@@ -103,7 +103,7 @@
 html {
   direction: rtl;
   font-family: var(--font-hebrew);
-  font-size: 16px;
+  font-size: 18px;
   line-height: 1.8;
   color: var(--color-text-primary);
   background-color: var(--color-bg-primary);
@@ -574,6 +574,15 @@ tbody tr:nth-child(even):hover {
 /* ============================================================
    Print Styles
    ============================================================ */
+
+/* ============================================================
+   Accessibility: readable minimums for hardcoded tiny classes
+   ============================================================ */
+
+/* text-[10px] appears throughout as labels/captions — floor at ~13px */
+.text-\[10px\] {
+  font-size: 0.722rem; /* 13px at 18px base */
+}
 
 @media print {
   .sidebar,

@@ -891,8 +891,13 @@ class AppStore {
     if (USE_FIREBASE) {
       const res = await this.authFetch('/api/treasury/redeem', { method: 'POST', body: JSON.stringify({ talmidId, amount }) });
       if (!res.ok) { toast.error(await res.text()); return; }
+      const data = await res.json();
       const usd = (amount * 0.10).toFixed(2);
-      toast.success(`נפדו ${amount} TMIM ($${usd})`);
+      toast.success(
+        `נפדו ${amount} TMIM ($${usd}) ✓`,
+        data.txUrl ? { label: 'צפה בעסקה על Base Sepolia ↗', href: data.txUrl } : undefined,
+        5000,
+      );
       return;
     }
     const tIdx = this.talmidim.findIndex(t => t.id === talmidId);
