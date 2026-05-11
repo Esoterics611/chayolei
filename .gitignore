@@ -16,6 +16,9 @@ dist/
 contracts/artifacts/
 contracts/cache/
 contracts/deployments/
+contracts/coverage/
+contracts/coverage.json
+contracts/lcov.info
 
 # Claude Code
 .claude/
