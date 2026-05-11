@@ -143,9 +143,11 @@ export interface ChayoleiGovernanceInterface extends Interface {
       | "setAttestationSigner"
       | "setDefaultQuorum"
       | "setExecutionGasReserve"
+      | "setSupermajorityBps"
       | "setTimelockDelay"
       | "setTrustedTarget"
       | "setVotingPeriod"
+      | "supermajorityBps"
       | "supportsInterface"
       | "timelockDelay"
       | "tmim"
@@ -306,6 +308,10 @@ export interface ChayoleiGovernanceInterface extends Interface {
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
+    functionFragment: "setSupermajorityBps",
+    values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
     functionFragment: "setTimelockDelay",
     values: [BigNumberish]
   ): string;
@@ -316,6 +322,10 @@ export interface ChayoleiGovernanceInterface extends Interface {
   encodeFunctionData(
     functionFragment: "setVotingPeriod",
     values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "supermajorityBps",
+    values?: undefined
   ): string;
   encodeFunctionData(
     functionFragment: "supportsInterface",
@@ -451,6 +461,10 @@ export interface ChayoleiGovernanceInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
+    functionFragment: "setSupermajorityBps",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "setTimelockDelay",
     data: BytesLike
   ): Result;
@@ -460,6 +474,10 @@ export interface ChayoleiGovernanceInterface extends Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "setVotingPeriod",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "supermajorityBps",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -979,6 +997,12 @@ export interface ChayoleiGovernance extends BaseContract {
     "nonpayable"
   >;
 
+  setSupermajorityBps: TypedContractMethod<
+    [_bps: BigNumberish],
+    [void],
+    "nonpayable"
+  >;
+
   setTimelockDelay: TypedContractMethod<
     [_delay: BigNumberish],
     [void],
@@ -996,6 +1020,8 @@ export interface ChayoleiGovernance extends BaseContract {
     [void],
     "nonpayable"
   >;
+
+  supermajorityBps: TypedContractMethod<[], [bigint], "view">;
 
   supportsInterface: TypedContractMethod<
     [interfaceId: BytesLike],
@@ -1239,6 +1265,9 @@ export interface ChayoleiGovernance extends BaseContract {
     nameOrSignature: "setExecutionGasReserve"
   ): TypedContractMethod<[_reserve: BigNumberish], [void], "nonpayable">;
   getFunction(
+    nameOrSignature: "setSupermajorityBps"
+  ): TypedContractMethod<[_bps: BigNumberish], [void], "nonpayable">;
+  getFunction(
     nameOrSignature: "setTimelockDelay"
   ): TypedContractMethod<[_delay: BigNumberish], [void], "nonpayable">;
   getFunction(
@@ -1251,6 +1280,9 @@ export interface ChayoleiGovernance extends BaseContract {
   getFunction(
     nameOrSignature: "setVotingPeriod"
   ): TypedContractMethod<[_period: BigNumberish], [void], "nonpayable">;
+  getFunction(
+    nameOrSignature: "supermajorityBps"
+  ): TypedContractMethod<[], [bigint], "view">;
   getFunction(
     nameOrSignature: "supportsInterface"
   ): TypedContractMethod<[interfaceId: BytesLike], [boolean], "view">;

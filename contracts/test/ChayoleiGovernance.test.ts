@@ -167,6 +167,20 @@ describe('ChayoleiGovernance — rank attestation (C1)', () => {
       ).to.be.revertedWith('signer zero');
     });
 
+    it('rejects zero admin address', async () => {
+      const GovF = await ethers.getContractFactory('ChayoleiGovernance');
+      await expect(
+        GovF.deploy(ethers.ZeroAddress, await tmim.getAddress(), attestationSigner.address),
+      ).to.be.revertedWith('admin zero');
+    });
+
+    it('rejects zero TMIM token address', async () => {
+      const GovF = await ethers.getContractFactory('ChayoleiGovernance');
+      await expect(
+        GovF.deploy(admin.address, ethers.ZeroAddress, attestationSigner.address),
+      ).to.be.revertedWith('tmim zero');
+    });
+
     it('stores the attestation signer and emits on deployment', async () => {
       expect(await governance.attestationSigner()).to.equal(attestationSigner.address);
     });
@@ -329,6 +343,21 @@ describe('ChayoleiGovernance — rank attestation (C1)', () => {
         governance.connect(proposer).castVote(proposalId, SUPPORT_FOR, toStructArg(att)),
       ).to.be.revertedWith('No TMIM balance');
     });
+
+    it('rejects vote on a non-Active proposal (e.g. Queued after finalization)', async () => {
+      // Lower quorum so Alice's single vote passes
+      await governance.setDefaultQuorum(10);
+      const att = await buildAttestation(attestationSigner, governance, voterAlice.address, 0, proposalId);
+      await governance.connect(voterAlice).castVote(proposalId, SUPPORT_FOR, toStructArg(att));
+      await time.increase(8 * 24 * 60 * 60);
+      await governance.finalizeProposal(proposalId); // → Queued
+
+      // Now try to vote again (different voter) — proposal is Queued, not Active
+      const att2 = await buildAttestation(attestationSigner, governance, voterBob.address, 0, proposalId);
+      await expect(
+        governance.connect(voterBob).castVote(proposalId, SUPPORT_FOR, toStructArg(att2)),
+      ).to.be.revertedWith('Proposal not active');
+    });
   });
 
   // ─── Signer rotation ──────────────────────────────────────────────
@@ -489,9 +518,27 @@ describe('ChayoleiGovernance — C3 target/selector whitelist', () => {
       .to.be.revertedWithCustomError(wGov, 'AccessControlUnauthorizedAccount');
   });
 
+  it('setTrustedTarget reverts for zero address', async () => {
+    await expect(wGov.connect(wAdmin).setTrustedTarget(ethers.ZeroAddress, true))
+      .to.be.revertedWith('Target zero');
+  });
+
   it('setAllowedSelector is DEFAULT_ADMIN_ROLE-only', async () => {
     await expect(wGov.connect(wProp).setAllowedSelector(PT_SIGNAL, '0x12345678', true))
       .to.be.revertedWithCustomError(wGov, 'AccessControlUnauthorizedAccount');
+  });
+
+  it('bootstrapSelectorWhitelist with all-zero targets skips the conditional trusts', async () => {
+    // Covers the false branches in all three if(x != address(0)) guards
+    await expect(
+      wGov.connect(wAdmin).bootstrapSelectorWhitelist(
+        ethers.ZeroAddress, ethers.ZeroAddress, ethers.ZeroAddress,
+      ),
+    ).to.not.be.reverted;
+    // Self-target (governance itself) is always added regardless
+    expect(await wGov.trustedTargets(await wGov.getAddress())).to.be.true;
+    // External targets were skipped
+    expect(await wGov.trustedTargets(ethers.ZeroAddress)).to.be.false;
   });
 });
 
@@ -832,6 +879,14 @@ describe('ChayoleiGovernance — C4 coverage hardening', () => {
         .to.be.revertedWith('Not queued');
     });
 
+    it('executeProposal reverts if timelock has not expired', async () => {
+      const pid = await makeQueuedProposal();
+      // Advance only 1 second — timelock is 2 days by default
+      await time.increase(1);
+      await expect(c4Gov.connect(c4Admin).executeProposal(pid))
+        .to.be.revertedWith('Timelock not expired');
+    });
+
     it('castVote records abstain votes correctly', async () => {
       const pid = await makeActiveProposal();
       const att = await buildAttestation(c4Att, c4Gov, c4Voter.address, 2, pid);
@@ -840,6 +895,357 @@ describe('ChayoleiGovernance — C4 coverage hardening', () => {
       expect(p.votesAbstain).to.equal(500n * BigInt(RANK_WEIGHTS[2])); // rank 2 → weight 5
       expect(p.votesFor).to.equal(0n);
       expect(p.votesAgainst).to.equal(0n);
+    });
+  });
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+// C4 — Supermajority enforcement (SPEC_2 §2B) + security hardening
+// ════════════════════════════════════════════════════════════════════════════
+describe('ChayoleiGovernance — C4 supermajority + security hardening', () => {
+  const MINTER_ROLE_S4   = ethers.keccak256(ethers.toUtf8Bytes('MINTER_ROLE'));
+  const PROPOSER_ROLE_S4 = ethers.keccak256(ethers.toUtf8Bytes('PROPOSER_ROLE'));
+
+  let s4Admin:   HardhatEthersSigner;
+  let s4Att:     HardhatEthersSigner;
+  let s4Prop:    HardhatEthersSigner;
+  let s4For:     HardhatEthersSigner;
+  let s4Against: HardhatEthersSigner;
+  let s4Tmim:    TMIMToken;
+  let s4Gov:     ChayoleiGovernance;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let s4Callee:  any;
+  let s4CalleeAddr: string;
+
+  const FAKE_SEL = '0x12345678';
+
+  beforeEach(async () => {
+    [s4Admin, s4Att, s4Prop, s4For, s4Against] = await ethers.getSigners();
+
+    const TMIMF = await ethers.getContractFactory('TMIMToken');
+    s4Tmim = (await TMIMF.deploy(s4Admin.address)) as unknown as TMIMToken;
+
+    const GovF = await ethers.getContractFactory('ChayoleiGovernance');
+    s4Gov = (await GovF.deploy(
+      s4Admin.address, await s4Tmim.getAddress(), s4Att.address,
+    )) as unknown as ChayoleiGovernance;
+
+    const CalleeF = await ethers.getContractFactory('TestCallee');
+    s4Callee = await CalleeF.deploy();
+    s4CalleeAddr = await s4Callee.getAddress();
+
+    await s4Gov.connect(s4Admin).grantRole(PROPOSER_ROLE_S4, s4Prop.address);
+    await s4Tmim.connect(s4Admin).grantRole(MINTER_ROLE_S4, s4Admin.address);
+    await s4Gov.connect(s4Admin).setDefaultQuorum(50);
+
+    // Whitelist fake target + selector for non-SIGNAL proposal types
+    await s4Gov.connect(s4Admin).setTrustedTarget(s4CalleeAddr, true);
+    await s4Gov.connect(s4Admin).setAllowedSelector(PT_GRANT_ROLE,         FAKE_SEL, true);
+    await s4Gov.connect(s4Admin).setAllowedSelector(PT_PARAMETER_UPDATE,   FAKE_SEL, true);
+    await s4Gov.connect(s4Admin).setAllowedSelector(PT_MONTHLY_CAP_UPDATE, FAKE_SEL, true);
+  });
+
+  async function makeNonSignalProposal(pt: number): Promise<bigint> {
+    await s4Gov.connect(s4Prop).propose(pt, 'title', 'desc', s4CalleeAddr, FAKE_SEL, 0);
+    return s4Gov.proposalCount();
+  }
+
+  async function voteAndFinalize(
+    pid: bigint,
+    forBalance: number,
+    againstBalance: number,
+  ): Promise<void> {
+    if (forBalance > 0) {
+      await s4Tmim.connect(s4Admin).mint(s4For.address, forBalance, 'test');
+      const attFor = await buildAttestation(s4Att, s4Gov, s4For.address, 0, pid);
+      await s4Gov.connect(s4For).castVote(pid, SUPPORT_FOR, toStructArg(attFor));
+    }
+    if (againstBalance > 0) {
+      await s4Tmim.connect(s4Admin).mint(s4Against.address, againstBalance, 'test');
+      const attAg = await buildAttestation(s4Att, s4Gov, s4Against.address, 0, pid);
+      await s4Gov.connect(s4Against).castVote(pid, SUPPORT_AGAINST, toStructArg(attAg));
+    }
+    await time.increase(8 * 24 * 60 * 60);
+    await s4Gov.finalizeProposal(pid);
+  }
+
+  // ─── Supermajority enforcement ────────────────────────────────────────
+  describe('supermajority enforcement', () => {
+    it('GRANT_ROLE at exactly 66% passes (6600 bps boundary)', async () => {
+      const pid = await makeNonSignalProposal(PT_GRANT_ROLE);
+      await voteAndFinalize(pid, 66, 34); // 66/100 = 66.0% ≥ 66%
+      expect((await s4Gov.getProposal(pid)).state).to.equal(3); // Queued
+    });
+
+    it('GRANT_ROLE at 65% fails supermajority', async () => {
+      const pid = await makeNonSignalProposal(PT_GRANT_ROLE);
+      await voteAndFinalize(pid, 65, 35); // 65% < 66%
+      expect((await s4Gov.getProposal(pid)).state).to.equal(2); // Failed
+    });
+
+    it('PARAMETER_UPDATE at 70% passes supermajority', async () => {
+      const pid = await makeNonSignalProposal(PT_PARAMETER_UPDATE);
+      await voteAndFinalize(pid, 70, 30); // 70% > 66%
+      expect((await s4Gov.getProposal(pid)).state).to.equal(3); // Queued
+    });
+
+    it('MONTHLY_CAP_UPDATE at 60% fails supermajority', async () => {
+      const pid = await makeNonSignalProposal(PT_MONTHLY_CAP_UPDATE);
+      await voteAndFinalize(pid, 60, 40); // 60% < 66%
+      expect((await s4Gov.getProposal(pid)).state).to.equal(2); // Failed
+    });
+
+    it('tied votes (50/50) fail supermajority for GRANT_ROLE', async () => {
+      const pid = await makeNonSignalProposal(PT_GRANT_ROLE);
+      await voteAndFinalize(pid, 50, 50); // 50% < 66%
+      expect((await s4Gov.getProposal(pid)).state).to.equal(2); // Failed
+    });
+
+    it('GRANT_ROLE with 100% FOR and no AGAINST passes', async () => {
+      const pid = await makeNonSignalProposal(PT_GRANT_ROLE);
+      await voteAndFinalize(pid, 100, 0); // 100% FOR
+      expect((await s4Gov.getProposal(pid)).state).to.equal(3); // Queued
+    });
+
+    it('SIGNAL with 51/49 passes simple majority (no supermajority required)', async () => {
+      await s4Gov.connect(s4Prop).propose(PT_SIGNAL, 't', 'd', ethers.ZeroAddress, '0x', 0);
+      const pid = await s4Gov.proposalCount();
+      await voteAndFinalize(pid, 51, 49); // 51% > 50% simple majority
+      expect((await s4Gov.getProposal(pid)).state).to.equal(3); // Queued
+    });
+
+    it('SIGNAL with tied 50/50 fails simple majority', async () => {
+      await s4Gov.connect(s4Prop).propose(PT_SIGNAL, 't', 'd', ethers.ZeroAddress, '0x', 0);
+      const pid = await s4Gov.proposalCount();
+      await voteAndFinalize(pid, 50, 50); // votesFor not > votesAgainst
+      expect((await s4Gov.getProposal(pid)).state).to.equal(2); // Failed
+    });
+
+    it('GRANT_ROLE with only abstain votes fails (quorum met but no contested votes)', async () => {
+      const pid = await makeNonSignalProposal(PT_GRANT_ROLE);
+      await s4Tmim.connect(s4Admin).mint(s4For.address, 100, 'test');
+      const att = await buildAttestation(s4Att, s4Gov, s4For.address, 0, pid);
+      await s4Gov.connect(s4For).castVote(pid, SUPPORT_ABSTAIN, toStructArg(att));
+      await time.increase(8 * 24 * 60 * 60);
+      await s4Gov.finalizeProposal(pid);
+      // contested = 0 → the supermajority branch short-circuits to Failed
+      expect((await s4Gov.getProposal(pid)).state).to.equal(2); // Failed
+    });
+  });
+
+  // ─── setSupermajorityBps ──────────────────────────────────────────────
+  describe('setSupermajorityBps', () => {
+    it('admin sets a value mid-range and emits GovernanceParameterUpdated', async () => {
+      await expect(s4Gov.connect(s4Admin).setSupermajorityBps(7500))
+        .to.emit(s4Gov, 'GovernanceParameterUpdated')
+        .withArgs('supermajorityBps', 7500n);
+      expect(await s4Gov.supermajorityBps()).to.equal(7500n);
+    });
+
+    it('admin sets the minimum valid value (5001)', async () => {
+      await expect(s4Gov.connect(s4Admin).setSupermajorityBps(5001))
+        .to.emit(s4Gov, 'GovernanceParameterUpdated')
+        .withArgs('supermajorityBps', 5001n);
+    });
+
+    it('admin sets the maximum valid value (9999)', async () => {
+      await expect(s4Gov.connect(s4Admin).setSupermajorityBps(9999))
+        .to.emit(s4Gov, 'GovernanceParameterUpdated')
+        .withArgs('supermajorityBps', 9999n);
+    });
+
+    it('reverts for bps < 5001', async () => {
+      await expect(s4Gov.connect(s4Admin).setSupermajorityBps(5000))
+        .to.be.revertedWith('Bps out of range [5001,9999]');
+    });
+
+    it('reverts for bps > 9999', async () => {
+      await expect(s4Gov.connect(s4Admin).setSupermajorityBps(10000))
+        .to.be.revertedWith('Bps out of range [5001,9999]');
+    });
+
+    it('non-admin cannot set supermajorityBps', async () => {
+      await expect(s4Gov.connect(s4Prop).setSupermajorityBps(7500))
+        .to.be.revertedWithCustomError(s4Gov, 'AccessControlUnauthorizedAccount');
+    });
+
+    it('setDefaultQuorum reverts for zero', async () => {
+      await expect(s4Gov.connect(s4Admin).setDefaultQuorum(0))
+        .to.be.revertedWith('Quorum must be positive');
+    });
+
+    it('lowered threshold (5001) allows 51% to pass a GRANT_ROLE proposal', async () => {
+      await s4Gov.connect(s4Admin).setSupermajorityBps(5001);
+      const pid = await makeNonSignalProposal(PT_GRANT_ROLE);
+      await voteAndFinalize(pid, 51, 49); // 51% > 50.01%
+      expect((await s4Gov.getProposal(pid)).state).to.equal(3); // Queued
+    });
+  });
+
+  // ─── Quorum boundary conditions ────────────────────────────────────────
+  describe('quorum boundary conditions', () => {
+    it('passes when total votes exactly equal quorumRequired', async () => {
+      await s4Tmim.connect(s4Admin).mint(s4For.address, 100, 'test');
+      // quorumOverride = 100; voter power = 100 (rank 0, balance 100)
+      await s4Gov.connect(s4Prop).propose(PT_SIGNAL, 't', 'd', ethers.ZeroAddress, '0x', 100);
+      const pid = await s4Gov.proposalCount();
+      const att = await buildAttestation(s4Att, s4Gov, s4For.address, 0, pid);
+      await s4Gov.connect(s4For).castVote(pid, SUPPORT_FOR, toStructArg(att));
+      await time.increase(8 * 24 * 60 * 60);
+      await s4Gov.finalizeProposal(pid);
+      expect((await s4Gov.getProposal(pid)).state).to.equal(3); // Queued
+    });
+
+    it('fails when total votes are one unit below quorumRequired', async () => {
+      await s4Tmim.connect(s4Admin).mint(s4For.address, 99, 'test');
+      // quorumOverride = 100; voter power = 99 — just short
+      await s4Gov.connect(s4Prop).propose(PT_SIGNAL, 't', 'd', ethers.ZeroAddress, '0x', 100);
+      const pid = await s4Gov.proposalCount();
+      const att = await buildAttestation(s4Att, s4Gov, s4For.address, 0, pid);
+      await s4Gov.connect(s4For).castVote(pid, SUPPORT_FOR, toStructArg(att));
+      await time.increase(8 * 24 * 60 * 60);
+      await s4Gov.finalizeProposal(pid);
+      expect((await s4Gov.getProposal(pid)).state).to.equal(2); // Failed
+    });
+  });
+
+  // ─── Execute idempotency ─────────────────────────────────────────────
+  describe('executeProposal idempotency', () => {
+    it('reverts "Not queued" when the same proposal is executed twice', async () => {
+      await s4Gov.connect(s4Admin).setDefaultQuorum(1);
+      await s4Tmim.connect(s4Admin).mint(s4For.address, 1, 'test');
+      await s4Gov.connect(s4Prop).propose(PT_SIGNAL, 't', 'd', ethers.ZeroAddress, '0x', 0);
+      const pid = await s4Gov.proposalCount();
+
+      const att = await buildAttestation(s4Att, s4Gov, s4For.address, 0, pid);
+      await s4Gov.connect(s4For).castVote(pid, SUPPORT_FOR, toStructArg(att));
+      await time.increase(8 * 24 * 60 * 60);
+      await s4Gov.finalizeProposal(pid);
+      await time.increase(3 * 24 * 60 * 60);
+
+      await s4Gov.connect(s4Admin).executeProposal(pid);
+      await expect(s4Gov.connect(s4Admin).executeProposal(pid))
+        .to.be.revertedWith('Not queued');
+    });
+  });
+
+  // ─── Reentrancy guard ────────────────────────────────────────────────
+  describe('executeProposal reentrancy guard', () => {
+    const ATTACK_IFACE = new ethers.Interface([
+      'function attackExecute(address gov, uint256 pid)',
+      'function attackExecuteQuiet(address gov, uint256 pid)',
+    ]);
+    const attackSel      = sel4('attackExecute(address,uint256)');
+    const attackQuietSel = sel4('attackExecuteQuiet(address,uint256)');
+
+    beforeEach(async () => {
+      await s4Gov.connect(s4Admin).setDefaultQuorum(1);
+      await s4Tmim.connect(s4Admin).mint(s4For.address, 100, 'test');
+      await s4Gov.connect(s4Admin).setAllowedSelector(PT_PARAMETER_UPDATE, attackSel, true);
+      await s4Gov.connect(s4Admin).setAllowedSelector(PT_PARAMETER_UPDATE, attackQuietSel, true);
+    });
+
+    it('callee that requires re-entry causes outer executeProposal to revert', async () => {
+      // propA is SIGNAL and will be queued (the reentrancy target)
+      await s4Gov.connect(s4Prop).propose(PT_SIGNAL, 'A', 'd', ethers.ZeroAddress, '0x', 0);
+      const propAId = await s4Gov.proposalCount(); // 1
+
+      // propB calls attackExecute(gov, propAId) — tries to reenter while propA is Queued
+      const calldataB = ATTACK_IFACE.encodeFunctionData('attackExecute', [
+        await s4Gov.getAddress(), propAId,
+      ]);
+      await s4Gov.connect(s4Prop).propose(
+        PT_PARAMETER_UPDATE, 'B', 'd', s4CalleeAddr, calldataB, 0,
+      );
+      const propBId = await s4Gov.proposalCount(); // 2
+
+      // Vote and queue both proposals
+      const attA = await buildAttestation(s4Att, s4Gov, s4For.address, 0, propAId);
+      await s4Gov.connect(s4For).castVote(propAId, SUPPORT_FOR, toStructArg(attA));
+      const attB = await buildAttestation(s4Att, s4Gov, s4For.address, 0, propBId);
+      await s4Gov.connect(s4For).castVote(propBId, SUPPORT_FOR, toStructArg(attB));
+
+      await time.increase(8 * 24 * 60 * 60);
+      await s4Gov.finalizeProposal(propAId);
+      await s4Gov.finalizeProposal(propBId);
+      await time.increase(3 * 24 * 60 * 60); // past timelock
+
+      // Execute propB → tries to reenter propA (still Queued) → blocked by nonReentrant
+      await expect(s4Gov.connect(s4Admin).executeProposal(propBId)).to.be.reverted;
+      // propB must remain Queued (whole tx reverted)
+      expect((await s4Gov.getProposal(propBId)).state).to.equal(3); // Queued
+      // propA is untouched
+      expect((await s4Gov.getProposal(propAId)).state).to.equal(3); // Queued
+    });
+
+    it('callee that silently ignores reentrancy failure: propA state not corrupted', async () => {
+      // propA SIGNAL — queued first (reentrancy target)
+      await s4Gov.connect(s4Prop).propose(PT_SIGNAL, 'A', 'd', ethers.ZeroAddress, '0x', 0);
+      const propAId = await s4Gov.proposalCount(); // 1
+
+      // propC calls attackExecuteQuiet(gov, propAId) — ignores the reentry failure
+      const calldataC = ATTACK_IFACE.encodeFunctionData('attackExecuteQuiet', [
+        await s4Gov.getAddress(), propAId,
+      ]);
+      await s4Gov.connect(s4Prop).propose(
+        PT_PARAMETER_UPDATE, 'C', 'd', s4CalleeAddr, calldataC, 0,
+      );
+      const propCId = await s4Gov.proposalCount(); // 2
+
+      const attA = await buildAttestation(s4Att, s4Gov, s4For.address, 0, propAId);
+      await s4Gov.connect(s4For).castVote(propAId, SUPPORT_FOR, toStructArg(attA));
+      const attC = await buildAttestation(s4Att, s4Gov, s4For.address, 0, propCId);
+      await s4Gov.connect(s4For).castVote(propCId, SUPPORT_FOR, toStructArg(attC));
+
+      await time.increase(8 * 24 * 60 * 60);
+      await s4Gov.finalizeProposal(propAId);
+      await s4Gov.finalizeProposal(propCId);
+      await time.increase(3 * 24 * 60 * 60);
+
+      // Execute propC: callee silently tries to reenter propA but fails (nonReentrant).
+      // propC itself succeeds since it doesn't propagate the failure.
+      await expect(s4Gov.connect(s4Admin).executeProposal(propCId))
+        .to.emit(s4Gov, 'ProposalExecuted').withArgs(propCId);
+
+      // propA must still be Queued — the silent reentry had no effect on state
+      expect((await s4Gov.getProposal(propAId)).state).to.equal(3); // Queued
+      expect((await s4Gov.getProposal(propCId)).state).to.equal(4); // Executed
+    });
+  });
+
+  // ─── hasVoted / usedNonces monotonicity invariants ───────────────────
+  describe('voting invariants', () => {
+    it('hasVoted is monotonically set: once true, never false', async () => {
+      await s4Tmim.connect(s4Admin).mint(s4For.address, 100, 'test');
+      await s4Gov.connect(s4Prop).propose(PT_SIGNAL, 't', 'd', ethers.ZeroAddress, '0x', 0);
+      const pid = await s4Gov.proposalCount();
+
+      expect(await s4Gov.hasVoted(pid, s4For.address)).to.be.false;
+      const att = await buildAttestation(s4Att, s4Gov, s4For.address, 0, pid);
+      await s4Gov.connect(s4For).castVote(pid, SUPPORT_FOR, toStructArg(att));
+      expect(await s4Gov.hasVoted(pid, s4For.address)).to.be.true;
+
+      // Second castVote attempt on the same proposal must revert (and hasVoted stays true)
+      const att2 = await buildAttestation(s4Att, s4Gov, s4For.address, 0, pid);
+      await expect(
+        s4Gov.connect(s4For).castVote(pid, SUPPORT_AGAINST, toStructArg(att2)),
+      ).to.be.revertedWith('Already voted');
+      expect(await s4Gov.hasVoted(pid, s4For.address)).to.be.true;
+    });
+
+    it('usedNonces is monotonically set: once true, never false', async () => {
+      await s4Tmim.connect(s4Admin).mint(s4For.address, 100, 'test');
+      await s4Gov.connect(s4Prop).propose(PT_SIGNAL, 't', 'd', ethers.ZeroAddress, '0x', 0);
+      const pid = await s4Gov.proposalCount();
+
+      const att = await buildAttestation(s4Att, s4Gov, s4For.address, 0, pid);
+      expect(await s4Gov.usedNonces(att.nonce)).to.be.false;
+      await s4Gov.connect(s4For).castVote(pid, SUPPORT_FOR, toStructArg(att));
+      expect(await s4Gov.usedNonces(att.nonce)).to.be.true;
+
+      // Nonce must remain set across blocks
+      await time.increase(1000);
+      expect(await s4Gov.usedNonces(att.nonce)).to.be.true;
     });
   });
 });

@@ -13,16 +13,13 @@ const RANK_VOTING_POWER_BY_INDEX = [1, 2, 5, 8, 12, 18, 25, 35, 45, 60] as const
 
 // POST /api/governance/proposals/[id]/vote
 //
-// Post-C1: voting power is computed using the rank read from
-// ChayoleiRegistry on-chain (authoritative), NOT Firestore. Firestore rank
-// is treated as display-only metadata and may lag the chain.
-//
-// The attestation body field is accepted and stored alongside the vote record
-// for later on-chain submission (C2). It is NOT re-validated here because
-// the signing key is held by this backend — we trust our own signature.
+// C2: voting power is computed using the rank read from ChayoleiRegistry
+// on-chain (authoritative). The frontend now submits the vote to the
+// governance contract via MetaMask before calling this endpoint;
+// txHash records the on-chain confirmation. Attestation is stored for audit.
 export const POST: RequestHandler = async ({ params, request }) => {
   const ctx = await requireAuth(request);
-  const { vote, attestation } = await request.json();
+  const { vote, attestation, txHash } = await request.json();
 
   if (!vote || !VALID_VOTES.has(vote)) throw error(400, 'הצבעה חייבת להיות: for, against, או abstain');
 
@@ -80,8 +77,8 @@ export const POST: RequestHandler = async ({ params, request }) => {
     talmidId: ctx.talmidId,
     walletAddress,
     timestamp: now,
-    // Persist attestation for later on-chain replay in C2 (optional for now).
     attestation: attestation ?? null,
+    txHash: txHash ?? null,        // on-chain castVote() tx hash (null if no wallet)
   });
 
   const increment: Record<string, unknown> = {};

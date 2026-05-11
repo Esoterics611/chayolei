@@ -8,6 +8,7 @@ import type {
   FunctionFragment,
   Result,
   Interface,
+  AddressLike,
   ContractRunner,
   ContractMethod,
   Listener,
@@ -23,12 +24,22 @@ import type {
 export interface TestCalleeInterface extends Interface {
   getFunction(
     nameOrSignature:
+      | "attackExecute"
+      | "attackExecuteQuiet"
       | "revertNoReason"
       | "revertWithMessage"
       | "setValue"
       | "value"
   ): FunctionFragment;
 
+  encodeFunctionData(
+    functionFragment: "attackExecute",
+    values: [AddressLike, BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "attackExecuteQuiet",
+    values: [AddressLike, BigNumberish]
+  ): string;
   encodeFunctionData(
     functionFragment: "revertNoReason",
     values?: undefined
@@ -43,6 +54,14 @@ export interface TestCalleeInterface extends Interface {
   ): string;
   encodeFunctionData(functionFragment: "value", values?: undefined): string;
 
+  decodeFunctionResult(
+    functionFragment: "attackExecute",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "attackExecuteQuiet",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(
     functionFragment: "revertNoReason",
     data: BytesLike
@@ -98,6 +117,18 @@ export interface TestCallee extends BaseContract {
     event?: TCEvent
   ): Promise<this>;
 
+  attackExecute: TypedContractMethod<
+    [gov: AddressLike, pid: BigNumberish],
+    [void],
+    "nonpayable"
+  >;
+
+  attackExecuteQuiet: TypedContractMethod<
+    [gov: AddressLike, pid: BigNumberish],
+    [void],
+    "nonpayable"
+  >;
+
   revertNoReason: TypedContractMethod<[], [void], "view">;
 
   revertWithMessage: TypedContractMethod<[], [void], "view">;
@@ -110,6 +141,20 @@ export interface TestCallee extends BaseContract {
     key: string | FunctionFragment
   ): T;
 
+  getFunction(
+    nameOrSignature: "attackExecute"
+  ): TypedContractMethod<
+    [gov: AddressLike, pid: BigNumberish],
+    [void],
+    "nonpayable"
+  >;
+  getFunction(
+    nameOrSignature: "attackExecuteQuiet"
+  ): TypedContractMethod<
+    [gov: AddressLike, pid: BigNumberish],
+    [void],
+    "nonpayable"
+  >;
   getFunction(
     nameOrSignature: "revertNoReason"
   ): TypedContractMethod<[], [void], "view">;

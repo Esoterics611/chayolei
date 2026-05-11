@@ -1021,24 +1021,72 @@ class AppStore {
   async castVote(proposalId: string, vote: 'for' | 'against' | 'abstain'): Promise<void> {
     if (!this.currentUser) { toast.error('יש להתחבר כדי להצביע'); return; }
     if (USE_FIREBASE) {
-      // Step 1: fetch a fresh, signed rank attestation from the backend.
-      // Attestations are short-lived (~5 min), single-use, and bound to this
-      // proposal. Post-C2 the frontend will submit this attestation directly
-      // to ChayoleiGovernance.castVote() via the user's wallet; for now we
-      // hand it to the vote API which records it alongside the Firestore vote.
+      // Resolve the on-chain proposal ID (stored in Firestore as onChainProposalId).
+      const proposal = this.proposals.find(p => p.id === proposalId);
+      if (!proposal) { toast.error('הצעה לא נמצאה'); return; }
+      const onChainId = proposal.onChainProposalId ?? '0';
+
+      // Step 1: fetch a fresh EIP-712 rank attestation bound to this proposal.
       const attRes = await this.authFetch('/api/governance/attestation', {
         method: 'POST',
-        body: JSON.stringify({ proposalId: 0 }), // C2: replace with on-chain uint256 id
+        body: JSON.stringify({ proposalId: onChainId }),
       });
       if (!attRes.ok) { toast.error(await attRes.text()); return; }
       const attestation = await attRes.json();
 
+      // Step 2: submit on-chain via MetaMask (C2).
+      // support: 0=For, 1=Against, 2=Abstain (mirrors ChayoleiGovernance.castVote)
+      const supportMap: Record<string, number> = { for: 0, against: 1, abstain: 2 };
+      const support = supportMap[vote];
+      let txHash: string | null = null;
+
+      if (typeof window !== 'undefined' && (window as unknown as { ethereum?: unknown }).ethereum) {
+        try {
+          const { BrowserProvider, Contract } = await import('ethers');
+          const provider = new BrowserProvider(
+            (window as unknown as { ethereum: unknown }).ethereum as Parameters<typeof BrowserProvider>[0],
+          );
+          const signer = await provider.getSigner();
+          const GOVERNANCE_ABI = [
+            'function castVote(uint256 proposalId, uint8 support, tuple(address voter, uint8 rankIndex, uint256 proposalId, uint256 nonce, uint256 expiry, bytes signature) att) external',
+          ];
+          const gov = new Contract(
+            import.meta.env.VITE_GOVERNANCE_ADDRESS as string,
+            GOVERNANCE_ABI,
+            signer,
+          );
+          const att = [
+            attestation.voter,
+            attestation.rankIndex,
+            BigInt(attestation.proposalId),
+            BigInt(attestation.nonce),
+            attestation.expiry,
+            attestation.signature,
+          ];
+          const tx = await gov.castVote(BigInt(onChainId), support, att);
+          toast.info('ממתין לאישור הרשת…');
+          const receipt = await tx.wait();
+          txHash = receipt?.hash ?? tx.hash;
+        } catch (e: unknown) {
+          const msg = e instanceof Error ? e.message : String(e);
+          if (msg.toLowerCase().includes('user rejected') || msg.toLowerCase().includes('denied')) {
+            toast.error('ההצבעה בוטלה על ידי המשתמש');
+            return;
+          }
+          // Log but continue — record vote in Firestore regardless so the UI
+          // reflects the intent; the on-chain tx can be replayed later.
+          console.warn('[castVote] on-chain tx failed, continuing with Firestore record:', e);
+        }
+      }
+
+      // Step 3: record the vote in Firestore (attestation stored for audit trail).
       const res = await this.authFetch(`/api/governance/proposals/${proposalId}/vote`, {
         method: 'POST',
-        body: JSON.stringify({ vote, attestation }),
+        body: JSON.stringify({ vote, attestation, txHash }),
       });
       if (!res.ok) { toast.error(await res.text()); return; }
-      toast.success('הצבעתך נרשמה');
+      const suffix = txHash ? ` · tx: ${txHash.slice(0, 10)}…` : '';
+      toast.success(`הצבעתך נרשמה${suffix}`);
       return;
     }
     // In-memory: optimistic update

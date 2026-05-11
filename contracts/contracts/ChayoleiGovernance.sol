@@ -288,6 +288,19 @@ contract ChayoleiGovernance is AccessControl, ReentrancyGuard, EIP712 {
         emit VoteCast(proposalId, msg.sender, support, att.rankIndex, weight, att.nonce);
     }
 
+    // ─── Supermajority threshold (SPEC_2 §2B line 621) ──────────────────
+    /// @notice 6600 bps = 66%. Sensitive proposal types require this fraction
+    ///         of participating votes to be FOR, not just a simple majority.
+    uint256 public supermajorityBps = 6600;
+
+    /// @notice Returns true if this proposal type requires a 66% supermajority.
+    /// Covers: GRANT_ROLE (6), PARAMETER_UPDATE (7), MONTHLY_CAP_UPDATE (9).
+    function _requiresSupermajority(ProposalType pt) private pure returns (bool) {
+        return pt == ProposalType.GRANT_ROLE
+            || pt == ProposalType.PARAMETER_UPDATE
+            || pt == ProposalType.MONTHLY_CAP_UPDATE;
+    }
+
     // ─── Finalize ────────────────────────────────────────────────────────
     function finalizeProposal(uint256 proposalId) external {
         Proposal storage p = proposals[proposalId];
@@ -296,7 +309,18 @@ contract ChayoleiGovernance is AccessControl, ReentrancyGuard, EIP712 {
 
         uint256 totalVotes = p.votesFor + p.votesAgainst + p.votesAbstain;
         bool    quorumMet  = totalVotes >= p.quorumRequired;
-        bool    passed     = quorumMet && p.votesFor > p.votesAgainst;
+
+        bool passed;
+        if (_requiresSupermajority(p.proposalType)) {
+            // 66% supermajority: votesFor / (votesFor + votesAgainst) >= 66%
+            // Avoids division-by-zero; if nobody voted, quorumMet is false anyway.
+            uint256 contested = p.votesFor + p.votesAgainst;
+            passed = quorumMet
+                && contested > 0
+                && p.votesFor * 10_000 >= contested * supermajorityBps;
+        } else {
+            passed = quorumMet && p.votesFor > p.votesAgainst;
+        }
 
         if (passed) {
             p.state         = ProposalState.Queued;
@@ -305,6 +329,12 @@ contract ChayoleiGovernance is AccessControl, ReentrancyGuard, EIP712 {
         } else {
             p.state = ProposalState.Failed;
         }
+    }
+
+    function setSupermajorityBps(uint256 _bps) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(_bps >= 5001 && _bps <= 9999, "Bps out of range [5001,9999]");
+        supermajorityBps = _bps;
+        emit GovernanceParameterUpdated("supermajorityBps", _bps);
     }
 
     // ─── Execute ─────────────────────────────────────────────────────────
