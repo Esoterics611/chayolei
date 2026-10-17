@@ -41,3 +41,7 @@ __pycache__/
 .dart_tool/
 .claude/settings.local.json
 %TEMP%/
+
+# Local tooling state
+.claude/settings.local.json
+tmpclaude-*

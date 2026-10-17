@@ -82,8 +82,6 @@ The more a talmid learns, produces, and contributes — the more they earn, the 
 
 **Honest summary.** Spec 1 (academic-institutional UI) is complete. Spec 2 (DAO governance) is roughly 70% done — the C1 security fix shipped 2026-04-24, with C2 (move proposals fully on-chain), C3 (execution hardening), C4 (test coverage to 95%+), C5 (treasury hardening), and C6 (audit prep) ahead.
 
-See [`SESSION_HANDOFF.md`](SESSION_HANDOFF.md) for exact in-progress state.
-
 ---
 
 ## The architecture
@@ -175,9 +173,8 @@ Once the public testnet is open, sign up with any wallet, choose a makom, and st
 If you teach Torah and want to use this platform to coordinate research with your talmidim — reach out. We are looking for the first 3–5 mashpia'im to design the early mivtzaot.
 
 ### As a developer
-1. Read [`SESSION_HANDOFF.md`](SESSION_HANDOFF.md) — exact current state, what's mid-flight, what's blocked.
-2. Read [`SPEC_2_DAO_REQUIREMENTS.md`](SPEC_2_DAO_REQUIREMENTS.md) — the full DAO spec (1909 lines).
-3. Pick a session prompt from `SESSION_HANDOFF.md` §5 (C2, C3, C4, C5, or C6) and start contributing.
+1. Read [`SPEC_2_DAO_REQUIREMENTS.md`](SPEC_2_DAO_REQUIREMENTS.md) — the full DAO spec.
+2. Pick one of the open milestones below (C3 to C6) and open an issue before starting.
 
 The most valuable contributions right now:
 - Finishing C3 (execution hardening) — contract is rewritten but uncompiled

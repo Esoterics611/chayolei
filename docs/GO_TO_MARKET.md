@@ -77,7 +77,7 @@ Pluralism is the point. Even brief endorsements published together as a council 
 
 ### Other foundation items
 - **Pick the name posture.** Recommended: "Chayolei" stays as the platform name; secondary descriptor "Chayolei Torah Scholarship Network" for cross-stream institutional clarity. Tomchei Tmimim heritage stays in the about page.
-- **Pick taglines per surface** (see [`INTERNAL_STATUS.md`](INTERNAL_STATUS.md) §6 — primary cross-Torah-world tagline: *"Verified scholarship. Transparent funding. The infrastructure for the next generation of Torah learning."*).
+- **Pick taglines per surface** (primary cross-Torah-world tagline: *"Verified scholarship. Transparent funding. The infrastructure for the next generation of Torah learning."*).
 - **Set up social presence:** @Chayolei or @ChayoleiTorah on X, similar on Telegram; consider a project Substack for the long-form essays that Stage 2 will need.
 - **Reserve domains:** chayolei.xyz / .org / .com defensively; chayolei.network for the institutional positioning.
 - **Backlog: contracts work.** Finish C3-C6 (uncompiled execution-hardening contract → 95% test coverage → static analysis → external audit). Audit can take 8–12 weeks, so start the audit shopping in parallel with Stage 0. Target: audit-ready by end of Stage 1, mainnet by end of Stage 2.

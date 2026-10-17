@@ -191,7 +191,7 @@ If you are an investor exploring impact-driven structures in Jewish or religious
 
 To explore a donation, partnership, or contribution to the platform — reach out to Ronnie Rendel directly at ronnie.rendel@gmail.com.
 
-The full strategic brief is in [`INTERNAL_STATUS.md`](INTERNAL_STATUS.md). The execution plan is in [`GO_TO_MARKET.md`](GO_TO_MARKET.md). The DAO specification is in [`SPEC_2_DAO_REQUIREMENTS.md`](SPEC_2_DAO_REQUIREMENTS.md). The platform itself is at chayolei.xyz (live testnet) and the codebase is in this repository.
+The execution plan is in [`GO_TO_MARKET.md`](GO_TO_MARKET.md). The DAO specification is in [`SPEC_2_DAO_REQUIREMENTS.md`](SPEC_2_DAO_REQUIREMENTS.md). The platform itself is at chayolei.xyz (live testnet) and the codebase is in this repository.
 
 ---
 
