@@ -2,6 +2,8 @@
 
 > **Economic model changed 2026-10-25:** crypto in, crypto out; no fiat, no fiat on- or off-ramps, no institutional connection (fiscal sponsor, 501(c)(3), tax receipts, payment processors); donations are handled separately, outside the platform; TMIM is minted only for participation. See `CLAUDE.md`. Superseded here: fiat donations converted to TMIM, the supporter donation flow milestone, and a token economy funded by donations.
 
+> **Positioning changed 2026-10-25:** Chayolei is now positioned as an organizing tool for teams that produce and publish, with a shared ledger at its core. See `MARKETING_BRIEF.md`; where this document's framing differs, the brief wins.
+
 ---
 
 ## What This Is
