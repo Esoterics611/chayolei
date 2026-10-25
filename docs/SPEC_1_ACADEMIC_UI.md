@@ -1,5 +1,7 @@
 # Spec 1: Academic UI Redesign — Chayolei Beis Dovid
 
+> **Economic model changed 2026-10-25:** crypto in, crypto out; no fiat, no fiat on- or off-ramps, no institutional connection (fiscal sponsor, 501(c)(3), tax receipts, payment processors); donations are handled separately, outside the platform; TMIM is minted only for participation. See `CLAUDE.md`. Superseded here: the donor portal, donation forms, USD donation figures and donation-based TMIM minting in the UI.
+
 ## Implementation Guide for SvelteKit / Tailwind CSS v4
 
 **Purpose:** Redesign the visual theme of the Chayolei Beis Dovid platform from cyberpunk dark to academic institutional. Same stack (SvelteKit 2, Svelte 5, Tailwind CSS v4), same pages, same components, same RTL Hebrew layout — only the visual layer changes.

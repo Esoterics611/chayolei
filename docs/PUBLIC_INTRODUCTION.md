@@ -1,5 +1,7 @@
 # Chayolei Beis Dovid
 
+> **Economic model changed 2026-10-25:** crypto in, crypto out; no fiat, no fiat on- or off-ramps, no institutional connection (fiscal sponsor, 501(c)(3), tax receipts, payment processors); donations are handled separately, outside the platform; TMIM is minted only for participation. See `CLAUDE.md`. Superseded here: fiat donations, donations converted to TMIM, donor TMIM receipts with voting power, cash stipends (redemption is in USDC), and the in-app donation flow under "As a supporter".
+
 **A digital network for Torah scholarship and leadership — connecting local yeshivot into a global research and publishing community, governed as a DAO with real token economics.**
 
 > חיילי בית דוד — Soldiers of the House of David.
@@ -58,9 +60,9 @@ Every talmid has a wallet. The platform token is **TMIM** (תמים — *complet
 | Sgan Aluf | סגן אלוף | 7.0× | 75,000 |
 | Aluf | אלוף | 10.0× | 150,000 |
 
-**Funding.** Supporters donate to the Chayolei DAO — fiat or crypto. Donations are converted to TMIM in the treasury at a target rate of $0.10 per TMIM. Supporters can designate funds to a specific makom, a specific mivtza, or the general fund. Donors receive TMIM receipts that grant governance voting power. Everything is on-chain and transparent.
+**Funding.** Crypto in, crypto out. The on-chain treasury holds ETH and USDC on Base and pays out in USDC. There is no fiat in the platform and no fiat on- or off-ramps. Donations, if any, are handled separately, outside the platform, and never mint TMIM. TMIM is minted only for participation. Everything is on-chain and transparent.
 
-**Spending.** The DAO treasury funds talmidim through mivtza allocations. Talmidim can redeem earned TMIM for cash stipends, project funding (printing a sefer, hosting a farbrengen, travel), or chessed initiatives. Major allocations are voted on.
+**Spending.** The DAO treasury funds talmidim through mivtza allocations. Talmidim can redeem earned TMIM for USDC from the treasury. Major allocations are voted on.
 
 **Governance.** Talmidim vote on which mivtzaot to fund, treasury allocations, new makomot, and community projects. Voting power is `TMIM balance × rank multiplier`. This is real on-chain governance over real funds — not a suggestion box.
 
@@ -182,8 +184,8 @@ The most valuable contributions right now:
 - Frontend RTL polish, accessibility
 - Hebrew copywriting and translation review
 
-### As a supporter (donor)
-The donation flow will go live with public testnet. Supporters can fund specific makomot, specific mivtzaot (e.g., "publish a sefer on Likkutei Torah"), or the general treasury. All donations are on-chain and transparent. The Chayolei structure removes the opacity that has historically deterred careful donors.
+### As a supporter
+Donations are handled separately, outside the platform; the platform itself takes no donations and mints no TMIM for them. Every TMIM minted and redeemed is visible on-chain.
 
 ### As a community leader
 If you run a yeshiva, kollel, or chabad house and want to use Chayolei as your scholarship-and-stipend infrastructure — reach out. We are looking for design partners during the early launch.

@@ -1,5 +1,7 @@
 # Spec 2: DAO Requirements — Chayolei Beis Dovid
 
+> **Economic model changed 2026-10-25:** crypto in, crypto out; no fiat, no fiat on- or off-ramps, no institutional connection (fiscal sponsor, 501(c)(3), tax receipts, payment processors); donations are handled separately, outside the platform; TMIM is minted only for participation. See `CLAUDE.md`. Superseded here: §2.3 Donation Conversion, §5.4 Donor Token Distinction and §6 Donation Economics (donations mint no TMIM; the treasury is funded in crypto and pays out in USDC), and any fiat or fiscal-sponsor references.
+
 ## Economic Model, Smart Contracts, and Governance UI
 
 **Purpose:** Define the complete DAO governance system for Chayolei Beis Dovid — tokenomics, new smart contracts, contract extensions, and the governance UI. This spec is divided into three integrated sections:
@@ -97,6 +99,8 @@ Where `baseReward` is the token allocation set when the masima/tafkid was create
 **Base reward:** Fixed per review (see reward table), modified by reviewer's rank multiplier.
 
 ### 2.3 Donation Conversion
+
+> **Superseded 2026-10-25:** money sent to the treasury mints no TMIM. TMIM is minted only for participation (§2.1, §2.2, §2.4, §2.5). See `CLAUDE.md`.
 
 **Trigger:** Donor sends ETH or USDC to the treasury.
 
@@ -276,6 +280,8 @@ TMIM is not just a cash-out token. Holding provides:
 
 ### 5.4 Donor Token Distinction
 
+> **Superseded 2026-10-25:** there are no donor tokens; donations mint no TMIM.
+
 Donors receive TMIM for their contributions, but "donated-origin" TMIM have different rules:
 
 - **Can vote:** Yes — donors get governance input proportional to their support.
@@ -286,6 +292,8 @@ Donors receive TMIM for their contributions, but "donated-origin" TMIM have diff
 **Implementation:** Add an `isDonorToken` mapping or use a separate `donorBalance` tracker in `GovernanceTreasury`. When checking voting power, include donor balance. When checking redemption eligibility, exclude it.
 
 ## 6. Donation Economics
+
+> **Superseded 2026-10-25:** donations are handled separately, outside the platform, and mint no TMIM. The treasury is funded in crypto and pays redemptions in USDC.
 
 ### 6.1 Donation Flow
 

@@ -1,5 +1,7 @@
 # Chayolei — Go-to-Market Plan (revised)
 
+> **Economic model changed 2026-10-25:** crypto in, crypto out; no fiat, no fiat on- or off-ramps, no institutional connection (fiscal sponsor, 501(c)(3), tax receipts, payment processors); donations are handled separately, outside the platform; TMIM is minted only for participation. See `CLAUDE.md`. Superseded here: operating principle 5, the Stage 0 donation rail (manual cash/check/Zelle/Venmo flow, fiscal sponsor, Stripe/ACH, donor-advised funds, chai-multiple donation tiers), minting TMIM per donation, the fiscal-sponsor and online-donation items in the 30-day plan, the fiscal-sponsor and Stripe budget lines, and the fiscal-sponsor / 501(c)(3) legal path.
+
 > Revised 2026-04-26. Vanguard parent deprioritized. Addressable market: the entire Torah-learning world. Ronnie is the initial mashpia. The first two mivtzaot are publications already in development. Online donations are the immediate operational priority.
 
 ---

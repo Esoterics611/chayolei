@@ -1,5 +1,7 @@
 # Tomchei Tmimim — Digital Network for Torah Scholarship and Leadership
 
+> **Economic model changed 2026-10-25:** crypto in, crypto out; no fiat, no fiat on- or off-ramps, no institutional connection (fiscal sponsor, 501(c)(3), tax receipts, payment processors); donations are handled separately, outside the platform; TMIM is minted only for participation. See `CLAUDE.md`. Superseded here: fiat donations converted to TMIM, the supporter donation flow milestone, and a token economy funded by donations.
+
 ---
 
 ## What This Is
@@ -34,7 +36,7 @@ Every student has a crypto wallet. The platform token is **TMIM** (תמים).
 
 **Earning:** Students earn TMIM for completing tasks, submitting quality work, peer reviewing, participating in discussions, and maintaining learning streaks. All rewards scale with rank.
 
-**Funding:** Supporters donate to the Chayolei DAO — fiat or crypto. Donations are converted to TMIM in the treasury. Supporters can designate funds to a specific location, a specific mivtza (research project), or the general fund. Everything is on-chain and transparent.
+**Funding:** Crypto in, crypto out. The on-chain treasury holds ETH and USDC and pays out in USDC; there is no fiat in the platform. Donations, if any, are handled separately, outside the platform, and never mint TMIM. TMIM is minted only for participation. Everything is on-chain and transparent.
 
 **Spending:** The DAO treasury funds student work through mivtza allocations. Students can redeem earned TMIM for cash stipends, project funding (printing a sefer, hosting a farbrengen, travel), or chessed initiatives. The community votes on major allocations.
 

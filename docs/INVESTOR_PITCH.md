@@ -1,5 +1,7 @@
 # Chayolei
 
+> **Economic model changed 2026-10-25:** crypto in, crypto out; no fiat, no fiat on- or off-ramps, no institutional connection (fiscal sponsor, 501(c)(3), tax receipts, payment processors); donations are handled separately, outside the platform; TMIM is minted only for participation. See `CLAUDE.md`. Superseded here: fiat donations through a fiscal sponsor with tax receipts, donations minting TMIM, the donation-fee revenue layer and projections built on donor flow, institutional partnerships as a revenue layer, and the fiscal-sponsor items under traction and regulatory exposure. This pitch needs rewriting around the participation-minted, crypto-only model before it is used.
+
 ## Verified scholarship. Transparent funding. Infrastructure for the next generation of Torah learning.
 
 > An on-platform pitch for donors, mission-aligned investors, and institutional partners.

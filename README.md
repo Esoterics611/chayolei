@@ -65,11 +65,11 @@ Talmidim progress through IDF ranks based on accumulated TMIM and verified contr
 
 The platform token is **TMIM** (תמים — *complete, pure*). Every talmid has a wallet.
 
-**Earning.** Talmidim earn TMIM for completing masimot, peer reviewing, participating in farbrengens, and maintaining learning streaks. All rewards scale with rank multiplier.
+**Earning.** TMIM is minted only for participation: completing masimot, peer reviewing, participating in farbrengens, and maintaining learning streaks. All rewards scale with rank multiplier. Money sent in never mints TMIM.
 
-**Funding.** Supporters donate to the Chayolei DAO — fiat or crypto. Donations enter the on-chain treasury at a target rate of $0.10/TMIM. Supporters can designate funds to a specific makom, a specific mivtza, or the general fund. Everything is transparent on-chain.
+**Funding.** Crypto in, crypto out. The on-chain treasury holds ETH and USDC on Base and pays out in USDC. There is no fiat anywhere in the platform: no card, bank or payment-app flows, no fiat on- or off-ramps, and no fiscal sponsor or other institutional connection. Donations, if any, are handled separately, outside the platform.
 
-**Redeeming.** Talmidim redeem earned TMIM for cash stipends, project funding (printing a sefer, hosting a farbrengen, travel), or chessed initiatives.
+**Redeeming.** Talmidim redeem earned TMIM for USDC from the on-chain treasury, at the redemption rate set by governance ($0.10/TMIM target).
 
 **Governance.** Voting power = `TMIM balance × rank multiplier`. Talmidim vote on mivtza funding, treasury allocations, and new makomot. Not a suggestion box — real on-chain authority over real funds.
 
