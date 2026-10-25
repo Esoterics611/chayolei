@@ -129,7 +129,7 @@ This needs to be unmistakable in every piece of copy:
 
 ## 13. Open questions for the owner
 
-1. **On-chain redemption.** The contracts can redeem TMIM for USDC at a set rate. With conversion outside the platform, keep redemption as a property of the token (not shown in the app), or retire it?
+1. **On-chain redemption** (to be decided in the future). The contracts can redeem TMIM for USDC at a set rate; until the owner decides, the product shows TMIM only.
 2. **Name and framing.** "Chayolei Beis Dovid", IDF ranks and "soldiers" carry the heritage but read as a Torah-only, military product to a global audience. Keep, keep as heritage under a broader product name, or rename?
 3. **Per-team treasuries.** Any small team needs its own treasury, charter and roles; today there is one global treasury and governance contract. A team factory is the main technical change this positioning implies.
 4. **Ledger privacy.** Which parts of a team's ledger are public by default (payouts? decisions?) and which stay private to the team?
