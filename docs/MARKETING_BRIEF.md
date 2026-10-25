@@ -1,118 +1,136 @@
 # Chayolei — Marketing Brief
 
-> Written 2026-10-25. **This changes the positioning.** It supersedes the framing in `README.md` (a scholarship network governed as a DAO), `PUBLIC_INTRODUCTION.md`, `TOMCHEI_TMIMIM_OVERVIEW.md`, `INVESTOR_PITCH.md` and `GO_TO_MARKET.md` wherever they disagree. The economic model in `CLAUDE.md` (crypto in, crypto out; TMIM minted only for participation) still holds. The UX plan built on this brief is `UX_REDESIGN.md`.
+> Revised 2026-10-25 (third revision the same day). **This is the positioning.** It supersedes the framing in `README.md`'s older sections, `PUBLIC_INTRODUCTION.md`, `TOMCHEI_TMIMIM_OVERVIEW.md`, `INVESTOR_PITCH.md` and `GO_TO_MARKET.md` wherever they disagree. The economic model is in `CLAUDE.md`. The UI built on this brief is `UX_REDESIGN.md`; the prompt for a pitch artifact is `PITCH_ARTIFACT_PROMPT.md`.
 
 ---
 
-## 1. What changed
+## 1. The big picture
 
-| Before | Now |
-|---|---|
-| A network of talmidim who earn tokens, rank up and vote | **An organizing tool for teams that produce and publish**, with a shared ledger at its core |
-| The token, the ranks and the DAO were the story | **Organizing is the story.** The ledger is what makes the organizing work: the group's books, its bank and its rules in one place |
-| Donors, fiat rails, fiscal sponsors, institutional partners | **Crypto in, crypto out.** No banks, no fiscal host, no institutional dependency. Donations, if any, happen off-platform |
-| Learning and rank progression | **Production and publishing.** A project starts as an idea and ends as a published work with every contribution on record |
+Every small team needs the same things to work together: a way to **decide**, a way to make people **responsible**, a way to turn goals into **work**, a way to keep **versions** of that work, a way to **talk**, and a way to **hold and move money**. Today that takes a bank account, a registered company, bylaws, an accountant, payroll, HR, a chat app, a task tracker, a shared drive and, for anything technical, GitHub. Most of the world's small teams can't get half of that list, can't afford it, or can't make it work across borders.
 
-## 2. Positioning
+**Chayolei builds three parallel systems on a decentralized ledger, so any small team, anywhere, can run itself without depending on the banking or corporate-legal system of any country:**
 
-**One line:** Chayolei is the ledger teams organize on: plan a work, split it up, write it, review it, publish it, and pay everyone who made it, all on one shared record.
+1. **A parallel banking system.** The team's treasury, budgets, payouts and monthly statements, all in the platform's own coin, TMIM.
+2. **A parallel corporate organization.** A versioned charter (the team's bylaws), roles, proposals and votes, and a decision log (the team's minutes).
+3. **A parallel workforce management system.** Objectives broken into deliverables and tasks; an owner, a reviewer and an approver for each; GitHub-style versions and reviews of the work; acceptance that pays; and every member's record of work.
 
-**Short pitch (≈60 words):** Producing a sefer, a translation or any serious body of work takes a team, and teams fall apart at the handoffs: who's writing what, who approved it, who got paid, who decided. Chayolei puts the whole production on one ledger. Every assignment, review, approval, payout and decision is recorded as it happens. The ledger holds the team's funds, its roles and its rules, so a group can organize itself without a bank account, a fiscal host or a back office.
+All three run on **one ledger**. Every change, whether to the work, the rules or the money, follows one pattern: **propose → decide → record.**
 
-**Category:** an organizing and publishing tool with a built-in ledger. Not a DAO tool, not a donation platform, not a token.
+## 2. Crypto only, in our own coin
 
-**Beachhead:** Torah scholarship and sefer publishing: chaburos, kollels and editorial teams producing seforim, translations and source collections. The first works in production are the books being assembled in `Esoterics611/sefer-forge`. The tool itself is not Torah-specific; the beachhead is where the heritage and the first users are.
+This needs to be unmistakable in every piece of copy:
 
-**Draft Hebrew lines** (for the owner to choose or rewrite):
-- הפנקס של החבורה — מתכננים, כותבים, מוציאים לאור.
-- כל מה שהחבורה עושה, רשום במקום אחד.
+- **Inside the platform, everything is TMIM:** budgets, rewards, payouts, balances, statements.
+- **TMIM is minted only for participation:** accepted work, reviews and other contributions. Money sent in never mints TMIM.
+- **No fiat anywhere, and no on- or off-ramps.** No bank links, cards or payment apps.
+- **Conversion is outside the platform.** A member may swap TMIM for other crypto and cash out through an exchange such as Coinbase. That is their own business; the platform doesn't offer, embed or link it.
+- **Donations, if any, happen off-platform** and are not recorded or acknowledged by it.
 
-## 3. The problem
+## 3. Positioning
 
-Teams that produce long works fail in the gaps between people, not in the writing:
+**One line:** Chayolei is a parallel bank, corporation and workforce system for small teams, on one decentralized ledger: decide together, assign responsibility, plan and version the work, and pay each other in TMIM, from anywhere.
 
-- **Handoffs break.** Editorial practitioners describe the manuscript journey as a series of handoffs, and the common breakdowns as coordination gaps: missed sign-offs, files stuck in disconnected systems ([Amnet](https://amnet.com/from-manuscript-to-publication-why-editorial-workflows-matter-more-than-ever/)).
-- **Paying contributors is manual and slow.** Groups that pay contributors on-chain still juggle CSVs, payment tools, screenshots and spreadsheets ([Consensys](https://consensys.io/blog/the-future-is-dao)). Contributors report waiting one to two weeks to be paid ([DAOhaus contributor notes](https://chainverse.notion.site/Contributor-UX-Discussion-6dfa08730b48487797fcaebc41f88e33)).
-- **Transparency alone doesn't organize anyone.** Interviews with decentralized-science DAOs found labor-intensive hybrid accounting, steep onboarding and fragmented coordination, and concluded that on-chain transparency works best with clearly defined roles, structured onboarding and credible validation ([Weidener & Boltz, Frontiers in Blockchain 2025](https://www.frontiersin.org/journals/blockchain/articles/10.3389/fbloc.2025.1641294/full)).
-- **Transparent group money exists, but on borrowed rails.** Open Collective shows the demand: every collective's budget and transactions are public ([docs](https://docs.opencollective.com/help/collectives/budget)). But groups typically rely on a fiscal host for legal and accounting coverage, and the money runs through banks.
+**Short pitch (≈70 words):** Small teams don't fail for lack of talent; they fail at the seams: unclear decisions, unclear ownership, lost versions, and pay that's slow, costly or impossible across borders. Chayolei gives a team its bank, its bylaws and its workforce system on one ledger. Plan objectives into deliverables, version and review the work, decide by vote, and pay in TMIM the moment work is accepted. No bank account or registered company required.
 
-Today a team doing this work uses a shared doc, a spreadsheet, a group chat and, if they're on-chain, a multisig and a voting site. Nothing connects the work to the money to the decisions.
+**Category:** a team operating system on a ledger: banking, governance and workforce in one. Not a DAO tool, not a wallet, not an exchange.
 
-## 4. The product, in three parts
+**First community:** Torah scholarship and publishing teams (chaburos, kollels, editorial groups) producing seforim; the first works are the books in production in `Esoterics611/sefer-forge`. That is where the product was born and where its first proof will come from. The product is for any small team.
 
-1. **The production line.** A project is a work in progress, laid out as its table of contents. Each piece moves through the same stages: open, claimed, drafting, in review, approved, published. Everyone sees what's blocking.
-2. **The ledger.** Every step that matters is an entry: who claimed, who submitted, who reviewed, who approved, what was paid, what was decided. Entries read as plain sentences; the on-chain proof is one tap away.
-3. **The treasury and the charter.** The ledger also holds the team's funds (in crypto) and its rules: roles, who can approve and spend, reward rates, how decisions are made. Approving a piece pays the contributor in the same step. Changing a rule is a proposal the team votes on, and the result is recorded.
+**Draft taglines** (for the owner to choose or rewrite):
+- *Your team's bank, bylaws and workforce, on one ledger.*
+- *Organize anywhere. Decide together. Get paid on the record.*
+- Hebrew: הבנק, התקנון וכוח העבודה של החבורה — בפנקס אחד.
 
-The legal and banking functions a group would otherwise need an institution for (holding funds, paying people, recording who decided what under which rules) live on the ledger.
+## 4. The parallel stack
 
-## 5. Who it's for
-
-| Audience | What they do | What they get |
+| What a team needs | The traditional system | Chayolei's parallel |
 |---|---|---|
-| **Project leads** (editor, mashpia, rosh chaburah) | Scope the work, assign it, approve it, publish it | One view of the whole production; approvals that pay on the spot; no spreadsheet to keep |
-| **Contributors** (writers, translators, source researchers) | Claim pieces, draft, revise | Clear scope, review anchored to their text, paid when approved, a public record of everything they made |
-| **Reviewers** | Read, comment, suggest, sign off | A review queue, suggestions the author accepts or rejects, credit on the ledger for every review |
-| **Members** | Vote on rules and spending | Decisions with clear stakes and deadlines, results that execute themselves |
-| **Funders** (crypto-native) | Send crypto to a team's treasury, outside the app | A ledger that shows exactly which work their funds paid for |
+| **Bank account** | A bank, if you qualify; fees and delays across borders | **Team treasury** in TMIM: balance, budgets, payouts |
+| **Books / accounting** | An accountant | **The ledger**, with monthly statements generated from it |
+| **Payroll** | A payroll provider and contracts | **Payouts on acceptance** and **scheduled pay**, in TMIM |
+| **Articles and bylaws** | Registration, lawyers | **The charter**: roles and rules, versioned, enforced on-chain |
+| **Board and member resolutions** | Meetings and minutes | **Proposals and votes**, and a **decision log** |
+| **Officers and authority** | Appointments, signatories | **Charter roles**: who may approve, spend, propose, publish |
+| **Membership register** | A registry | **Members and roles**, on the ledger |
+| **Project management** | Jira, Asana | **Objectives → deliverables → tasks** with owners and budgets |
+| **HR and work records** | HR systems, contracts | **Owner / reviewer / approver** on every item; each person's **record of work** |
+| **Version control and documents** | GitHub, Drive | **Drafts, versions, compare, review requests, releases** for any work, not just code |
+| **Internal communication** | Slack, email | **Threads** attached to the work, part of the record |
+| **Audit** | External auditors | **Anyone in the team can verify** the ledger |
 
-## 6. Message pillars
+## 5. Why now, and why it matters
 
-1. **Organize the work, not the paperwork.** The project is its table of contents; status, owners and payments come from the work itself.
-   *Proof:* stages per piece, review in context, approval that pays.
-2. **Everything on the record.** Every contribution, review, payment and decision is a ledger entry, readable by the whole team.
-   *Proof:* the credits page of a published work is generated from its ledger.
-3. **Your group's bank and rules, built in.** Funds, roles and rules live on the ledger; no bank account, fiscal host or back office.
-   *Proof:* treasury, charter and proposals in the app; crypto in, crypto out.
-4. **Paid when it's approved.** Contributors are paid in the same step as the approval, not weeks later.
-   *Proof:* approval shows the payout before you sign; the payout is the next ledger entry.
-5. **AI as a member of the team, on the record.** AI helpers have defined roles; what they suggest is attributed and never applied silently.
+- **1.3 billion adults have no account** at a bank or mobile-money provider, even with account ownership at a record 79% in 2024; half live in eight economies ([World Bank Global Findex 2025](https://www.biia.com/financial-inclusion-at-record-high-but-1-3-billion-still-unbanked-world-bank-global-findex-2025-report)).
+- **Paying someone abroad through the traditional system costs about 6.5%**: the global average cost of sending $200 was 6.49% in Q1 2025 ([World Bank Remittance Prices Worldwide, Issue 53](https://remittanceprices.worldbank.org/sites/default/files/rpw_main_report_and_annex_q125_1_0.pdf)).
+- **Most of the world works outside formal structures:** about 58–61% of workers, some two billion people, 93% of them in emerging and developing countries, where informality goes with lack of access to finance ([ILO via People Matters](https://www.peoplematters.in/news/economy-policy/nearly-58percent-of-global-workforce-still-trapped-in-informal-employment-ilo-report-49690); [UN study](https://www.eco-business.com/id/news/nearly-two-thirds-of-global-workforce-in-the-informal-economy-un-study/)).
+- **Crypto is already how people move value where banks fall short:** Asia-Pacific on-chain value received grew 69% in a year to $2.36 trillion, Latin America 63%, Sub-Saharan Africa 52% ([Chainalysis 2025 Geography of Cryptocurrency](https://www.chainalysis.com/reports/2025-geography-of-cryptocurrency-report/), [coverage](https://bitcoinist.com/crypto-adoption-2025-chainalysis-report/amp/)).
+- **Wallets now work for normal people:** passkey smart wallets need one biometric prompt, no seed phrase, no app; a paymaster can cover network fees ([overview](https://eco.com/support/en/articles/15039720-passkey-wallets-explained), [Base sub accounts](https://docs.base.org/base-account/improve-ux/sub-accounts)).
+- **Teams already organizing on-chain still run on spreadsheets:** contributors juggle CSVs and screenshots to get paid ([Consensys](https://consensys.io/blog/the-future-is-dao)), wait one to two weeks for payouts ([DAOhaus notes](https://chainverse.notion.site/Contributor-UX-Discussion-6dfa08730b48487797fcaebc41f88e33)), and transparency only helps with clear roles and onboarding ([Weidener & Boltz, Frontiers in Blockchain 2025](https://www.frontiersin.org/journals/blockchain/articles/10.3389/fbloc.2025.1641294/full)). The pieces exist (Safe, Hats, Coordinape, Snapshot) but not as one product a non-technical team can run.
+- **Version control is ready to leave code:** research on version control for writers shows private drafts, readable diffs and a reviewable history work for prose ([Ink & Switch Upwelling](https://www.inkandswitch.com/project/upwelling/), [Patchwork](https://www.inkandswitch.com/patchwork/notebook/2024-version-control/)).
 
-## 7. Alternatives and how we differ
+## 6. Who it's for
 
-| What teams use now | What it lacks |
+| Audience | Their problem | What they get |
+|---|---|---|
+| **Small teams anywhere** (3–30 people: editorial and research groups, studios, collectives, community projects) | No bank account or entity; members in several countries; tools that don't connect | Bank, bylaws and workforce system in one place, working in minutes |
+| **Team leads** | Chasing status and approvals; paying people by hand | Objectives and deliverables with owners; acceptance that pays; statements generated |
+| **Contributors** | Unclear scope; slow, costly pay; no record of their work | Clear assignments, review on their work, paid in TMIM on acceptance, a portable record of what they made |
+| **Members** | Decisions made in side chats | Proposals with stakes and deadlines; results that execute themselves |
+
+## 7. Message pillars
+
+1. **A bank, a corporation and a workforce system, on one ledger.** *Proof:* the treasury, the charter and the plan all link to the same ledger timeline.
+2. **Organize without permission.** No bank account, company registration or institution needed; the same in every country. *Proof:* a team created, chartered and paying its first contributor in minutes.
+3. **Responsibility you can see.** Owner, reviewer and approver on every deliverable; commitments and outcomes recorded. *Proof:* every item's history.
+4. **Version everything.** Drafts, versions, reviews and releases for documents as well as code, and for the team's own bylaws. *Proof:* compare view; the charter's amendment history.
+5. **Decide together, and it happens.** Votes change the rules or the budgets directly. *Proof:* a proposal that changes a reward rate, and the charter showing the new value.
+6. **Paid in TMIM when the work is accepted.** No invoices, no waiting, no intermediaries. *Proof:* the acceptance card listing the payout; the payout as the next ledger entry.
+
+## 8. Alternatives
+
+| Today's stack | What it lacks |
 |---|---|
-| Google Docs + spreadsheet + WhatsApp | No connection between the work, the money and the decisions; nothing on record |
-| Notion / project trackers | Track tasks, not money or authority; no shared, tamper-proof record |
-| Open Collective | Transparent money, but fiat rails through a fiscal host; not a production tool |
-| Safe + Hats + Coordinape + Snapshot (an on-chain stack) | Powerful pieces, five tools, no production line; built for crypto operators, not writers |
-| Editorial systems (e.g. Editorial Manager) | Built for publishers' staff, not self-organizing teams; no treasury or rules |
+| Bank + registered company + accountant + payroll + Slack + Jira + Drive | Expensive or unavailable for most small teams; nothing connects work, money and decisions |
+| Notion / Linear / GitHub | Organize the work, not the money or the authority |
+| Open Collective | Transparent money, but in fiat through a fiscal host ([docs](https://docs.opencollective.com/help/collectives/budget)) |
+| Safe + Hats + Coordinape + Snapshot | Powerful pieces, five tools, built for crypto operators; no planning, versioning or workforce view |
+| Mobile money / remittance apps | Move money; don't organize a team |
 
-## 8. Voice and vocabulary
+## 9. Voice and vocabulary
 
-- **Say what things are.** Project, piece, draft, review, approve, publish, ledger, treasury, rules, vote. Keep the Hebrew domain words (מבצע, משימה, תפקיד) as in-app labels where they're the natural name.
-- **Lead with the work, then the ledger, then the chain.** The chain is how the ledger is trustworthy, not the pitch.
-- **Plain and exact.** "Approving pays Levi 120 TMIM from the Brachos budget." Not "unlock rewards."
-- **No hype.** No price talk, no returns, no "to the moon," no "Web3 revolution."
-- **Military framing is not the pitch.** Ranks and "soldiers" stay heritage and in-app flavour at most; see open questions.
+- **Plain words:** team, charter, role, objective, deliverable, task, draft, version, review, accept, release, proposal, vote, treasury, budget, payout, statement, ledger. Local-language labels stay natural (the Hebrew app uses מבצע / משימה / תפקיד).
+- **"Parallel"** is the big-picture word ("a parallel banking system, corporation and workforce system"). In product copy, name the thing: "your team's treasury," "your charter," "your plan."
+- **Always TMIM** for amounts. Never show or imply dollars, fiat prices or exchange rates in the product.
+- **Explain the ledger by what it does,** then why it can be trusted.
+- **No hype, no price talk, no returns, no "to the moon."**
+- **Military framing and ranks are heritage**, not the pitch (see open questions).
 
-## 9. Claims we don't make
+## 10. Claims we don't make
 
-- The ledger is not a legal entity, and using it doesn't give a group legal status, tax status or a substitute for legal advice. Say "the group's rules and record," not "your legal entity."
-- TMIM is not an investment and has no promised value beyond redemption at the treasury's published rate.
-- No fiat, no bank integration, no institutional partner. Don't imply any.
-- Don't claim audit completion or mainnet before they happen (contracts are on Base Sepolia; see `contracts/audit/README.md`).
+- **Not a bank.** No deposits, deposit insurance, lending, fiat or exchange. The team's funds are TMIM on-chain under the team's rules.
+- **Not a legal entity, not a way around the law.** "Independent of the banking and legal system" means a team can organize without needing a bank account or registration to start. Teams remain responsible for the laws that apply to them; never suggest the product avoids taxes, sanctions, employment or securities law.
+- **Not an employer.** Contributors are members of a team, not employees of the platform; "workforce management" describes organizing work, not employment.
+- **TMIM is not an investment** and is not equity. No promised value, returns or price. Swaps and off-ramps are outside the platform.
+- **Not fully self-custodied yet.** Today's contracts have admin roles held by a deployer key; don't claim teams fully control their treasury until per-team treasuries with team-held keys ship.
+- **No mainnet or audit claims** before they happen (contracts are on Base Sepolia testnet; see `contracts/audit/README.md`).
 
-## 10. The first story
+## 11. Proof and the first story
 
-The first works produced through Chayolei are the seforim in production in `sefer-forge`: each one a project, each chapter a piece, each contributor and reviewer credited from the ledger, each payout on record. Launch with a published work and its ledger side by side: here is the sefer, and here is everything that went into it.
-
-## 11. Channels
-
-Crypto-native and community channels only, consistent with the model: the team's own networks, Torah-learning communities, and on-chain communities on Base. No institutional partnerships, fiscal sponsors or donor programmes.
+- **Built so far:** Solidity contracts on Base Sepolia testnet (TMIM token, registry, participation rewards, governance with signed rank attestations, treasuries), 178 contract tests, an audit package with fixes in the source awaiting redeploy, a SvelteKit app on Firebase with on-chain voting, CI. No live teams yet.
+- **The first story:** a Torah publishing team producing a sefer. The objective is the book, the deliverables are its chapters, the tasks are sources, translation and review. Every chapter is versioned, every decision is on the record, and contributors are paid in TMIM on acceptance. Launch with the published book and its ledger side by side.
 
 ## 12. Measures of success
 
-- Projects started; pieces approved per week; editions published.
-- **Time from approval to payout** (target: same transaction).
-- **Time from submission to review** (shows the production line moving).
-- Share of published works whose credits come entirely from the ledger.
-- Contributors active in a second project.
+- Teams created; teams active after 30 days; members active in more than one team.
+- Time from "create team" to first accepted deliverable and first payout.
+- Time from acceptance to payout (target: same transaction).
+- Proposals decided per team per month; share executed on-chain.
+- Share of released work whose credits come entirely from the ledger.
 
 ## 13. Open questions for the owner
 
-1. **Torah-first or general from day one?** This brief leads with Torah publishing as the beachhead and keeps the tool general.
-2. **Name and military framing.** "Chayolei Beis Dovid", IDF ranks and "soldiers" fit the heritage but not an organizing tool for teams. Keep, soften to heritage, or rename the product while keeping the heritage story?
-3. **Who can start a team?** Anyone, or invitation only at first?
-4. **What a team's treasury holds:** USDC only, or ETH as well?
-5. **Ranks:** keep them as a record of trust and permissions, or replace them with a contribution history?
+1. **On-chain redemption.** The contracts can redeem TMIM for USDC at a set rate. With conversion outside the platform, keep redemption as a property of the token (not shown in the app), or retire it?
+2. **Name and framing.** "Chayolei Beis Dovid", IDF ranks and "soldiers" carry the heritage but read as a Torah-only, military product to a global audience. Keep, keep as heritage under a broader product name, or rename?
+3. **Per-team treasuries.** Any small team needs its own treasury, charter and roles; today there is one global treasury and governance contract. A team factory is the main technical change this positioning implies.
+4. **Ledger privacy.** Which parts of a team's ledger are public by default (payouts? decisions?) and which stay private to the team?
+5. **Who can start a team:** anyone, or invitation-only at first?

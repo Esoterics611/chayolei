@@ -1,8 +1,8 @@
 # Chayolei Beis Dovid
 
-> **Economic model changed 2026-10-25:** crypto in, crypto out; no fiat, no fiat on- or off-ramps, no institutional connection (fiscal sponsor, 501(c)(3), tax receipts, payment processors); donations are handled separately, outside the platform; TMIM is minted only for participation. See `CLAUDE.md`. Superseded here: fiat donations, donations converted to TMIM, donor TMIM receipts with voting power, cash stipends (redemption is in USDC), and the in-app donation flow under "As a supporter".
+> **Economic model changed 2026-10-25:** crypto only, in the platform's own coin (TMIM); no fiat and no on- or off-ramps (any conversion to other crypto or fiat happens outside the platform); no institutional connection (fiscal sponsor, 501(c)(3), tax receipts, payment processors); donations are handled separately, outside the platform; TMIM is minted only for participation. See `CLAUDE.md`. Superseded here: fiat donations, donations converted to TMIM, donor TMIM receipts with voting power, cash stipends (redemption is in USDC), and the in-app donation flow under "As a supporter".
 
-> **Positioning changed 2026-10-25:** Chayolei is now positioned as an organizing tool for teams that produce and publish, with a shared ledger at its core. See `MARKETING_BRIEF.md`; where this document's framing differs, the brief wins.
+> **Positioning changed 2026-10-25:** Chayolei is now positioned as three parallel systems on one decentralized ledger (banking, corporate organization and workforce management) for any small team. See `MARKETING_BRIEF.md`; where this document's framing differs, the brief wins.
 
 **A digital network for Torah scholarship and leadership — connecting local yeshivot into a global research and publishing community, governed as a DAO with real token economics.**
 
@@ -62,9 +62,9 @@ Every talmid has a wallet. The platform token is **TMIM** (תמים — *complet
 | Sgan Aluf | סגן אלוף | 7.0× | 75,000 |
 | Aluf | אלוף | 10.0× | 150,000 |
 
-**Funding.** Crypto in, crypto out. The on-chain treasury holds ETH and USDC on Base and pays out in USDC. There is no fiat in the platform and no fiat on- or off-ramps. Donations, if any, are handled separately, outside the platform, and never mint TMIM. TMIM is minted only for participation. Everything is on-chain and transparent.
+**Funding.** Crypto only, in the platform's own coin: inside the platform everything is TMIM, minted only for participation. There is no fiat and no on- or off-ramps; members may swap TMIM for other crypto and cash out through an exchange outside the platform. Donations, if any, are handled separately, outside the platform, and never mint TMIM. Everything is on-chain and transparent.
 
-**Spending.** The DAO treasury funds talmidim through mivtza allocations. Talmidim can redeem earned TMIM for USDC from the treasury. Major allocations are voted on.
+**Spending.** The DAO treasury funds talmidim through mivtza allocations. Talmidim are paid in TMIM. Major allocations are voted on.
 
 **Governance.** Talmidim vote on which mivtzaot to fund, treasury allocations, new makomot, and community projects. Voting power is `TMIM balance × rank multiplier`. This is real on-chain governance over real funds — not a suggestion box.
 
@@ -187,7 +187,7 @@ The most valuable contributions right now:
 - Hebrew copywriting and translation review
 
 ### As a supporter
-Donations are handled separately, outside the platform; the platform itself takes no donations and mints no TMIM for them. Every TMIM minted and redeemed is visible on-chain.
+Donations are handled separately, outside the platform; the platform itself takes no donations and mints no TMIM for them. Every TMIM minted and paid is visible on-chain.
 
 ### As a community leader
 If you run a yeshiva, kollel, or chabad house and want to use Chayolei as your scholarship-and-stipend infrastructure — reach out. We are looking for design partners during the early launch.

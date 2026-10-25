@@ -1,6 +1,6 @@
 # Chayolei Beis Dovid — Backend & Smart Contract Plan
 
-> **Economic model changed 2026-10-25:** crypto in, crypto out; no fiat, no fiat on- or off-ramps, no institutional connection (fiscal sponsor, 501(c)(3), tax receipts, payment processors); donations are handled separately, outside the platform; TMIM is minted only for participation. See `CLAUDE.md`. This plan also predates the Firebase backend, which is now built; see `README.md` for current status. Superseded here: donation records, `addDonation`, and the treasury minting TMIM for donations.
+> **Economic model changed 2026-10-25:** crypto only, in the platform's own coin (TMIM); no fiat and no on- or off-ramps (any conversion to other crypto or fiat happens outside the platform); no institutional connection (fiscal sponsor, 501(c)(3), tax receipts, payment processors); donations are handled separately, outside the platform; TMIM is minted only for participation. See `CLAUDE.md`. This plan also predates the Firebase backend, which is now built; see `README.md` for current status. Superseded here: donation records, `addDonation`, and the treasury minting TMIM for donations.
 
 ## Current State
 - SvelteKit 2 + Svelte 5 frontend with full CRUD, state machines, toast, signup

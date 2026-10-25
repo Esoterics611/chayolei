@@ -1,6 +1,6 @@
 # Spec 2: DAO Requirements — Chayolei Beis Dovid
 
-> **Economic model changed 2026-10-25:** crypto in, crypto out; no fiat, no fiat on- or off-ramps, no institutional connection (fiscal sponsor, 501(c)(3), tax receipts, payment processors); donations are handled separately, outside the platform; TMIM is minted only for participation. See `CLAUDE.md`. Superseded here: §2.3 Donation Conversion, §5.4 Donor Token Distinction and §6 Donation Economics (donations mint no TMIM; the treasury is funded in crypto and pays out in USDC), and any fiat or fiscal-sponsor references.
+> **Economic model changed 2026-10-25:** crypto only, in the platform's own coin (TMIM); no fiat and no on- or off-ramps (any conversion to other crypto or fiat happens outside the platform); no institutional connection (fiscal sponsor, 501(c)(3), tax receipts, payment processors); donations are handled separately, outside the platform; TMIM is minted only for participation. See `CLAUDE.md`. Superseded here: §2.3 Donation Conversion, §5.4 Donor Token Distinction and §6 Donation Economics (donations mint no TMIM; inside the platform everything is TMIM), §5 where it routes redemption through the app (on-chain redemption to USDC is an open decision), and any fiat or fiscal-sponsor references.
 
 ## Economic Model, Smart Contracts, and Governance UI
 
@@ -293,7 +293,7 @@ Donors receive TMIM for their contributions, but "donated-origin" TMIM have diff
 
 ## 6. Donation Economics
 
-> **Superseded 2026-10-25:** donations are handled separately, outside the platform, and mint no TMIM. The treasury is funded in crypto and pays redemptions in USDC.
+> **Superseded 2026-10-25:** donations are handled separately, outside the platform, and mint no TMIM. Inside the platform everything is TMIM; any conversion happens outside it.
 
 ### 6.1 Donation Flow
 

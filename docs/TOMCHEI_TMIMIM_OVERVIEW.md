@@ -1,8 +1,8 @@
 # Tomchei Tmimim — Digital Network for Torah Scholarship and Leadership
 
-> **Economic model changed 2026-10-25:** crypto in, crypto out; no fiat, no fiat on- or off-ramps, no institutional connection (fiscal sponsor, 501(c)(3), tax receipts, payment processors); donations are handled separately, outside the platform; TMIM is minted only for participation. See `CLAUDE.md`. Superseded here: fiat donations converted to TMIM, the supporter donation flow milestone, and a token economy funded by donations.
+> **Economic model changed 2026-10-25:** crypto only, in the platform's own coin (TMIM); no fiat and no on- or off-ramps (any conversion to other crypto or fiat happens outside the platform); no institutional connection (fiscal sponsor, 501(c)(3), tax receipts, payment processors); donations are handled separately, outside the platform; TMIM is minted only for participation. See `CLAUDE.md`. Superseded here: fiat donations converted to TMIM, the supporter donation flow milestone, and a token economy funded by donations.
 
-> **Positioning changed 2026-10-25:** Chayolei is now positioned as an organizing tool for teams that produce and publish, with a shared ledger at its core. See `MARKETING_BRIEF.md`; where this document's framing differs, the brief wins.
+> **Positioning changed 2026-10-25:** Chayolei is now positioned as three parallel systems on one decentralized ledger (banking, corporate organization and workforce management) for any small team. See `MARKETING_BRIEF.md`; where this document's framing differs, the brief wins.
 
 ---
 
@@ -38,7 +38,7 @@ Every student has a crypto wallet. The platform token is **TMIM** (תמים).
 
 **Earning:** Students earn TMIM for completing tasks, submitting quality work, peer reviewing, participating in discussions, and maintaining learning streaks. All rewards scale with rank.
 
-**Funding:** Crypto in, crypto out. The on-chain treasury holds ETH and USDC and pays out in USDC; there is no fiat in the platform. Donations, if any, are handled separately, outside the platform, and never mint TMIM. TMIM is minted only for participation. Everything is on-chain and transparent.
+**Funding:** Crypto only, in the platform's own coin: inside the platform everything is TMIM, minted only for participation. No fiat and no on- or off-ramps; any conversion happens outside the platform. Donations, if any, are handled separately, outside the platform, and never mint TMIM. Everything is on-chain and transparent.
 
 **Spending:** The DAO treasury funds student work through mivtza allocations. Students can redeem earned TMIM for cash stipends, project funding (printing a sefer, hosting a farbrengen, travel), or chessed initiatives. The community votes on major allocations.
 

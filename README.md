@@ -67,9 +67,9 @@ The platform token is **TMIM** (תמים — *complete, pure*). Every talmid has
 
 **Earning.** TMIM is minted only for participation: completing masimot, peer reviewing, participating in farbrengens, and maintaining learning streaks. All rewards scale with rank multiplier. Money sent in never mints TMIM.
 
-**Funding.** Crypto in, crypto out. The on-chain treasury holds ETH and USDC on Base and pays out in USDC. There is no fiat anywhere in the platform: no card, bank or payment-app flows, no fiat on- or off-ramps, and no fiscal sponsor or other institutional connection. Donations, if any, are handled separately, outside the platform.
+**Crypto only, in our own coin.** Inside the platform everything is TMIM: budgets, rewards, payouts, balances, statements. There is no fiat anywhere: no card, bank or payment-app flows, no on- or off-ramps, and no fiscal sponsor or other institutional connection. Members may swap TMIM for other crypto and cash out through an exchange such as Coinbase; that happens outside the platform. Donations, if any, are handled separately, outside the platform.
 
-**Redeeming.** Talmidim redeem earned TMIM for USDC from the on-chain treasury, at the redemption rate set by governance ($0.10/TMIM target).
+**Redemption.** The contracts can still redeem TMIM for USDC at a governance-set rate; whether that stays is an open decision ([`docs/MARKETING_BRIEF.md`](docs/MARKETING_BRIEF.md) §13), and the redesigned app shows TMIM only.
 
 **Governance.** Voting power = `TMIM balance × rank multiplier`. Talmidim vote on mivtza funding, treasury allocations, and new makomot. Not a suggestion box — real on-chain authority over real funds.
 
