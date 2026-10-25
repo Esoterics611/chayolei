@@ -400,6 +400,7 @@ export interface Proposal {
   quorumReached: boolean;
   quorumRequired: number;
   totalVotingTokens: number;
+  onChainProposalId?: string;     // ChayoleiGovernance proposal id (uint256 as a string)
   myVote?: 'for' | 'against' | 'abstain' | null;
 }
 
