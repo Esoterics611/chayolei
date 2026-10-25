@@ -28,8 +28,7 @@ export interface ChayoleiTreasuryInterface extends Interface {
     nameOrSignature:
       | "DEFAULT_ADMIN_ROLE"
       | "TREASURER_ROLE"
-      | "donateUsdc"
-      | "ethUsdCents"
+      | "fundUsdc"
       | "getEthBalance"
       | "getRoleAdmin"
       | "getUsdcBalance"
@@ -39,29 +38,26 @@ export interface ChayoleiTreasuryInterface extends Interface {
       | "redemptionRateBps"
       | "renounceRole"
       | "revokeRole"
-      | "setEthUsdRate"
       | "setRedemptionRate"
       | "stablecoin"
       | "supportsInterface"
       | "tmim"
-      | "totalEthDonated"
-      | "totalTmimMinted"
+      | "totalEthReceived"
       | "totalTmimRedeemed"
-      | "totalUsdcDonated"
+      | "totalUsdcFunded"
       | "withdrawEth"
       | "withdrawUsdc"
   ): FunctionFragment;
 
   getEvent(
     nameOrSignatureOrTopic:
-      | "DonationReceived"
-      | "EthUsdRateUpdated"
+      | "EthReceived"
       | "RedemptionRateUpdated"
       | "RoleAdminChanged"
       | "RoleGranted"
       | "RoleRevoked"
-      | "StablecoinDonationReceived"
       | "TmimRedeemed"
+      | "UsdcFunded"
   ): EventFragment;
 
   encodeFunctionData(
@@ -73,12 +69,8 @@ export interface ChayoleiTreasuryInterface extends Interface {
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: "donateUsdc",
+    functionFragment: "fundUsdc",
     values: [BigNumberish]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "ethUsdCents",
-    values?: undefined
   ): string;
   encodeFunctionData(
     functionFragment: "getEthBalance",
@@ -117,10 +109,6 @@ export interface ChayoleiTreasuryInterface extends Interface {
     values: [BytesLike, AddressLike]
   ): string;
   encodeFunctionData(
-    functionFragment: "setEthUsdRate",
-    values: [BigNumberish]
-  ): string;
-  encodeFunctionData(
     functionFragment: "setRedemptionRate",
     values: [BigNumberish]
   ): string;
@@ -134,11 +122,7 @@ export interface ChayoleiTreasuryInterface extends Interface {
   ): string;
   encodeFunctionData(functionFragment: "tmim", values?: undefined): string;
   encodeFunctionData(
-    functionFragment: "totalEthDonated",
-    values?: undefined
-  ): string;
-  encodeFunctionData(
-    functionFragment: "totalTmimMinted",
+    functionFragment: "totalEthReceived",
     values?: undefined
   ): string;
   encodeFunctionData(
@@ -146,7 +130,7 @@ export interface ChayoleiTreasuryInterface extends Interface {
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: "totalUsdcDonated",
+    functionFragment: "totalUsdcFunded",
     values?: undefined
   ): string;
   encodeFunctionData(
@@ -166,11 +150,7 @@ export interface ChayoleiTreasuryInterface extends Interface {
     functionFragment: "TREASURER_ROLE",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "donateUsdc", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "ethUsdCents",
-    data: BytesLike
-  ): Result;
+  decodeFunctionResult(functionFragment: "fundUsdc", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "getEthBalance",
     data: BytesLike
@@ -196,10 +176,6 @@ export interface ChayoleiTreasuryInterface extends Interface {
   ): Result;
   decodeFunctionResult(functionFragment: "revokeRole", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "setEthUsdRate",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
     functionFragment: "setRedemptionRate",
     data: BytesLike
   ): Result;
@@ -210,11 +186,7 @@ export interface ChayoleiTreasuryInterface extends Interface {
   ): Result;
   decodeFunctionResult(functionFragment: "tmim", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "totalEthDonated",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "totalTmimMinted",
+    functionFragment: "totalEthReceived",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -222,7 +194,7 @@ export interface ChayoleiTreasuryInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "totalUsdcDonated",
+    functionFragment: "totalUsdcFunded",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -235,33 +207,12 @@ export interface ChayoleiTreasuryInterface extends Interface {
   ): Result;
 }
 
-export namespace DonationReceivedEvent {
-  export type InputTuple = [
-    donor: AddressLike,
-    ethAmount: BigNumberish,
-    tmimMinted: BigNumberish
-  ];
-  export type OutputTuple = [
-    donor: string,
-    ethAmount: bigint,
-    tmimMinted: bigint
-  ];
+export namespace EthReceivedEvent {
+  export type InputTuple = [from: AddressLike, ethAmount: BigNumberish];
+  export type OutputTuple = [from: string, ethAmount: bigint];
   export interface OutputObject {
-    donor: string;
+    from: string;
     ethAmount: bigint;
-    tmimMinted: bigint;
-  }
-  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
-  export type Filter = TypedDeferredTopicFilter<Event>;
-  export type Log = TypedEventLog<Event>;
-  export type LogDescription = TypedLogDescription<Event>;
-}
-
-export namespace EthUsdRateUpdatedEvent {
-  export type InputTuple = [newRateCents: BigNumberish];
-  export type OutputTuple = [newRateCents: bigint];
-  export interface OutputObject {
-    newRateCents: bigint;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -339,28 +290,6 @@ export namespace RoleRevokedEvent {
   export type LogDescription = TypedLogDescription<Event>;
 }
 
-export namespace StablecoinDonationReceivedEvent {
-  export type InputTuple = [
-    donor: AddressLike,
-    usdcAmount: BigNumberish,
-    tmimMinted: BigNumberish
-  ];
-  export type OutputTuple = [
-    donor: string,
-    usdcAmount: bigint,
-    tmimMinted: bigint
-  ];
-  export interface OutputObject {
-    donor: string;
-    usdcAmount: bigint;
-    tmimMinted: bigint;
-  }
-  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
-  export type Filter = TypedDeferredTopicFilter<Event>;
-  export type Log = TypedEventLog<Event>;
-  export type LogDescription = TypedLogDescription<Event>;
-}
-
 export namespace TmimRedeemedEvent {
   export type InputTuple = [
     holder: AddressLike,
@@ -376,6 +305,19 @@ export namespace TmimRedeemedEvent {
     holder: string;
     tmimAmount: bigint;
     usdcPaid: bigint;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace UsdcFundedEvent {
+  export type InputTuple = [from: AddressLike, usdcAmount: BigNumberish];
+  export type OutputTuple = [from: string, usdcAmount: bigint];
+  export interface OutputObject {
+    from: string;
+    usdcAmount: bigint;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -430,13 +372,11 @@ export interface ChayoleiTreasury extends BaseContract {
 
   TREASURER_ROLE: TypedContractMethod<[], [string], "view">;
 
-  donateUsdc: TypedContractMethod<
+  fundUsdc: TypedContractMethod<
     [usdcAmount: BigNumberish],
     [void],
     "nonpayable"
   >;
-
-  ethUsdCents: TypedContractMethod<[], [bigint], "view">;
 
   getEthBalance: TypedContractMethod<[], [bigint], "view">;
 
@@ -476,12 +416,6 @@ export interface ChayoleiTreasury extends BaseContract {
     "nonpayable"
   >;
 
-  setEthUsdRate: TypedContractMethod<
-    [rateCents: BigNumberish],
-    [void],
-    "nonpayable"
-  >;
-
   setRedemptionRate: TypedContractMethod<
     [rateBps: BigNumberish],
     [void],
@@ -498,13 +432,11 @@ export interface ChayoleiTreasury extends BaseContract {
 
   tmim: TypedContractMethod<[], [string], "view">;
 
-  totalEthDonated: TypedContractMethod<[], [bigint], "view">;
-
-  totalTmimMinted: TypedContractMethod<[], [bigint], "view">;
+  totalEthReceived: TypedContractMethod<[], [bigint], "view">;
 
   totalTmimRedeemed: TypedContractMethod<[], [bigint], "view">;
 
-  totalUsdcDonated: TypedContractMethod<[], [bigint], "view">;
+  totalUsdcFunded: TypedContractMethod<[], [bigint], "view">;
 
   withdrawEth: TypedContractMethod<
     [to: AddressLike, amount: BigNumberish],
@@ -529,11 +461,8 @@ export interface ChayoleiTreasury extends BaseContract {
     nameOrSignature: "TREASURER_ROLE"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
-    nameOrSignature: "donateUsdc"
+    nameOrSignature: "fundUsdc"
   ): TypedContractMethod<[usdcAmount: BigNumberish], [void], "nonpayable">;
-  getFunction(
-    nameOrSignature: "ethUsdCents"
-  ): TypedContractMethod<[], [bigint], "view">;
   getFunction(
     nameOrSignature: "getEthBalance"
   ): TypedContractMethod<[], [bigint], "view">;
@@ -578,9 +507,6 @@ export interface ChayoleiTreasury extends BaseContract {
     "nonpayable"
   >;
   getFunction(
-    nameOrSignature: "setEthUsdRate"
-  ): TypedContractMethod<[rateCents: BigNumberish], [void], "nonpayable">;
-  getFunction(
     nameOrSignature: "setRedemptionRate"
   ): TypedContractMethod<[rateBps: BigNumberish], [void], "nonpayable">;
   getFunction(
@@ -593,16 +519,13 @@ export interface ChayoleiTreasury extends BaseContract {
     nameOrSignature: "tmim"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
-    nameOrSignature: "totalEthDonated"
-  ): TypedContractMethod<[], [bigint], "view">;
-  getFunction(
-    nameOrSignature: "totalTmimMinted"
+    nameOrSignature: "totalEthReceived"
   ): TypedContractMethod<[], [bigint], "view">;
   getFunction(
     nameOrSignature: "totalTmimRedeemed"
   ): TypedContractMethod<[], [bigint], "view">;
   getFunction(
-    nameOrSignature: "totalUsdcDonated"
+    nameOrSignature: "totalUsdcFunded"
   ): TypedContractMethod<[], [bigint], "view">;
   getFunction(
     nameOrSignature: "withdrawEth"
@@ -620,18 +543,11 @@ export interface ChayoleiTreasury extends BaseContract {
   >;
 
   getEvent(
-    key: "DonationReceived"
+    key: "EthReceived"
   ): TypedContractEvent<
-    DonationReceivedEvent.InputTuple,
-    DonationReceivedEvent.OutputTuple,
-    DonationReceivedEvent.OutputObject
-  >;
-  getEvent(
-    key: "EthUsdRateUpdated"
-  ): TypedContractEvent<
-    EthUsdRateUpdatedEvent.InputTuple,
-    EthUsdRateUpdatedEvent.OutputTuple,
-    EthUsdRateUpdatedEvent.OutputObject
+    EthReceivedEvent.InputTuple,
+    EthReceivedEvent.OutputTuple,
+    EthReceivedEvent.OutputObject
   >;
   getEvent(
     key: "RedemptionRateUpdated"
@@ -662,41 +578,30 @@ export interface ChayoleiTreasury extends BaseContract {
     RoleRevokedEvent.OutputObject
   >;
   getEvent(
-    key: "StablecoinDonationReceived"
-  ): TypedContractEvent<
-    StablecoinDonationReceivedEvent.InputTuple,
-    StablecoinDonationReceivedEvent.OutputTuple,
-    StablecoinDonationReceivedEvent.OutputObject
-  >;
-  getEvent(
     key: "TmimRedeemed"
   ): TypedContractEvent<
     TmimRedeemedEvent.InputTuple,
     TmimRedeemedEvent.OutputTuple,
     TmimRedeemedEvent.OutputObject
   >;
+  getEvent(
+    key: "UsdcFunded"
+  ): TypedContractEvent<
+    UsdcFundedEvent.InputTuple,
+    UsdcFundedEvent.OutputTuple,
+    UsdcFundedEvent.OutputObject
+  >;
 
   filters: {
-    "DonationReceived(address,uint256,uint256)": TypedContractEvent<
-      DonationReceivedEvent.InputTuple,
-      DonationReceivedEvent.OutputTuple,
-      DonationReceivedEvent.OutputObject
+    "EthReceived(address,uint256)": TypedContractEvent<
+      EthReceivedEvent.InputTuple,
+      EthReceivedEvent.OutputTuple,
+      EthReceivedEvent.OutputObject
     >;
-    DonationReceived: TypedContractEvent<
-      DonationReceivedEvent.InputTuple,
-      DonationReceivedEvent.OutputTuple,
-      DonationReceivedEvent.OutputObject
-    >;
-
-    "EthUsdRateUpdated(uint256)": TypedContractEvent<
-      EthUsdRateUpdatedEvent.InputTuple,
-      EthUsdRateUpdatedEvent.OutputTuple,
-      EthUsdRateUpdatedEvent.OutputObject
-    >;
-    EthUsdRateUpdated: TypedContractEvent<
-      EthUsdRateUpdatedEvent.InputTuple,
-      EthUsdRateUpdatedEvent.OutputTuple,
-      EthUsdRateUpdatedEvent.OutputObject
+    EthReceived: TypedContractEvent<
+      EthReceivedEvent.InputTuple,
+      EthReceivedEvent.OutputTuple,
+      EthReceivedEvent.OutputObject
     >;
 
     "RedemptionRateUpdated(uint256)": TypedContractEvent<
@@ -743,17 +648,6 @@ export interface ChayoleiTreasury extends BaseContract {
       RoleRevokedEvent.OutputObject
     >;
 
-    "StablecoinDonationReceived(address,uint256,uint256)": TypedContractEvent<
-      StablecoinDonationReceivedEvent.InputTuple,
-      StablecoinDonationReceivedEvent.OutputTuple,
-      StablecoinDonationReceivedEvent.OutputObject
-    >;
-    StablecoinDonationReceived: TypedContractEvent<
-      StablecoinDonationReceivedEvent.InputTuple,
-      StablecoinDonationReceivedEvent.OutputTuple,
-      StablecoinDonationReceivedEvent.OutputObject
-    >;
-
     "TmimRedeemed(address,uint256,uint256)": TypedContractEvent<
       TmimRedeemedEvent.InputTuple,
       TmimRedeemedEvent.OutputTuple,
@@ -763,6 +657,17 @@ export interface ChayoleiTreasury extends BaseContract {
       TmimRedeemedEvent.InputTuple,
       TmimRedeemedEvent.OutputTuple,
       TmimRedeemedEvent.OutputObject
+    >;
+
+    "UsdcFunded(address,uint256)": TypedContractEvent<
+      UsdcFundedEvent.InputTuple,
+      UsdcFundedEvent.OutputTuple,
+      UsdcFundedEvent.OutputObject
+    >;
+    UsdcFunded: TypedContractEvent<
+      UsdcFundedEvent.InputTuple,
+      UsdcFundedEvent.OutputTuple,
+      UsdcFundedEvent.OutputObject
     >;
   };
 }

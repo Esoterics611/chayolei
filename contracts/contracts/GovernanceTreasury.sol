@@ -11,6 +11,8 @@ import "./TMIMToken.sol";
  * @title GovernanceTreasury
  * @notice Extended DAO treasury with governance-controlled parameters,
  *         linear payment streams, and monthly TMIM minting caps.
+ *         Crypto in, crypto out: USDC sent in never mints TMIM. TMIM is
+ *         minted only for participation.
  *
  * Extends the core ChayoleiTreasury concepts with:
  *  - Monthly minting cap (governs how many TMIM can be minted per 30-day window)
@@ -33,7 +35,11 @@ contract GovernanceTreasury is AccessControl, ReentrancyGuard {
     /// @notice Basis points: 1000 bps = $0.10 per TMIM at redemption
     uint256 public redemptionRateBps  = 1_000;
 
-    /// @notice Maximum new TMIM that can be minted per 30-day window
+    /// @notice Maximum new TMIM that can be minted per 30-day window.
+    /// @dev    Only donation minting ever checked this cap, and that is gone.
+    ///         Participation rewards (MasimaRewardsV2) and MINT_TOKENS
+    ///         proposals mint on TMIMToken directly, so nothing enforces it
+    ///         until those paths are routed through it (SPEC_2 §4.2).
     uint256 public maxMonthlyMint     = 100_000;
 
     /// @notice Minimum reserve ratio (scaled ×1000, so 200 = 20%)
@@ -44,8 +50,7 @@ contract GovernanceTreasury is AccessControl, ReentrancyGuard {
     uint256 public mintedThisWindow;
 
     // ─── Totals ───────────────────────────────────────────────────────────
-    uint256 public totalDonatedUSDC;
-    uint256 public totalTmimMinted;
+    uint256 public totalFundedUSDC;
     uint256 public totalTmimRedeemed;
 
     // ─── Payment streams ──────────────────────────────────────────────────
@@ -62,7 +67,7 @@ contract GovernanceTreasury is AccessControl, ReentrancyGuard {
     mapping(uint256 => Stream) public streams;
 
     // ─── Events ───────────────────────────────────────────────────────────
-    event Donated(address indexed donor, uint256 usdcAmount, uint256 tmimMinted, string memo);
+    event Funded(address indexed from, uint256 usdcAmount, string memo);
     event Redeemed(address indexed holder, uint256 tmimAmount, uint256 usdcPaid);
     event StreamCreated(uint256 indexed id, address indexed recipient, uint256 total, uint256 end);
     event StreamClaimed(uint256 indexed id, address indexed recipient, uint256 amount);
@@ -84,36 +89,22 @@ contract GovernanceTreasury is AccessControl, ReentrancyGuard {
         currentWindowStart = block.timestamp;
     }
 
-    // ─── Donation ─────────────────────────────────────────────────────────
+    // ─── Funding (crypto in; mints nothing) ───────────────────────────────
 
     /**
-     * @notice Donate USDC to the treasury and receive TMIM.
-     * @param usdcAmount  Amount of USDC to donate (6 decimals)
-     * @param memo        Optional donor message stored off-chain (emitted here)
+     * @notice Move USDC into the treasury, backing redemptions and streams.
+     * @param usdcAmount  Amount of USDC (6 decimals); approve the treasury first
+     * @param memo        Optional note, emitted with the event
      */
-    function donate(uint256 usdcAmount, string calldata memo)
+    function fund(uint256 usdcAmount, string calldata memo)
         external
         nonReentrant
         whenNotPaused
     {
-        require(usdcAmount > 0, "Zero donation");
-
+        require(usdcAmount > 0, "Zero amount");
         usdc.safeTransferFrom(msg.sender, address(this), usdcAmount);
-
-        // $1 USDC = 10 TMIM (adjustable by governance via parameter_update proposal)
-        uint256 tmimToMint = (usdcAmount * 10) / 1e6; // convert 6-decimal cents to TMIM
-        require(tmimToMint > 0, "Donation too small");
-
-        _refreshWindow();
-        require(mintedThisWindow + tmimToMint <= maxMonthlyMint, "Monthly mint cap exceeded");
-
-        mintedThisWindow  += tmimToMint;
-        totalTmimMinted   += tmimToMint;
-        totalDonatedUSDC  += usdcAmount;
-
-        tmim.mint(msg.sender, tmimToMint, "donation");
-
-        emit Donated(msg.sender, usdcAmount, tmimToMint, memo);
+        totalFundedUSDC += usdcAmount;
+        emit Funded(msg.sender, usdcAmount, memo);
     }
 
     // ─── Redemption ───────────────────────────────────────────────────────
@@ -273,13 +264,6 @@ contract GovernanceTreasury is AccessControl, ReentrancyGuard {
 
     function _isNewWindow() internal view returns (bool) {
         return block.timestamp >= currentWindowStart + 30 days;
-    }
-
-    function _refreshWindow() internal {
-        if (_isNewWindow()) {
-            currentWindowStart += 30 days;  // advance by exactly 30 days to prevent drift
-            mintedThisWindow   = 0;
-        }
     }
 
     function _enforceReserveRatio(uint256 usdcOut) internal view {

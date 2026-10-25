@@ -8,8 +8,10 @@ import "./TMIMToken.sol";
 
 /**
  * @title ChayoleiTreasury
- * @notice DAO treasury — accepts ETH donations, mints TMIM,
- *         and handles TMIM redemption back to stablecoin.
+ * @notice DAO treasury — holds the ETH and USDC sent to it and redeems
+ *         TMIM back to stablecoin. Crypto in, crypto out: money sent in
+ *         never mints TMIM. TMIM is minted only for participation
+ *         (MasimaRewardsV2).
  *
  *         Redemption rate: 1 TMIM = 0.10 USD (1000 bps).
  *         USDC/USDT address is set at deploy time for Base Sepolia.
@@ -20,21 +22,16 @@ contract ChayoleiTreasury is AccessControl, ReentrancyGuard {
     TMIMToken public immutable tmim;
     IERC20    public stablecoin; // USDC on Base Sepolia
 
-    /// @notice ETH/USD price in cents (e.g. 300000 = $3000.00)
-    uint256 public ethUsdCents = 300_000;
-
     /// @notice Basis points: 1000 bps = $0.10 per TMIM
     uint256 public redemptionRateBps = 1000;
 
-    uint256 public totalEthDonated;
-    uint256 public totalUsdcDonated;
-    uint256 public totalTmimMinted;
+    uint256 public totalEthReceived;
+    uint256 public totalUsdcFunded;
     uint256 public totalTmimRedeemed;
 
-    event DonationReceived(address indexed donor, uint256 ethAmount, uint256 tmimMinted);
-    event StablecoinDonationReceived(address indexed donor, uint256 usdcAmount, uint256 tmimMinted);
+    event EthReceived(address indexed from, uint256 ethAmount);
+    event UsdcFunded(address indexed from, uint256 usdcAmount);
     event TmimRedeemed(address indexed holder, uint256 tmimAmount, uint256 usdcPaid);
-    event EthUsdRateUpdated(uint256 newRateCents);
     event RedemptionRateUpdated(uint256 newRateBps);
 
     constructor(address admin, address tmimToken, address stablecoinAddress) {
@@ -44,36 +41,23 @@ contract ChayoleiTreasury is AccessControl, ReentrancyGuard {
         stablecoin = IERC20(stablecoinAddress);
     }
 
-    // ── ETH Donations ──────────────────────────────────────────
+    // ── Funding (crypto in; mints nothing) ─────────────────────
 
-    /**
-     * @notice Donate ETH to the treasury. Mints TMIM at the current ETH/USD rate.
-     *         Formula: tmim = (ethAmount * ethUsdCents) / (redemptionRateBps * 1e16)
-     */
-    receive() external payable nonReentrant {
-        uint256 tmimAmount = _ethToTmim(msg.value);
-        require(tmimAmount > 0, "Donation too small");
-        tmim.mint(msg.sender, tmimAmount, "eth_donation");
-        totalEthDonated  += msg.value;
-        totalTmimMinted  += tmimAmount;
-        emit DonationReceived(msg.sender, msg.value, tmimAmount);
+    /// @notice Accept ETH sent to the treasury.
+    receive() external payable {
+        totalEthReceived += msg.value;
+        emit EthReceived(msg.sender, msg.value);
     }
 
-    // ── USDC Donations ─────────────────────────────────────────
-
     /**
-     * @notice Donate USDC (6 decimals) to the treasury. Mints TMIM at 1 TMIM / $0.10.
+     * @notice Move USDC (6 decimals) into the treasury, backing redemptions.
+     *         Caller must approve the treasury for `usdcAmount` first.
      */
-    function donateUsdc(uint256 usdcAmount) external nonReentrant {
+    function fundUsdc(uint256 usdcAmount) external nonReentrant {
         require(usdcAmount > 0, "Amount must be positive");
         stablecoin.transferFrom(msg.sender, address(this), usdcAmount);
-        // USDC has 6 decimals: 1 USDC = 1e6. 1 TMIM = $0.10 = 100000 USDC units.
-        uint256 tmimAmount = usdcAmount / 100_000;
-        require(tmimAmount > 0, "Donation below minimum ($0.10)");
-        tmim.mint(msg.sender, tmimAmount, "usdc_donation");
-        totalUsdcDonated += usdcAmount;
-        totalTmimMinted  += tmimAmount;
-        emit StablecoinDonationReceived(msg.sender, usdcAmount, tmimAmount);
+        totalUsdcFunded += usdcAmount;
+        emit UsdcFunded(msg.sender, usdcAmount);
     }
 
     // ── Redemption ─────────────────────────────────────────────
@@ -107,23 +91,9 @@ contract ChayoleiTreasury is AccessControl, ReentrancyGuard {
         stablecoin.transfer(to, amount);
     }
 
-    function setEthUsdRate(uint256 rateCents) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        ethUsdCents = rateCents;
-        emit EthUsdRateUpdated(rateCents);
-    }
-
     function setRedemptionRate(uint256 rateBps) external onlyRole(DEFAULT_ADMIN_ROLE) {
         redemptionRateBps = rateBps;
         emit RedemptionRateUpdated(rateBps);
-    }
-
-    // ── Internal helpers ───────────────────────────────────────
-
-    function _ethToTmim(uint256 weiAmount) internal view returns (uint256) {
-        // wei → USD cents: weiAmount * ethUsdCents / 1e18
-        // USD cents → TMIM: divide by (redemptionRateBps / 100)  →  * 100 / redemptionRateBps
-        // Combined: weiAmount * ethUsdCents * 100 / (1e18 * redemptionRateBps)
-        return (weiAmount * ethUsdCents * 100) / (1e18 * redemptionRateBps);
     }
 
     function getEthBalance() external view returns (uint256) {

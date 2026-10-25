@@ -54,61 +54,30 @@ describe('GovernanceTreasury', () => {
   });
 
   // ═══════════════════════════════════════════════════════════════
-  // donate()
+  // fund() — crypto in, mints nothing
   // ═══════════════════════════════════════════════════════════════
 
-  describe('donate()', () => {
-    it('transfers USDC in and mints TMIM at 10:1 rate', async () => {
-      await expect(treasury.connect(donor).donate(usdc(100), 'test'))
-        .to.emit(treasury, 'Donated')
-        .withArgs(donor.address, usdc(100), TMIM(1000), 'test');
+  describe('fund()', () => {
+    it('transfers USDC in without minting TMIM', async () => {
+      const before = await mockUsdc.balanceOf(await treasury.getAddress());
+      await expect(treasury.connect(donor).fund(usdc(100), 'test'))
+        .to.emit(treasury, 'Funded')
+        .withArgs(donor.address, usdc(100), 'test');
 
-      expect(await tmim.balanceOf(donor.address)).to.equal(TMIM(1000));
-      expect(await mockUsdc.balanceOf(await treasury.getAddress())).to.be.gt(usdc(10_000));
-      expect(await treasury.totalDonatedUSDC()).to.equal(usdc(100));
-      expect(await treasury.totalTmimMinted()).to.equal(TMIM(1000));
+      expect(await mockUsdc.balanceOf(await treasury.getAddress())).to.equal(before + usdc(100));
+      expect(await treasury.totalFundedUSDC()).to.equal(usdc(100));
+      expect(await tmim.balanceOf(donor.address)).to.equal(0n);
+      expect(await tmim.totalSupply()).to.equal(0n);
     });
 
     it('reverts on zero amount', async () => {
-      await expect(treasury.connect(donor).donate(0n, ''))
-        .to.be.revertedWith('Zero donation');
-    });
-
-    it('reverts when donation too small to mint 1 TMIM', async () => {
-      // 1 unit of USDC (0.000001 USD) mints 0 TMIM
-      await mockUsdc.connect(donor).approve(await treasury.getAddress(), 1n);
-      await expect(treasury.connect(donor).donate(1n, ''))
-        .to.be.revertedWith('Donation too small');
-    });
-
-    it('reverts when monthly cap would be exceeded', async () => {
-      // maxMonthlyMint = 100_000 TMIM → requires 10_000 USDC to hit cap
-      await mockUsdc.mint(donor.address, usdc(10_001));
-      await mockUsdc.connect(donor).approve(await treasury.getAddress(), usdc(20_001));
-
-      // Hit the cap exactly (10_000 USDC → 100_000 TMIM)
-      await treasury.connect(donor).donate(usdc(10_000), '');
-      // Next donation should fail
-      await expect(treasury.connect(donor).donate(usdc(1), ''))
-        .to.be.revertedWith('Monthly mint cap exceeded');
-    });
-
-    it('resets minting window after 30 days', async () => {
-      await mockUsdc.mint(donor.address, usdc(10_000));
-      await mockUsdc.connect(donor).approve(await treasury.getAddress(), usdc(20_000));
-
-      // Fill the cap
-      await treasury.connect(donor).donate(usdc(10_000), '');
-      // Advance 30 days
-      await time.increase(30 * 24 * 3600 + 1);
-      // Should succeed again
-      await expect(treasury.connect(donor).donate(usdc(100), ''))
-        .to.emit(treasury, 'Donated');
+      await expect(treasury.connect(donor).fund(0n, ''))
+        .to.be.revertedWith('Zero amount');
     });
 
     it('reverts when paused', async () => {
       await treasury.connect(governance).pause();
-      await expect(treasury.connect(donor).donate(usdc(100), ''))
+      await expect(treasury.connect(donor).fund(usdc(100), ''))
         .to.be.revertedWith('Treasury paused');
     });
   });
@@ -119,10 +88,8 @@ describe('GovernanceTreasury', () => {
 
   describe('redeem()', () => {
     beforeEach(async () => {
-      // Give alice 1000 TMIM for redemption tests
-      await treasury.connect(donor).donate(usdc(100), '');  // mints 1000 TMIM to donor
-      // Transfer some to alice
-      await tmim.connect(donor).transfer(alice.address, TMIM(100));
+      // Alice holds 100 TMIM earned for work (admin holds MINTER_ROLE in tests)
+      await tmim.connect(admin).mint(alice.address, TMIM(100), 'tafkid_approved');
     });
 
     it('burns TMIM and transfers USDC at redemption rate', async () => {
@@ -393,11 +360,11 @@ describe('GovernanceTreasury', () => {
       await expect(treasury.connect(donor).unpause()).to.be.reverted;
     });
 
-    it('unpause restores donate()', async () => {
+    it('unpause restores fund()', async () => {
       await treasury.connect(governance).pause();
       await treasury.connect(governance).unpause();
-      await expect(treasury.connect(donor).donate(usdc(100), ''))
-        .to.emit(treasury, 'Donated');
+      await expect(treasury.connect(donor).fund(usdc(100), ''))
+        .to.emit(treasury, 'Funded');
     });
   });
 
@@ -410,45 +377,12 @@ describe('GovernanceTreasury', () => {
       expect(await treasury.reserveRatioPpm()).to.equal(ethers.MaxUint256);
     });
 
-    it('reserveRatioPpm returns correct value after donation', async () => {
-      // After donating 100 USDC: 1000 TMIM minted, treasury holds 10_100 USDC
+    it('reserveRatioPpm returns correct value once TMIM is in circulation', async () => {
+      // 1000 TMIM earned for work; treasury holds 10_000 USDC
       // usdcNeeded = 1000 * 1000 * 1e6 / 10_000 = 1e8 = 100 USDC
-      // ratio = 10_100 * 1e6 * 1000 / 1e8 = 101_000
-      await treasury.connect(donor).donate(usdc(100), '');
-      const ratio = await treasury.reserveRatioPpm();
-      expect(ratio).to.be.gt(0n);
-      // Should be far above minReserveRatioPpm (200 = 20%)
-      expect(ratio).to.be.gt(200n);
-    });
-
-    it('mintedThisMonth returns 0 after window rolls over', async () => {
-      await treasury.connect(donor).donate(usdc(10), '');
-      expect(await treasury.mintedThisMonth()).to.be.gt(0n);
-
-      await time.increase(30 * 24 * 3600 + 1);
-      expect(await treasury.mintedThisMonth()).to.equal(0n);
-    });
-  });
-
-  // ═══════════════════════════════════════════════════════════════
-  // Window drift regression
-  // ═══════════════════════════════════════════════════════════════
-
-  describe('window drift fix', () => {
-    it('windowStart advances by exactly 30 days each rollover', async () => {
-      const start = await treasury.currentWindowStart();
-      await mockUsdc.mint(donor.address, usdc(10_001));
-      await mockUsdc.connect(donor).approve(await treasury.getAddress(), usdc(20_001));
-
-      // Fill cap
-      await treasury.connect(donor).donate(usdc(10_000), '');
-
-      // Advance 30+ days and trigger a new window via a new donate
-      await time.increase(30 * 24 * 3600 + 1);
-      await treasury.connect(donor).donate(usdc(1), '');
-
-      const newStart = await treasury.currentWindowStart();
-      expect(newStart).to.equal(start + BigInt(30 * 24 * 3600));
+      // ratio = 10_000e6 * 1000 / 1e8 = 100_000
+      await tmim.connect(admin).mint(alice.address, TMIM(1000), 'masima_approved');
+      expect(await treasury.reserveRatioPpm()).to.equal(100_000n);
     });
   });
 });
