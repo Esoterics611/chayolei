@@ -88,7 +88,7 @@
                 <span class="text-[10px] uppercase tracking-wider" style="color: var(--color-text-secondary);">לדרגה: {rankProgress.nextLabel}</span>
                 <span class="text-xs font-mono" style="color: var(--color-text-secondary);">{formatTmim(rankProgress.current)} / {formatTmim(rankProgress.required)}</span>
               </div>
-              <ProgressBar value={rankProgress.current} max={rankProgress.required} color="gold" size="md" />
+              <ProgressBar value={rankProgress.current} max={rankProgress.required} color="token" size="md" />
             </div>
           </div>
         </div>
@@ -211,7 +211,7 @@
             </div>
             <div class="flex-shrink-0 w-28 flex flex-col items-end gap-1">
               <span class="text-xs font-mono" style="color: var(--color-text-secondary);">{progress}%</span>
-              <ProgressBar value={progress} max={100} showLabel={false} color="gold" />
+              <ProgressBar value={progress} max={100} showLabel={false} color="token" />
             </div>
           </div>
         </a>

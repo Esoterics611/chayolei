@@ -10,7 +10,7 @@
   import PeerReviewCard from '$components/PeerReviewCard.svelte';
   import ConfirmDialog from '$components/ConfirmDialog.svelte';
 
-  let id = $derived($page.params.id);
+  let id = $derived($page.params.id ?? '');
   let mivtza = $derived(app.getMivtza(id));
   let masimot = $derived(mivtza ? app.getMivtzaMasimot(mivtza.id) : []);
   let tafkidim = $derived(mivtza ? app.getMivtzaTafkidim(mivtza.id) : []);
@@ -33,7 +33,7 @@
     return { talmid: t, completed, tmimEarned };
   }).filter(Boolean));
 
-  let isEnrolled = $derived(mivtza?.enrolledIds.includes(app.currentUserId) ?? false);
+  let isEnrolled = $derived(!!app.currentUserId && (mivtza?.enrolledIds.includes(app.currentUserId) ?? false));
   let showDeleteConfirm = $state(false);
   let showUnenrollConfirm = $state(false);
 
@@ -105,7 +105,7 @@
         <div class="text-center">
           <span class="text-3xl font-bold font-mono block" style="color: var(--color-accent-secondary);">{progress}%</span>
           <p class="text-[10px] mb-1" style="color: var(--color-text-tertiary);">התקדמות</p>
-          <ProgressBar value={progress} max={100} color="gold" />
+          <ProgressBar value={progress} max={100} color="token" />
           <div class="mt-2 text-[10px]" style="color: var(--color-text-tertiary);">
             <div>תקציב: {formatTmim(mivtza.tokenAllocation)}</div>
             <div style="color: var(--color-accent-secondary);">שומש: {formatTmim(mivtza.tokensUsed)}</div>
@@ -127,7 +127,7 @@
           >עזוב מבצע</button>
         {:else}
           <button
-            onclick={() => app.enrollInMivtza(app.currentUserId, mivtza!.id)}
+            onclick={() => app.currentUserId && app.enrollInMivtza(app.currentUserId, mivtza!.id)}
             class="w-full py-2 text-xs font-medium transition-colors duration-150"
             style="
               background-color: rgba(125,108,63,0.1);
@@ -448,6 +448,6 @@
   message="האם לעזוב את '{mivtza?.shem ?? ''}'?"
   confirmLabel="עזוב"
   destructive={true}
-  onconfirm={() => { if (mivtza) { app.unenrollFromMivtza(app.currentUserId, mivtza.id); showUnenrollConfirm = false; } }}
+  onconfirm={() => { if (mivtza && app.currentUserId) { app.unenrollFromMivtza(app.currentUserId, mivtza.id); showUnenrollConfirm = false; } }}
   oncancel={() => showUnenrollConfirm = false}
 />

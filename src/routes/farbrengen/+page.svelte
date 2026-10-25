@@ -11,11 +11,6 @@
     tmim_distributed:'◆', farbrengen_announced:'◆', maamar_shared:'◈',
   };
 
-  const maamarCategoryStyle: Record<string,string> = {
-    maamar: 'color: var(--color-accent-secondary); background-color: rgba(125,108,63,0.1);',
-    sicha:  'color: var(--color-accent-primary);   background-color: rgba(27,79,114,0.1);',
-    hemshech: 'color: #7c3aed; background-color: rgba(124,58,237,0.1);',
-  };
 </script>
 
 <div class="page-container space-y-6">
@@ -94,27 +89,23 @@
           <div class="flex items-start justify-between gap-4 mb-3">
             <div class="flex-1">
               <div class="flex items-center gap-2 mb-2">
-                <h3 class="text-base font-semibold" style="color: var(--color-text-primary);">{m.shem}</h3>
-                {#if m.hemshechNum}
+                <h3 class="text-base font-semibold" style="color: var(--color-text-primary);">{m.title}</h3>
+                {#if m.hemshech}
                   <span
                     class="text-[10px] px-2 py-0.5"
                     style="border-radius: 9999px; background-color: rgba(124,58,237,0.1); color: #7c3aed;"
-                  >המשך #{m.hemshechNum}</span>
+                  >המשך {m.hemshech}{m.hemshechNumber ? ` #${m.hemshechNumber}` : ''}</span>
                 {/if}
               </div>
-              <span
-                class="text-[10px] px-2 py-0.5"
-                style="border-radius: 9999px; {maamarCategoryStyle[m.category] ?? 'color: var(--color-text-tertiary); background-color: var(--color-bg-tertiary);'}"
-              >{m.category}</span>
             </div>
-            <span class="text-[10px] flex-shrink-0" style="color: var(--color-text-tertiary);">{formatDate(m.publishedAt)}</span>
+            <span class="text-[10px] flex-shrink-0" style="color: var(--color-text-tertiary);">{formatDate(m.sharedAt)}</span>
           </div>
           <p class="text-sm leading-relaxed mb-3" style="color: var(--color-text-secondary);">{m.summary}</p>
           {#if author}
             <p class="text-sm mb-2" style="color: var(--color-text-secondary);">מאת: <span style="color: var(--color-text-primary);">{author.shem}</span></p>
           {/if}
           <div class="flex flex-wrap gap-1">
-            {#each m.topics as topic}
+            {#each m.tags as topic}
               <span
                 class="text-[10px] px-2 py-0.5"
                 style="border-radius: 9999px; background-color: var(--color-bg-tertiary); color: var(--color-text-tertiary);"
@@ -152,13 +143,12 @@
                     style="border-radius: 9999px; background-color: var(--color-bg-tertiary); color: var(--color-text-tertiary);"
                   >הסתיים</span>
                 {/if}
-                <h3 class="text-base font-semibold" style="color: var(--color-text-primary);">{f.topic}</h3>
+                <h3 class="text-base font-semibold" style="color: var(--color-text-primary);">{f.title}</h3>
               </div>
               <p class="text-sm mb-2" style="color: var(--color-text-secondary);">{f.description}</p>
               <div class="flex items-center gap-4 text-sm flex-wrap" style="color: var(--color-text-secondary);">
-                <span class="font-mono">{new Date(f.date).toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
-                <span>⏱ {f.duration} דקות</span>
-                {#if f.location}<span>📍 {f.location}</span>{/if}
+                <span class="font-mono">{new Date(f.scheduledAt).toLocaleString('he-IL', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                <span>{f.attendeeIds.length} משתתפים</span>
               </div>
             </div>
           </div>

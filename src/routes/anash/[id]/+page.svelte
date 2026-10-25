@@ -14,7 +14,7 @@
   import ConfirmDialog from '$components/ConfirmDialog.svelte';
   import { PROPOSAL_TYPE_LABELS } from '$lib/types';
 
-  let id = $derived($page.params.id);
+  let id = $derived($page.params.id ?? '');
   let talmid = $derived(app.getTalmid(id));
   let rankMeta = $derived(talmid ? RANK_META[talmid.rank] : null);
   let makom = $derived(talmid ? app.getMakom(talmid.makomId) : null);
@@ -110,7 +110,7 @@
               <span>התקדמות ל: <span style="color: var(--color-text-primary);">{next.shem}</span></span>
               <span class="font-mono">{formatTmim(talmid.totalTokensEarned)} / {formatTmim(next.tokensRequired)}</span>
             </div>
-            <ProgressBar value={talmid.totalTokensEarned} max={next.tokensRequired} color="gold" size="md" />
+            <ProgressBar value={talmid.totalTokensEarned} max={next.tokensRequired} color="token" size="md" />
           </div>
         {:else}
           <div class="text-xs font-semibold" style="color: var(--color-accent-secondary);">✦ דרגה עליונה — אלוף</div>
@@ -255,7 +255,7 @@
             onmouseleave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; }}
           >
             <p class="text-sm truncate mb-1.5" style="color: var(--color-text-primary);">{mivtza.shem}</p>
-            <ProgressBar value={app.getMivtzaProgress(mivtza.id)} max={100} showLabel color="gold" />
+            <ProgressBar value={app.getMivtzaProgress(mivtza.id)} max={100} showLabel color="token" />
           </a>
         {:else}
           <EmptyState icon="◈" title="לא רשום למבצעים" />

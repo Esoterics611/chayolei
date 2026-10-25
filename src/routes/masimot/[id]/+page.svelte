@@ -10,7 +10,7 @@
   import DiscussionThread from '$components/DiscussionThread.svelte';
   import ConfirmDialog from '$components/ConfirmDialog.svelte';
 
-  let id = $derived($page.params.id);
+  let id = $derived($page.params.id ?? '');
   let masima = $derived(app.getMasima(id));
   let mivtza = $derived(masima ? app.getMivtza(masima.mivtzaId) : null);
   let assignee = $derived(masima?.assigneeId ? app.getTalmid(masima.assigneeId) : null);

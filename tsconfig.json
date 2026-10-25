@@ -10,5 +10,18 @@
     "sourceMap": true,
     "strict": true,
     "moduleResolution": "bundler"
-  }
+  },
+  // Generated Data Connect SDKs are not type-checked. Overriding "exclude"
+  // replaces SvelteKit's list in .svelte-kit/tsconfig.json, so it is repeated here.
+  "exclude": [
+    "node_modules/**",
+    "src/service-worker.js",
+    "src/service-worker/**/*.js",
+    "src/service-worker.ts",
+    "src/service-worker/**/*.ts",
+    "src/service-worker.d.ts",
+    "src/service-worker/**/*.d.ts",
+    "src/dataconnect-generated/**",
+    "src/dataconnect-admin-generated/**"
+  ]
 }
