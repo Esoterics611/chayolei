@@ -1,0 +1,11 @@
+.git
+.github
+.svelte-kit
+build
+node_modules
+contracts
+dataconnect
+docs
+.env
+.env.*
+*.log

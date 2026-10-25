@@ -1,0 +1,17 @@
+# Builds the web app image with the public browser config passed as build
+# args. Run through scripts/deploy.sh, which fills the substitutions from .env.
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - --tag=${_IMAGE}
+      - --build-arg=VITE_FIREBASE_API_KEY=${_VITE_FIREBASE_API_KEY}
+      - --build-arg=VITE_FIREBASE_AUTH_DOMAIN=${_VITE_FIREBASE_AUTH_DOMAIN}
+      - --build-arg=VITE_FIREBASE_PROJECT_ID=${_VITE_FIREBASE_PROJECT_ID}
+      - --build-arg=VITE_FIREBASE_STORAGE_BUCKET=${_VITE_FIREBASE_STORAGE_BUCKET}
+      - --build-arg=VITE_FIREBASE_MESSAGING_SENDER_ID=${_VITE_FIREBASE_MESSAGING_SENDER_ID}
+      - --build-arg=VITE_FIREBASE_APP_ID=${_VITE_FIREBASE_APP_ID}
+      - --build-arg=VITE_GOVERNANCE_ADDRESS=${_VITE_GOVERNANCE_ADDRESS}
+      - .
+images:
+  - ${_IMAGE}

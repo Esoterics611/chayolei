@@ -126,9 +126,11 @@ The more a talmid learns, produces, and contributes — the more they earn, the 
 - ✅ SvelteKit app running with live Firebase — all state from real Firestore listeners
 - ✅ 8 Solidity contracts deployed and verified on Base Sepolia
 - ✅ EIP-712 rank attestation on governance (C1 security fix shipped)
-- ✅ 35 passing contract tests
-- 🔄 On-chain proposal/vote storage (C2 — in progress)
-- 🔄 Wallet connection UI
+- ✅ 178 passing contract tests; app tests against the Firestore emulator; CI on every pull request
+- ✅ On-chain votes recorded exactly once in Firestore; the chain listener resumes from a checkpoint (C2)
+- ✅ Wallet sign-in with a browser wallet
+- 🔄 Audit fixes L-1, L-2, M-2 and participation-only minting are in the source; contracts need redeploying
+- 🔄 UI redesign around teams producing and publishing: [`docs/UX_REDESIGN.md`](docs/UX_REDESIGN.md)
 - ⬜ External audit
 - ⬜ Base mainnet deployment
 
@@ -163,6 +165,10 @@ npx hardhat test
 npx hardhat run scripts/deploy.ts --network baseSepolia
 ```
 
+### Deploying the web app
+
+Cloud Run behind Firebase Hosting: see [`docs/DEPLOY.md`](docs/DEPLOY.md).
+
 ---
 
 ## Contributing
@@ -170,7 +176,7 @@ npx hardhat run scripts/deploy.ts --network baseSepolia
 This project is early and moving fast. If you want to contribute:
 
 1. Check open issues for `good first issue` tags
-2. The biggest gaps right now are wallet connection, on-chain proposal storage (C2), and the donor portal
+2. The biggest gaps right now are the UI redesign ([`docs/UX_REDESIGN.md`](docs/UX_REDESIGN.md)), passkey wallets with sponsored gas, and redeploying the contracts
 3. Read `SPEC_2_DAO_REQUIREMENTS.md` for the full governance spec before touching contract code
 
 ---
