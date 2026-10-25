@@ -2,13 +2,7 @@
 // Server-side contract helpers — Base Sepolia
 // ═══════════════════════════════════════════════════════════════
 import { ethers } from 'ethers';
-import {
-  BASE_SEPOLIA_RPC_URL,
-  DEPLOYER_PRIVATE_KEY,
-  VITE_MASIMA_REWARDS_ADDRESS,
-  VITE_TREASURY_ADDRESS,
-  VITE_TMIM_TOKEN_ADDRESS,
-} from '$env/static/private';
+import { env } from '$env/dynamic/private';
 
 // ── ABIs (minimal — only what we call) ────────────────────────
 const MASIMA_REWARDS_ABI = [
@@ -30,17 +24,23 @@ const TMIM_ABI = [
 let _provider: ethers.JsonRpcProvider | null = null;
 let _signer:   ethers.Wallet | null = null;
 
+function requireEnv(name: string): string {
+  const value = env[name];
+  if (!value) throw new Error(`${name} not set`);
+  return value;
+}
+
 function getSigner(): ethers.Wallet {
   if (!_signer) {
-    const rpc = BASE_SEPOLIA_RPC_URL || 'https://sepolia.base.org';
+    const rpc = env.BASE_SEPOLIA_RPC_URL || 'https://sepolia.base.org';
     _provider = new ethers.JsonRpcProvider(rpc);
-    _signer   = new ethers.Wallet(DEPLOYER_PRIVATE_KEY, _provider);
+    _signer   = new ethers.Wallet(requireEnv('DEPLOYER_PRIVATE_KEY'), _provider);
   }
   return _signer;
 }
 
 export function getMasimaRewardsContract() {
-  return new ethers.Contract(VITE_MASIMA_REWARDS_ADDRESS, MASIMA_REWARDS_ABI, getSigner());
+  return new ethers.Contract(requireEnv('VITE_MASIMA_REWARDS_ADDRESS'), MASIMA_REWARDS_ABI, getSigner());
 }
 
 // ── helpers ───────────────────────────────────────────────────
@@ -123,7 +123,7 @@ export async function redeemTmimOnChain(
   if (tmimAmount <= 0) return null;
 
   const signer  = getSigner();
-  const tmim    = new ethers.Contract(VITE_TMIM_TOKEN_ADDRESS, TMIM_ABI, signer);
+  const tmim    = new ethers.Contract(requireEnv('VITE_TMIM_TOKEN_ADDRESS'), TMIM_ABI, signer);
 
   // 1. Burn TMIM from user wallet (deployer has BURNER_ROLE)
   const burnTx = await tmim.burn(userWallet, BigInt(tmimAmount));

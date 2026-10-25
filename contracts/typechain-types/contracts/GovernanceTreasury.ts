@@ -34,7 +34,7 @@ export interface GovernanceTreasuryInterface extends Interface {
       | "claimableForStream"
       | "createStream"
       | "currentWindowStart"
-      | "donate"
+      | "fund"
       | "getRoleAdmin"
       | "grantRole"
       | "hasRole"
@@ -55,8 +55,7 @@ export interface GovernanceTreasuryInterface extends Interface {
       | "streams"
       | "supportsInterface"
       | "tmim"
-      | "totalDonatedUSDC"
-      | "totalTmimMinted"
+      | "totalFundedUSDC"
       | "totalTmimRedeemed"
       | "unpause"
       | "usdc"
@@ -64,7 +63,7 @@ export interface GovernanceTreasuryInterface extends Interface {
 
   getEvent(
     nameOrSignatureOrTopic:
-      | "Donated"
+      | "Funded"
       | "MaxMonthlyMintUpdated"
       | "Redeemed"
       | "RedemptionRateUpdated"
@@ -109,7 +108,7 @@ export interface GovernanceTreasuryInterface extends Interface {
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: "donate",
+    functionFragment: "fund",
     values: [BigNumberish, string]
   ): string;
   encodeFunctionData(
@@ -184,11 +183,7 @@ export interface GovernanceTreasuryInterface extends Interface {
   ): string;
   encodeFunctionData(functionFragment: "tmim", values?: undefined): string;
   encodeFunctionData(
-    functionFragment: "totalDonatedUSDC",
-    values?: undefined
-  ): string;
-  encodeFunctionData(
-    functionFragment: "totalTmimMinted",
+    functionFragment: "totalFundedUSDC",
     values?: undefined
   ): string;
   encodeFunctionData(
@@ -230,7 +225,7 @@ export interface GovernanceTreasuryInterface extends Interface {
     functionFragment: "currentWindowStart",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "donate", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "fund", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "getRoleAdmin",
     data: BytesLike
@@ -288,11 +283,7 @@ export interface GovernanceTreasuryInterface extends Interface {
   ): Result;
   decodeFunctionResult(functionFragment: "tmim", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "totalDonatedUSDC",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "totalTmimMinted",
+    functionFragment: "totalFundedUSDC",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -303,23 +294,16 @@ export interface GovernanceTreasuryInterface extends Interface {
   decodeFunctionResult(functionFragment: "usdc", data: BytesLike): Result;
 }
 
-export namespace DonatedEvent {
+export namespace FundedEvent {
   export type InputTuple = [
-    donor: AddressLike,
+    from: AddressLike,
     usdcAmount: BigNumberish,
-    tmimMinted: BigNumberish,
     memo: string
   ];
-  export type OutputTuple = [
-    donor: string,
-    usdcAmount: bigint,
-    tmimMinted: bigint,
-    memo: string
-  ];
+  export type OutputTuple = [from: string, usdcAmount: bigint, memo: string];
   export interface OutputObject {
-    donor: string;
+    from: string;
     usdcAmount: bigint;
-    tmimMinted: bigint;
     memo: string;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
@@ -566,7 +550,7 @@ export interface GovernanceTreasury extends BaseContract {
 
   currentWindowStart: TypedContractMethod<[], [bigint], "view">;
 
-  donate: TypedContractMethod<
+  fund: TypedContractMethod<
     [usdcAmount: BigNumberish, memo: string],
     [void],
     "nonpayable"
@@ -653,9 +637,7 @@ export interface GovernanceTreasury extends BaseContract {
 
   tmim: TypedContractMethod<[], [string], "view">;
 
-  totalDonatedUSDC: TypedContractMethod<[], [bigint], "view">;
-
-  totalTmimMinted: TypedContractMethod<[], [bigint], "view">;
+  totalFundedUSDC: TypedContractMethod<[], [bigint], "view">;
 
   totalTmimRedeemed: TypedContractMethod<[], [bigint], "view">;
 
@@ -700,7 +682,7 @@ export interface GovernanceTreasury extends BaseContract {
     nameOrSignature: "currentWindowStart"
   ): TypedContractMethod<[], [bigint], "view">;
   getFunction(
-    nameOrSignature: "donate"
+    nameOrSignature: "fund"
   ): TypedContractMethod<
     [usdcAmount: BigNumberish, memo: string],
     [void],
@@ -796,10 +778,7 @@ export interface GovernanceTreasury extends BaseContract {
     nameOrSignature: "tmim"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
-    nameOrSignature: "totalDonatedUSDC"
-  ): TypedContractMethod<[], [bigint], "view">;
-  getFunction(
-    nameOrSignature: "totalTmimMinted"
+    nameOrSignature: "totalFundedUSDC"
   ): TypedContractMethod<[], [bigint], "view">;
   getFunction(
     nameOrSignature: "totalTmimRedeemed"
@@ -812,11 +791,11 @@ export interface GovernanceTreasury extends BaseContract {
   ): TypedContractMethod<[], [string], "view">;
 
   getEvent(
-    key: "Donated"
+    key: "Funded"
   ): TypedContractEvent<
-    DonatedEvent.InputTuple,
-    DonatedEvent.OutputTuple,
-    DonatedEvent.OutputObject
+    FundedEvent.InputTuple,
+    FundedEvent.OutputTuple,
+    FundedEvent.OutputObject
   >;
   getEvent(
     key: "MaxMonthlyMintUpdated"
@@ -883,15 +862,15 @@ export interface GovernanceTreasury extends BaseContract {
   >;
 
   filters: {
-    "Donated(address,uint256,uint256,string)": TypedContractEvent<
-      DonatedEvent.InputTuple,
-      DonatedEvent.OutputTuple,
-      DonatedEvent.OutputObject
+    "Funded(address,uint256,string)": TypedContractEvent<
+      FundedEvent.InputTuple,
+      FundedEvent.OutputTuple,
+      FundedEvent.OutputObject
     >;
-    Donated: TypedContractEvent<
-      DonatedEvent.InputTuple,
-      DonatedEvent.OutputTuple,
-      DonatedEvent.OutputObject
+    Funded: TypedContractEvent<
+      FundedEvent.InputTuple,
+      FundedEvent.OutputTuple,
+      FundedEvent.OutputObject
     >;
 
     "MaxMonthlyMintUpdated(uint256)": TypedContractEvent<

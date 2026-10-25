@@ -26,7 +26,6 @@
   ];
 
   const bottomNav: NavItem[] = [
-    { label: 'תמיכה',  href: '/support',  icon: '♡' },
     { label: 'הגדרות', href: '/settings', icon: '⚙' },
   ];
 

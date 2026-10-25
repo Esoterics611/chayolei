@@ -17,12 +17,7 @@
 //     is acceptable for testnet only
 //
 import { ethers } from 'ethers';
-import {
-  BASE_SEPOLIA_RPC_URL,
-  ATTESTATION_SIGNER_PRIVATE_KEY,
-  VITE_GOVERNANCE_ADDRESS,
-  VITE_CHAYOLEI_REGISTRY_ADDRESS,
-} from '$env/static/private';
+import { env } from '$env/dynamic/private';
 
 const DEFAULT_TTL_SECONDS = 300; // 5 minutes
 
@@ -59,7 +54,7 @@ let _provider: ethers.JsonRpcProvider | null = null;
 function getProvider(): ethers.JsonRpcProvider {
   if (!_provider) {
     _provider = new ethers.JsonRpcProvider(
-      BASE_SEPOLIA_RPC_URL || 'https://sepolia.base.org',
+      env.BASE_SEPOLIA_RPC_URL || 'https://sepolia.base.org',
     );
   }
   return _provider;
@@ -67,13 +62,13 @@ function getProvider(): ethers.JsonRpcProvider {
 
 let _wallet: ethers.Wallet | null = null;
 function getWallet(): ethers.Wallet {
-  if (!ATTESTATION_SIGNER_PRIVATE_KEY) {
+  if (!env.ATTESTATION_SIGNER_PRIVATE_KEY) {
     throw new Error(
       'ATTESTATION_SIGNER_PRIVATE_KEY not set. Generate a new key for the backend attestation signer (ethers.Wallet.createRandom().privateKey) and set it in .env.',
     );
   }
   if (!_wallet) {
-    _wallet = new ethers.Wallet(ATTESTATION_SIGNER_PRIVATE_KEY, getProvider());
+    _wallet = new ethers.Wallet(env.ATTESTATION_SIGNER_PRIVATE_KEY, getProvider());
   }
   return _wallet;
 }
@@ -87,17 +82,17 @@ async function getChainId(): Promise<number> {
 }
 
 function requireGovernanceAddress(): string {
-  if (!VITE_GOVERNANCE_ADDRESS || !VITE_GOVERNANCE_ADDRESS.startsWith('0x')) {
+  if (!env.VITE_GOVERNANCE_ADDRESS || !env.VITE_GOVERNANCE_ADDRESS.startsWith('0x')) {
     throw new Error('VITE_GOVERNANCE_ADDRESS not set in .env');
   }
-  return VITE_GOVERNANCE_ADDRESS;
+  return env.VITE_GOVERNANCE_ADDRESS;
 }
 
 function requireRegistryAddress(): string {
-  if (!VITE_CHAYOLEI_REGISTRY_ADDRESS || !VITE_CHAYOLEI_REGISTRY_ADDRESS.startsWith('0x')) {
+  if (!env.VITE_CHAYOLEI_REGISTRY_ADDRESS || !env.VITE_CHAYOLEI_REGISTRY_ADDRESS.startsWith('0x')) {
     throw new Error('VITE_CHAYOLEI_REGISTRY_ADDRESS not set in .env');
   }
-  return VITE_CHAYOLEI_REGISTRY_ADDRESS;
+  return env.VITE_CHAYOLEI_REGISTRY_ADDRESS;
 }
 
 // ── Public API ─────────────────────────────────────────────────

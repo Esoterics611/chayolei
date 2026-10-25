@@ -27,6 +27,8 @@ export interface TestCalleeInterface extends Interface {
       | "attackExecute"
       | "attackExecuteQuiet"
       | "revertNoReason"
+      | "revertWithCustomError"
+      | "revertWithMalformedError"
       | "revertWithMessage"
       | "setValue"
       | "value"
@@ -42,6 +44,14 @@ export interface TestCalleeInterface extends Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "revertNoReason",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "revertWithCustomError",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "revertWithMalformedError",
     values?: undefined
   ): string;
   encodeFunctionData(
@@ -64,6 +74,14 @@ export interface TestCalleeInterface extends Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "revertNoReason",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "revertWithCustomError",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "revertWithMalformedError",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -131,6 +149,10 @@ export interface TestCallee extends BaseContract {
 
   revertNoReason: TypedContractMethod<[], [void], "view">;
 
+  revertWithCustomError: TypedContractMethod<[], [void], "view">;
+
+  revertWithMalformedError: TypedContractMethod<[], [void], "view">;
+
   revertWithMessage: TypedContractMethod<[], [void], "view">;
 
   setValue: TypedContractMethod<[v: BigNumberish], [void], "nonpayable">;
@@ -157,6 +179,12 @@ export interface TestCallee extends BaseContract {
   >;
   getFunction(
     nameOrSignature: "revertNoReason"
+  ): TypedContractMethod<[], [void], "view">;
+  getFunction(
+    nameOrSignature: "revertWithCustomError"
+  ): TypedContractMethod<[], [void], "view">;
+  getFunction(
+    nameOrSignature: "revertWithMalformedError"
   ): TypedContractMethod<[], [void], "view">;
   getFunction(
     nameOrSignature: "revertWithMessage"

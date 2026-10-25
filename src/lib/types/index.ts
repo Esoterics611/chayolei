@@ -262,22 +262,8 @@ export interface Discussion {
   createdAt: string;
 }
 
-// ── תרומה (Donation) ─────────────────────────────────────────────
-export interface Donation {
-  id: string;
-  donorName: string;
-  donorWallet?: string;
-  amount: number;
-  tmimMinted: number;
-  makomId?: string;
-  mivtzaId?: string;
-  message?: string;
-  createdAt: string;
-}
-
 // ── אוצר (Treasury) ─────────────────────────────────────────────
 export interface Treasury {
-  totalDonated: number;
   totalTmimMinted: number;
   totalTmimDistributed: number;
   totalTmimRedeemed: number;
@@ -414,6 +400,7 @@ export interface Proposal {
   quorumReached: boolean;
   quorumRequired: number;
   totalVotingTokens: number;
+  onChainProposalId?: string;     // ChayoleiGovernance proposal id (uint256 as a string)
   myVote?: 'for' | 'against' | 'abstain' | null;
 }
 
@@ -439,7 +426,6 @@ export interface PaymentStream {
 }
 
 export interface TreasuryStats {
-  totalDonatedUSD: number;
   tmimCirculating: number;
   tmimTotalMinted: number;
   usdcBalance: number;
@@ -448,14 +434,6 @@ export interface TreasuryStats {
   redemptionRate: number;
   maxMonthlyMint: number;
   currentMonthMinted: number;
-}
-
-export interface DonationForm {
-  amount: number;
-  currency: 'ETH' | 'USDC';
-  earmarkType: 'none' | 'makom' | 'mivtza';
-  earmarkId?: string;
-  message?: string;
 }
 
 export interface RedemptionForm {

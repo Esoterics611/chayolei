@@ -1,0 +1,281 @@
+/* ============================================================
+   New UI — visual system (docs/UX_TECH_DESIGN.md §9)
+   Calm, precise, trustworthy: a ledger, not a casino.
+   Layout: a navigation rail + a single content column; compact tables
+   for organizing, generous measure for reading.
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Hebrew:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=Frank+Ruhl+Libre:wght@400;500&display=swap');
+
+:root {
+  /* Surfaces and ink: warm paper neutrals, biased slightly toward the accent */
+  --surface: #f8f8f5;
+  --surface-raised: #ffffff;
+  --surface-2: #f1f0eb;
+  --surface-3: #e7e5de;
+  --ink: #181b1d;
+  --ink-2: #474d53;
+  --ink-3: #697077;
+  --rule: #e2e0d9;
+  --rule-strong: #c9c6bc;
+  /* Accent: deep ledger green */
+  --accent: #1e5a50;
+  --accent-hover: #174a42;
+  --accent-ink: #ffffff;
+  --accent-weak: #e0eeea;
+  --accent-text: #1b5047;
+  /* Stage colours (text on tint); always paired with a label */
+  --st-open: #5b6370;        --st-open-bg: #eceef0;
+  --st-assigned: #355089;    --st-assigned-bg: #e6edf8;
+  --st-progress: #835500;    --st-progress-bg: #f9eed6;
+  --st-review: #4a43b2;      --st-review-bg: #ebeafb;
+  --st-changes: #9c4320;     --st-changes-bg: #fae7de;
+  --st-accepted: #216b46;    --st-accepted-bg: #e0f1e6;
+  --st-released: #1e5a50;    --st-released-bg: #dbece7;
+  --st-stalled: #b02a1f;     --st-stalled-bg: #fce6e3;
+  --danger: #b02a1f;
+  --warning: #835500;
+  --shadow-pop: 0 10px 34px rgba(20, 24, 22, 0.14), 0 2px 6px rgba(20, 24, 22, 0.06);
+
+  /* Type */
+  --font-ui: 'IBM Plex Sans', 'IBM Plex Sans Hebrew', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
+  --font-doc: 'Source Serif 4', 'Frank Ruhl Libre', Georgia, 'Times New Roman', serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --fs-xs: 12px;
+  --fs-sm: 13px;
+  --fs-md: 14px;
+  --fs-lg: 16px;
+  --fs-xl: 20px;
+  --fs-2xl: 24px;
+  --fs-3xl: 30px;
+
+  /* Space, shape, motion */
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 20px; --s6: 24px; --s8: 32px; --s10: 40px; --s12: 48px;
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --rail: 236px;
+  --rail-compact: 64px;
+  --content: 1120px;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --fast: 160ms;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --surface: #111413;
+    --surface-raised: #181c1b;
+    --surface-2: #1d2220;
+    --surface-3: #262c2a;
+    --ink: #eceee9;
+    --ink-2: #b4bab5;
+    --ink-3: #8b928d;
+    --rule: #29302d;
+    --rule-strong: #3a423f;
+    --accent: #5cbca5;
+    --accent-hover: #74ccb7;
+    --accent-ink: #0a1a16;
+    --accent-weak: #16302a;
+    --accent-text: #7cd2bd;
+    --st-open: #aab1ba;        --st-open-bg: #252a2d;
+    --st-assigned: #9db6ec;    --st-assigned-bg: #1d2638;
+    --st-progress: #e8bd6a;    --st-progress-bg: #33280f;
+    --st-review: #b3adf6;      --st-review-bg: #26244a;
+    --st-changes: #f0a27f;     --st-changes-bg: #3a2218;
+    --st-accepted: #84d3a6;    --st-accepted-bg: #17301f;
+    --st-released: #7cd2bd;    --st-released-bg: #15302a;
+    --st-stalled: #f3958b;     --st-stalled-bg: #3a1a17;
+    --danger: #f3958b;
+    --warning: #e8bd6a;
+    --shadow-pop: 0 12px 38px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.3);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme='dark'] {
+  --surface: #111413;
+  --surface-raised: #181c1b;
+  --surface-2: #1d2220;
+  --surface-3: #262c2a;
+  --ink: #eceee9;
+  --ink-2: #b4bab5;
+  --ink-3: #8b928d;
+  --rule: #29302d;
+  --rule-strong: #3a423f;
+  --accent: #5cbca5;
+  --accent-hover: #74ccb7;
+  --accent-ink: #0a1a16;
+  --accent-weak: #16302a;
+  --accent-text: #7cd2bd;
+  --st-open: #aab1ba;        --st-open-bg: #252a2d;
+  --st-assigned: #9db6ec;    --st-assigned-bg: #1d2638;
+  --st-progress: #e8bd6a;    --st-progress-bg: #33280f;
+  --st-review: #b3adf6;      --st-review-bg: #26244a;
+  --st-changes: #f0a27f;     --st-changes-bg: #3a2218;
+  --st-accepted: #84d3a6;    --st-accepted-bg: #17301f;
+  --st-released: #7cd2bd;    --st-released-bg: #15302a;
+  --st-stalled: #f3958b;     --st-stalled-bg: #3a1a17;
+  --danger: #f3958b;
+  --warning: #e8bd6a;
+  --shadow-pop: 0 12px 38px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.3);
+  color-scheme: dark;
+}
+
+/* ── Base, scoped to the new UI so the classic global styles can't leak in ── */
+
+.ui,
+.ui *,
+.ui *::before,
+.ui *::after {
+  box-sizing: border-box;
+}
+
+.ui {
+  min-height: 100dvh;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: var(--fs-md);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.ui :where(h1, h2, h3, h4, p, ul, ol, li, figure, blockquote, dl, dd) {
+  margin: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  letter-spacing: normal;
+}
+.ui :where(ul, ol) { list-style: none; }
+.ui :where(a) { color: inherit; text-decoration: none; }
+.ui :where(button, input, select, textarea) { font: inherit; color: inherit; margin: 0; }
+.ui :where(button) { background: none; border: 0; padding: 0; cursor: pointer; }
+.ui :where(table) { border-collapse: collapse; width: 100%; background: none; border: 0; }
+.ui :where(th, td) { padding: 0; border: 0; background: none; text-align: start; font-weight: inherit; }
+.ui :where(tr:nth-child(even), tr:hover) { background: none; }
+.ui :where(label) { margin: 0; font: inherit; color: inherit; }
+.ui :where(img, svg) { display: block; max-width: 100%; }
+.ui :where(::selection) { background: var(--accent-weak); color: var(--ink); }
+
+.ui :focus { outline: none; }
+.ui :focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ── Primitives ─────────────────────────────────────────────── */
+
+.ui .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s2);
+  min-height: 34px;
+  padding-inline: var(--s3);
+  border-radius: var(--r-sm);
+  border: 1px solid var(--rule-strong);
+  background: var(--surface-raised);
+  color: var(--ink);
+  font-weight: 500;
+  font-size: var(--fs-md);
+  line-height: 1.2;
+  white-space: nowrap;
+  transition: background var(--fast) var(--ease), border-color var(--fast) var(--ease);
+}
+.ui .btn:hover { background: var(--surface-2); }
+.ui .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.ui .btn-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.ui .btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+.ui .btn-ghost { border-color: transparent; background: transparent; }
+.ui .btn-ghost:hover { background: var(--surface-2); }
+.ui .btn-danger { color: var(--danger); }
+.ui .btn-sm { min-height: 28px; padding-inline: var(--s2); font-size: var(--fs-sm); gap: 6px; }
+.ui .btn-block { width: 100%; }
+
+.ui .input {
+  width: 100%;
+  min-height: 38px;
+  padding: 7px 10px;
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--r-sm);
+  background: var(--surface-raised);
+  color: var(--ink);
+  font-size: var(--fs-md);
+}
+.ui textarea.input { resize: vertical; line-height: 1.55; }
+.ui .input::placeholder { color: var(--ink-3); }
+.ui .input:focus-visible { outline-offset: 0; }
+
+.ui .field { display: flex; flex-direction: column; gap: 6px; }
+.ui .label { font-size: var(--fs-sm); font-weight: 500; color: var(--ink-2); }
+.ui .hint { font-size: var(--fs-sm); color: var(--ink-3); }
+
+.ui .panel {
+  background: var(--surface-raised);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-md);
+}
+
+.ui .section-title {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.ui .muted { color: var(--ink-3); }
+.ui .num { font-variant-numeric: tabular-nums; }
+.ui .mono { font-family: var(--font-mono); font-size: 0.92em; }
+.ui .kbd {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 1px 5px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 4px;
+  color: var(--ink-3);
+}
+.ui [dir='rtl'] .flip-rtl,
+.ui[dir='rtl'] .flip-rtl { transform: scaleX(-1); }
+
+/* Forms */
+.ui .form { display: flex; flex-direction: column; gap: var(--s4); }
+.ui .form-actions { display: flex; justify-content: flex-end; gap: var(--s2); flex-wrap: wrap; padding-block-start: var(--s2); }
+.ui .grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s4); }
+@media (max-width: 520px) { .ui .grid2 { grid-template-columns: minmax(0, 1fr); } }
+.ui .note { font-size: var(--fs-sm); color: var(--ink-2); padding: 10px 12px; border-radius: var(--r-sm); background: var(--surface-2); }
+.ui select.input { appearance: auto; }
+.ui .rule-diff {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px;
+  padding: 10px 12px; border-radius: var(--r-sm); border: 1px solid var(--rule);
+  font-family: var(--font-mono); font-size: var(--fs-sm);
+}
+.ui .rule-diff .minus { color: var(--st-stalled); background: var(--st-stalled-bg); padding: 2px 8px; border-radius: 4px; text-decoration: line-through; text-decoration-thickness: 1px; }
+.ui .rule-diff .plus { color: var(--st-accepted); background: var(--st-accepted-bg); padding: 2px 8px; border-radius: 4px; }
+.ui .rule-diff .ver { margin-inline-start: auto; color: var(--ink-3); font-size: var(--fs-xs); }
+
+/* Small uppercase label above a figure */
+.ui .eyebrow-label { font-size: var(--fs-xs); font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-3); }
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* View transitions between pages (SvelteKit onNavigate). */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--fast);
+  animation-timing-function: var(--ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) { animation: none; }
+  .ui *, .ui *::before, .ui *::after { transition: none !important; animation: none !important; }
+}

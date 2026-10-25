@@ -79,14 +79,16 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // ── Donations ─────────────────────────────────────────────
-    match /donations/{donationId} {
+    // ── Proposals ──────────────────────────────────────────────
+    match /proposals/{proposalId} {
       allow read:  if isAuthenticated();
       allow write: if false;
     }
 
-    // ── Proposals ──────────────────────────────────────────────
-    match /proposals/{proposalId} {
+    // ── Votes — mirrored from the chain, where they are public anyway ──
+    // proposals/{id}/votes/{walletAddress}; the app queries them as a
+    // collection group to find the signed-in talmid's votes.
+    match /{path=**}/votes/{voter} {
       allow read:  if isAuthenticated();
       allow write: if false;
     }

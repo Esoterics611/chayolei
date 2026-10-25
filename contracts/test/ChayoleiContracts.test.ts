@@ -125,20 +125,34 @@ describe('Chayolei Contracts', () => {
   });
 
   describe('ChayoleiTreasury', () => {
-    it('ETH donation mints TMIM', async () => {
-      const donationEth = ethers.parseEther('0.01');
-      await chayal.sendTransaction({ to: await treasury.getAddress(), value: donationEth });
-      // At $3000/ETH rate: 0.01 ETH = $30 = 300 TMIM
-      const tmimBalance = await tmim.balanceOf(chayal.address);
-      expect(tmimBalance).to.be.gt(0n);
+    it('accepts ETH without minting TMIM', async () => {
+      const amount = ethers.parseEther('0.01');
+      await expect(chayal.sendTransaction({ to: await treasury.getAddress(), value: amount }))
+        .to.emit(treasury, 'EthReceived').withArgs(chayal.address, amount);
+      expect(await treasury.getEthBalance()).to.equal(amount);
+      expect(await treasury.totalEthReceived()).to.equal(amount);
+      expect(await tmim.balanceOf(chayal.address)).to.equal(0n);
+      expect(await tmim.totalSupply()).to.equal(0n);
     });
 
-    it('USDC donation mints TMIM', async () => {
-      const usdcAmount = 1_000_000n; // 1 USDC = 10 TMIM
+    it('accepts USDC without minting TMIM', async () => {
+      const usdcAmount = 1_000_000n; // 1 USDC
       await usdc.transfer(chayal.address, usdcAmount);
       await usdc.connect(chayal).approve(await treasury.getAddress(), usdcAmount);
-      await treasury.connect(chayal).donateUsdc(usdcAmount);
-      expect(await tmim.balanceOf(chayal.address)).to.equal(10n);
+      await expect(treasury.connect(chayal).fundUsdc(usdcAmount))
+        .to.emit(treasury, 'UsdcFunded').withArgs(chayal.address, usdcAmount);
+      expect(await treasury.getUsdcBalance()).to.equal(usdcAmount);
+      expect(await tmim.balanceOf(chayal.address)).to.equal(0n);
+    });
+
+    it('redeems TMIM earned for work into USDC', async () => {
+      // 10 TMIM earned through an approved tafkid, then redeemed at $0.10 each
+      await rewards.approveTafkid(ethers.keccak256(ethers.toUtf8Bytes('tafkid-redeem')), chayal.address, 10);
+      await usdc.transfer(await treasury.getAddress(), 1_000_000n);
+      await expect(treasury.connect(chayal).redeemTmim(10n))
+        .to.emit(treasury, 'TmimRedeemed').withArgs(chayal.address, 10n, 1_000_000n);
+      expect(await tmim.balanceOf(chayal.address)).to.equal(0n);
+      expect(await usdc.balanceOf(chayal.address)).to.equal(1_000_000n);
     });
   });
 });

@@ -65,11 +65,11 @@ Talmidim progress through IDF ranks based on accumulated TMIM and verified contr
 
 The platform token is **TMIM** (תמים — *complete, pure*). Every talmid has a wallet.
 
-**Earning.** Talmidim earn TMIM for completing masimot, peer reviewing, participating in farbrengens, and maintaining learning streaks. All rewards scale with rank multiplier.
+**Earning.** TMIM is minted only for participation: completing masimot, peer reviewing, participating in farbrengens, and maintaining learning streaks. All rewards scale with rank multiplier. Money sent in never mints TMIM.
 
-**Funding.** Supporters donate to the Chayolei DAO — fiat or crypto. Donations enter the on-chain treasury at a target rate of $0.10/TMIM. Supporters can designate funds to a specific makom, a specific mivtza, or the general fund. Everything is transparent on-chain.
+**Crypto only, in our own coin.** Inside the platform everything is TMIM: budgets, rewards, payouts, balances, statements. There is no fiat anywhere: no card, bank or payment-app flows, no on- or off-ramps, and no fiscal sponsor or other institutional connection. Members may swap TMIM for other crypto and cash out through an exchange such as Coinbase; that happens outside the platform. Donations, if any, are handled separately, outside the platform.
 
-**Redeeming.** Talmidim redeem earned TMIM for cash stipends, project funding (printing a sefer, hosting a farbrengen, travel), or chessed initiatives.
+**Redemption.** The contracts can still redeem TMIM for USDC at a governance-set rate; whether that stays is an open decision ([`docs/MARKETING_BRIEF.md`](docs/MARKETING_BRIEF.md) §13), and the redesigned app shows TMIM only.
 
 **Governance.** Voting power = `TMIM balance × rank multiplier`. Talmidim vote on mivtza funding, treasury allocations, and new makomot. Not a suggestion box — real on-chain authority over real funds.
 
@@ -111,9 +111,8 @@ The more a talmid learns, produces, and contributes — the more they earn, the 
 /review               Mashpia review room — approve submitted work
 /governance           Active proposals, voting
 /governance/[id]      Proposal detail and vote
-/treasury             TMIM balance, redemption, treasury stats
+/treasury             TMIM balance, redemption to USDC, treasury stats
 /farbrengen           Community discussion
-/support              Donor portal
 /signup               Onboarding flow
 /settings             Profile, wallet connection, makom assignment
 ```
@@ -127,9 +126,11 @@ The more a talmid learns, produces, and contributes — the more they earn, the 
 - ✅ SvelteKit app running with live Firebase — all state from real Firestore listeners
 - ✅ 8 Solidity contracts deployed and verified on Base Sepolia
 - ✅ EIP-712 rank attestation on governance (C1 security fix shipped)
-- ✅ 35 passing contract tests
-- 🔄 On-chain proposal/vote storage (C2 — in progress)
-- 🔄 Wallet connection UI
+- ✅ 178 passing contract tests; app tests against the Firestore emulator; CI on every pull request
+- ✅ On-chain votes recorded exactly once in Firestore; the chain listener resumes from a checkpoint (C2)
+- ✅ Wallet sign-in with a browser wallet
+- 🔄 Audit fixes L-1, L-2, M-2 and participation-only minting are in the source; contracts need redeploying
+- 🔄 UI redesign around teams producing and publishing: [`docs/UX_REDESIGN.md`](docs/UX_REDESIGN.md)
 - ⬜ External audit
 - ⬜ Base mainnet deployment
 
@@ -164,6 +165,10 @@ npx hardhat test
 npx hardhat run scripts/deploy.ts --network baseSepolia
 ```
 
+### Deploying the web app
+
+Cloud Run behind Firebase Hosting: see [`docs/DEPLOY.md`](docs/DEPLOY.md).
+
 ---
 
 ## Contributing
@@ -171,7 +176,7 @@ npx hardhat run scripts/deploy.ts --network baseSepolia
 This project is early and moving fast. If you want to contribute:
 
 1. Check open issues for `good first issue` tags
-2. The biggest gaps right now are wallet connection, on-chain proposal storage (C2), and the donor portal
+2. The biggest gaps right now are the UI redesign ([`docs/UX_REDESIGN.md`](docs/UX_REDESIGN.md)), passkey wallets with sponsored gas, and redeploying the contracts
 3. Read `SPEC_2_DAO_REQUIREMENTS.md` for the full governance spec before touching contract code
 
 ---
