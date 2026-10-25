@@ -7,7 +7,6 @@
 
   let treasury      = $derived(app.treasury);
   let stats         = $derived(app.treasuryStats);
-  let donations     = $derived([...app.donations].sort((a,b) => b.createdAt.localeCompare(a.createdAt)));
   let streams       = $derived(app.paymentStreams.filter(s => !s.cancelled));
 
   let mivtzaAllocation = $derived(
@@ -20,29 +19,6 @@
   function tmimToUsd(amount: number): string {
     const rate = stats?.redemptionRate ?? 0.10;
     return `$${(amount * rate).toFixed(0)}`;
-  }
-
-  // ── Donation form ────────────────────────────────────────────
-  let showDonateForm = $state(false);
-  let donorName      = $state('');
-  let donateAmount   = $state(100);
-  let donateCurrency = $state<'ETH'|'USDC'>('USDC');
-  let donateMessage  = $state('');
-
-  function handleDonate() {
-    if (!donorName.trim() || donateAmount < 1) return;
-    const tmimMinted = donateAmount * 10;
-    app.addDonation({
-      donorName: donorName.trim(),
-      donorWallet: '0x' + Math.random().toString(16).slice(2, 12),
-      amount: donateAmount,
-      tmimMinted,
-      message: donateMessage.trim() || undefined,
-    });
-    showDonateForm = false;
-    donorName = '';
-    donateAmount = 100;
-    donateMessage = '';
   }
 
   // ── Redemption calculator ────────────────────────────────────
@@ -60,7 +36,7 @@
   <!-- Page header -->
   <div>
     <h1 class="text-2xl font-bold" style="color: var(--color-text-primary); font-family: var(--font-hebrew);">אוצר</h1>
-    <p class="text-sm mt-0.5" style="color: var(--color-text-secondary);">ניהול הקרן הקהילתית — תרומות, TMIM ופדיון</p>
+    <p class="text-sm mt-0.5" style="color: var(--color-text-secondary);">קופת הרשת — TMIM שהונפק על עבודה, הקצאות למבצעים ופדיון ל-USDC</p>
   </div>
 
   <!-- Treasury stats (from Firebase treasury/global) -->
@@ -70,7 +46,7 @@
     <!-- Fallback to legacy treasury object -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
       {#each [
-        { label: 'סה"כ תרומות', value: `$${treasury.totalDonated.toLocaleString()}`, color: 'var(--color-accent-secondary)' },
+        { label: 'TMIM חולקו', value: formatTmim(treasury.totalTmimDistributed), color: 'var(--color-accent-secondary)' },
         { label: 'TMIM הונפקו', value: formatTmim(treasury.totalTmimMinted), color: 'var(--color-accent-primary)' },
         { label: 'TMIM במחזור', value: formatTmim(treasury.tmimCirculating), color: 'var(--color-accent-primary)' },
         { label: 'TMIM נפדה', value: formatTmim(treasury.totalTmimRedeemed), color: 'var(--color-status-success)' },
@@ -106,7 +82,7 @@
       <h3 class="text-xs font-semibold uppercase tracking-widest" style="color: var(--color-text-secondary);">יתרת קופה</h3>
       <div class="flex items-center justify-between">
         <div>
-          <span class="text-4xl font-bold" style="color: var(--color-accent-secondary); font-family: var(--font-mono);">${treasury.currentBalance.toLocaleString()}</span>
+          <span class="text-4xl font-bold" style="color: var(--color-accent-secondary); font-family: var(--font-mono);">{treasury.currentBalance.toLocaleString()} USDC</span>
           <p class="text-xs mt-1" style="color: var(--color-text-tertiary);">זמין לחלוקה ופדיון</p>
         </div>
         <div class="text-right space-y-2 text-xs">
@@ -128,19 +104,6 @@
         <p class="text-[10px]" style="color: var(--color-text-tertiary);">שיעור מינימלי — עשוי לעלות עם גדילת הקרן. משתנה ע"י הצבעת ממשל.</p>
       </div>
 
-      <!-- Wallet -->
-      <div
-        style="
-          background-color: var(--color-bg-tertiary);
-          border: 1px solid var(--color-border-secondary);
-          border-radius: var(--radius-md);
-          padding: 0.75rem;
-        "
-      >
-        <p class="text-xs font-semibold mb-1" style="color: var(--color-accent-secondary);">תמוך בחיילי בית דוד</p>
-        <p class="text-[11px] font-mono break-all" style="color: var(--color-text-primary);">0x1234...5678 (ETH/USDC · Base Sepolia)</p>
-        <p class="text-[10px] mt-1" style="color: var(--color-text-tertiary);">כל תרומה מנפיקה TMIM לאוצר הרשת</p>
-      </div>
     </div>
 
     <!-- Allocation by mivtza -->
@@ -179,94 +142,6 @@
       </div>
     </div>
   </div>
-
-  <!-- Donate button / form -->
-  {#if !showDonateForm}
-    <button
-      onclick={() => showDonateForm = true}
-      class="w-full py-3 text-sm font-semibold transition-colors duration-150"
-      style="
-        border: 1px solid var(--color-accent-secondary);
-        border-radius: var(--radius-lg);
-        background-color: transparent;
-        color: var(--color-accent-secondary);
-        cursor: pointer;
-      "
-      onmouseenter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(125,108,63,0.08)'; }}
-      onmouseleave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; }}
-    >+ תרום לאוצר</button>
-  {:else}
-    <div
-      class="space-y-4"
-      style="
-        background-color: var(--color-bg-secondary);
-        border: 1px solid var(--color-border-primary);
-        border-radius: var(--radius-xl);
-        padding: 1.5rem;
-      "
-    >
-      <h3 class="text-sm font-semibold" style="color: var(--color-text-primary);">תרומה חדשה</h3>
-      <div class="grid grid-cols-2 gap-4">
-        <div class="space-y-1">
-          <label class="text-xs font-semibold" style="color: var(--color-text-secondary);" for="donor">שם התורם</label>
-          <input id="donor" type="text" bind:value={donorName} dir="rtl"
-            style="width: 100%; background-color: var(--color-bg-primary); border: 1px solid var(--color-border-primary); border-radius: var(--radius-md); padding: 0.5rem 0.75rem; font-size: 0.875rem; color: var(--color-text-primary);" />
-        </div>
-        <div class="space-y-1">
-          <label class="text-xs font-semibold" style="color: var(--color-text-secondary);" for="donate-amount">סכום (USD)</label>
-          <input id="donate-amount" type="number" bind:value={donateAmount} min="1"
-            style="width: 100%; background-color: var(--color-bg-primary); border: 1px solid var(--color-border-primary); border-radius: var(--radius-md); padding: 0.5rem 0.75rem; font-size: 0.875rem; color: var(--color-text-primary);" />
-        </div>
-      </div>
-      <!-- Currency toggle -->
-      <div class="flex gap-2">
-        {#each (['USDC', 'ETH'] as const) as cur}
-          <button
-            onclick={() => donateCurrency = cur}
-            class="flex-1 py-2 text-xs font-semibold transition-colors duration-150"
-            style="
-              border: 1px solid {donateCurrency === cur ? 'var(--color-accent-primary)' : 'var(--color-border-primary)'};
-              border-radius: var(--radius-sm);
-              background-color: {donateCurrency === cur ? 'rgba(27,79,114,0.08)' : 'transparent'};
-              color: {donateCurrency === cur ? 'var(--color-accent-primary)' : 'var(--color-text-secondary)'};
-              cursor: pointer;
-            "
-          >{cur}</button>
-        {/each}
-      </div>
-      <div class="space-y-1">
-        <label class="text-xs font-semibold" style="color: var(--color-text-secondary);" for="donate-msg">הודעה (אופציונלי)</label>
-        <input id="donate-msg" type="text" bind:value={donateMessage} dir="rtl"
-          style="width: 100%; background-color: var(--color-bg-primary); border: 1px solid var(--color-border-primary); border-radius: var(--radius-md); padding: 0.5rem 0.75rem; font-size: 0.875rem; color: var(--color-text-primary);" />
-      </div>
-      {#if donateAmount > 0}
-        <p class="text-xs text-center" style="color: var(--color-text-tertiary);">
-          תרומה של <span style="color: var(--color-accent-secondary); font-family: var(--font-mono);">${donateAmount}</span>
-          תנפיק <span style="color: var(--color-accent-secondary); font-family: var(--font-mono);">{donateAmount * 10} TMIM</span> לאוצר
-        </p>
-      {/if}
-      <div class="flex gap-3 justify-end">
-        <button
-          onclick={() => showDonateForm = false}
-          class="px-4 py-2 text-sm"
-          style="background: none; border: 1px solid var(--color-border-primary); border-radius: var(--radius-md); color: var(--color-text-secondary); cursor: pointer;"
-        >ביטול</button>
-        <button
-          onclick={handleDonate}
-          disabled={!donorName.trim() || donateAmount < 1}
-          class="px-5 py-2 text-sm font-semibold"
-          style="
-            background-color: var(--color-accent-secondary);
-            color: var(--color-text-inverse);
-            border: none;
-            border-radius: var(--radius-md);
-            cursor: pointer;
-            opacity: {!donorName.trim() || donateAmount < 1 ? 0.5 : 1};
-          "
-        >תרום</button>
-      </div>
-    </div>
-  {/if}
 
   <!-- Redemption calculator -->
   <div
@@ -372,59 +247,4 @@
     </div>
   {/if}
 
-  <!-- Recent donations -->
-  <div
-    style="
-      background-color: var(--color-bg-secondary);
-      border: 1px solid var(--color-border-primary);
-      border-radius: var(--radius-xl);
-      overflow: hidden;
-    "
-  >
-    <div class="px-5 py-3" style="border-bottom: 1px solid var(--color-border-primary);">
-      <h3 class="text-sm font-semibold" style="color: var(--color-text-primary);">תרומות אחרונות</h3>
-    </div>
-    <div style="divide-y: 1px solid var(--color-border-secondary);">
-      {#each donations as don}
-        {@const mivtza = don.mivtzaId ? app.getMivtza(don.mivtzaId) : null}
-        {@const makom  = don.makomId  ? app.getMakom(don.makomId)   : null}
-        <div
-          class="px-5 py-4 flex items-start gap-4"
-          style="border-bottom: 1px solid var(--color-border-secondary);"
-        >
-          <div
-            class="w-10 h-10 flex items-center justify-center flex-shrink-0"
-            style="
-              background-color: var(--color-bg-tertiary);
-              border: 1px solid var(--color-border-primary);
-              border-radius: var(--radius-md);
-              color: var(--color-accent-secondary);
-            "
-          >{don.donorWallet ? '⬡' : '₪'}</div>
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center gap-2 mb-0.5 flex-wrap">
-              <span class="text-sm font-semibold" style="color: var(--color-text-primary);">{don.donorName}</span>
-              {#if makom}
-                <span class="badge" style="background-color: var(--color-bg-tertiary); color: var(--color-text-secondary);">→ {makom.shem}</span>
-              {:else if mivtza}
-                <span class="badge" style="background-color: rgba(125,108,63,0.1); color: var(--color-accent-secondary);">→ {mivtza.shem}</span>
-              {:else}
-                <span class="badge" style="background-color: var(--color-bg-tertiary); color: var(--color-text-tertiary);">קרן כללית</span>
-              {/if}
-            </div>
-            {#if don.message}
-              <p class="text-xs italic" style="color: var(--color-text-secondary);">{don.message}</p>
-            {/if}
-            <span class="text-[10px]" style="color: var(--color-text-tertiary);">{formatDate(don.createdAt)}</span>
-          </div>
-          <div class="text-right flex-shrink-0">
-            <div class="text-sm font-bold" style="color: var(--color-accent-secondary); font-family: var(--font-mono);">${don.amount.toLocaleString()}</div>
-            <div class="text-[10px]" style="color: var(--color-text-tertiary);">{formatTmim(don.tmimMinted)} TMIM</div>
-          </div>
-        </div>
-      {:else}
-        <div class="px-5 py-8 text-center text-sm" style="color: var(--color-text-tertiary);">אין תרומות עדיין</div>
-      {/each}
-    </div>
-  </div>
 </div>

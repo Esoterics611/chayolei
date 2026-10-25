@@ -18,7 +18,6 @@ import {
   MOCK_TAFKIDIM,
   MOCK_PEER_REVIEWS,
   MOCK_DISCUSSIONS,
-  MOCK_DONATIONS,
   MOCK_TREASURY,
   MOCK_ACTIVITIES,
   MOCK_MAAMARIM,
@@ -35,7 +34,6 @@ import type {
   Tafkid,
   PeerReview,
   Discussion,
-  Donation,
   Treasury,
   Activity,
   ActivityType,
@@ -72,7 +70,6 @@ class AppStore {
   tafkidim      = $state<Tafkid[]>([]);
   peerReviews   = $state<PeerReview[]>([]);
   discussions   = $state<Discussion[]>([]);
-  donations     = $state<Donation[]>([]);
   treasury      = $state<Treasury>(MOCK_TREASURY);
   activities    = $state<Activity[]>([]);
   maamarim      = $state<Maamar[]>(MOCK_MAAMARIM);
@@ -96,7 +93,7 @@ class AppStore {
   // ── counters (in-memory mode only) ────────────────────────────
   private counters: Record<string, number> = {
     mivtza: 100, masima: 100, tafkid: 100, review: 100,
-    discussion: 100, donation: 100, activity: 100, talmid: 100,
+    discussion: 100, activity: 100, talmid: 100,
   };
 
   // JWT claims tier — set from Firebase Auth token on login, reliable even before Firestore syncs
@@ -157,7 +154,6 @@ class AppStore {
       this.tafkidim    = MOCK_TAFKIDIM;
       this.peerReviews = MOCK_PEER_REVIEWS;
       this.discussions = MOCK_DISCUSSIONS;
-      this.donations   = MOCK_DONATIONS;
       this.treasury    = MOCK_TREASURY;
       this.activities  = MOCK_ACTIVITIES;
       this.mekomot     = MOCK_MEKOMOT;
@@ -196,7 +192,6 @@ class AppStore {
         snap<Tafkid>('tafkidim',   v => { this.tafkidim   = v; }),
         snap<PeerReview>('peerReviews', v => { this.peerReviews = v; }),
         snap<Discussion>('discussions', v => { this.discussions  = v; }),
-        snap<Donation>('donations',    v => { this.donations     = v; }),
         onSnapshot(collection(db, 'proposals'), s => {
           this.proposals = s.docs.map(d => {
             const data = d.data();
@@ -248,7 +243,6 @@ class AppStore {
     this.tafkidim    = [];
     this.peerReviews = [];
     this.discussions = [];
-    this.donations   = [];
     this.activities     = [];
     this.proposals      = [];
     this.paymentStreams  = [];
@@ -867,25 +861,6 @@ class AppStore {
   // ══════════════════════════════════════════════════════════════
   // Treasury
   // ══════════════════════════════════════════════════════════════
-
-  async addDonation(data: Omit<Donation, 'id' | 'createdAt'>): Promise<void> {
-    if (USE_FIREBASE) {
-      const res = await this.authFetch('/api/donations', { method: 'POST', body: JSON.stringify(data) });
-      if (!res.ok) { toast.error(await res.text()); return; }
-      toast.success(`תרומה של $${data.amount} התקבלה`);
-      return;
-    }
-    const id = this.nextId('donation');
-    this.donations = [...this.donations, { ...data, id, createdAt: now() }];
-    this.treasury = {
-      ...this.treasury,
-      totalDonated:    this.treasury.totalDonated + data.amount,
-      totalTmimMinted: this.treasury.totalTmimMinted + data.tmimMinted,
-      tmimCirculating: this.treasury.tmimCirculating + data.tmimMinted,
-      currentBalance:  this.treasury.currentBalance + data.amount,
-    };
-    toast.success(`תרומה של $${data.amount} התקבלה`);
-  }
 
   async redeemTmim(talmidId: string, amount: number): Promise<void> {
     if (USE_FIREBASE) {

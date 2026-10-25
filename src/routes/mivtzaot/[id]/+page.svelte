@@ -393,15 +393,6 @@
         {/if}
       </div>
 
-      <!-- קישור תמיכה -->
-      <a
-        href="/support?intent=mivtza_{mivtza.id}&title={encodeURIComponent(pub.titleHebrew)}"
-        class="flex items-center justify-center gap-2 py-3 rounded-xl border font-medium text-sm transition-colors"
-        style="border-color: rgba(245,200,66,0.3); background-color: rgba(245,200,66,0.06); color: var(--color-accent-secondary);"
-        onmouseenter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(245,200,66,0.12)'; }}
-        onmouseleave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(245,200,66,0.06)'; }}>
-        ❤ תמוך בפרסום זה
-      </a>
     </div>
 
   <!-- ביקורות -->

@@ -79,12 +79,6 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // ── Donations ─────────────────────────────────────────────
-    match /donations/{donationId} {
-      allow read:  if isAuthenticated();
-      allow write: if false;
-    }
-
     // ── Proposals ──────────────────────────────────────────────
     match /proposals/{proposalId} {
       allow read:  if isAuthenticated();

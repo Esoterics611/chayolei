@@ -11,7 +11,6 @@ import type {
   Tafkid,
   PeerReview,
   Discussion,
-  Donation,
   Treasury,
   Activity,
   Maamar,
@@ -987,61 +986,9 @@ export const MOCK_DISCUSSIONS: Discussion[] = [
   },
 ];
 
-// ── תרומות (Donations) ──────────────────────────────────────────
-export const MOCK_DONATIONS: Donation[] = [
-  {
-    id: 'don-001',
-    donorName: 'ר׳ שלמה גרינברג',
-    donorWallet: '0xf1e2d3c4b5a6978869504132',
-    amount: 5000,
-    tmimMinted: 50000,
-    makomId: 'makom-001',
-    message: 'לעילוי נשמת אבי מורי — לזכות כל החיילים בירושלים',
-    createdAt: '2026-01-10T00:00:00Z',
-  },
-  {
-    id: 'don-002',
-    donorName: 'משפחת שניאורסון',
-    amount: 2500,
-    tmimMinted: 25000,
-    mivtzaId: 'mv-003',
-    message: 'לתמוך בפרויקט ספר החסידות — יהי רצון שיצא לאור בקרוב',
-    createdAt: '2026-01-25T00:00:00Z',
-  },
-  {
-    id: 'don-003',
-    donorName: 'Anonymous Supporter',
-    donorWallet: '0xa9b8c7d6e5f4031209876543',
-    amount: 10000,
-    tmimMinted: 100000,
-    message: 'General fund — keep up the amazing work!',
-    createdAt: '2026-02-05T00:00:00Z',
-  },
-  {
-    id: 'don-004',
-    donorName: 'ר׳ מנחם אלטר',
-    amount: 1800,
-    tmimMinted: 18000,
-    makomId: 'makom-002',
-    message: 'לברוקלין — שיתחזק המקום ויגדל',
-    createdAt: '2026-02-20T00:00:00Z',
-  },
-  {
-    id: 'don-005',
-    donorName: 'Beis Dovid Foundation',
-    donorWallet: '0x1234567890abcdef1234567890abcdef12345678',
-    amount: 25000,
-    tmimMinted: 250000,
-    mivtzaId: 'mv-002',
-    message: 'For the Rav Kook research project — advancing Torah scholarship',
-    createdAt: '2026-03-01T00:00:00Z',
-  },
-];
-
 // ── אוצר (Treasury) ──────────────────────────────────────────────
 export const MOCK_TREASURY: Treasury = {
-  totalDonated: 44300,
-  totalTmimMinted: 443000,
+  totalTmimMinted: 91100,
   totalTmimDistributed: 91100,
   totalTmimRedeemed: 18200,
   currentBalance: 38200,

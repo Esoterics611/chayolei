@@ -111,9 +111,8 @@ The more a talmid learns, produces, and contributes — the more they earn, the 
 /review               Mashpia review room — approve submitted work
 /governance           Active proposals, voting
 /governance/[id]      Proposal detail and vote
-/treasury             TMIM balance, redemption, treasury stats
+/treasury             TMIM balance, redemption to USDC, treasury stats
 /farbrengen           Community discussion
-/support              Donor portal
 /signup               Onboarding flow
 /settings             Profile, wallet connection, makom assignment
 ```
