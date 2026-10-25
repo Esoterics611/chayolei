@@ -71,13 +71,22 @@ class UiState {
     this.apply();
   }
 
+  /** Whether this app set <html data-theme>; on "system" it removes only its own. */
+  private themed = false;
+
   apply(): void {
     if (typeof document === 'undefined') return;
     const html = document.documentElement;
     html.lang = this.locale;
     html.dir = this.dir;
-    if (this.theme === 'system') html.removeAttribute('data-theme');
-    else html.setAttribute('data-theme', this.theme);
+    if (this.theme !== 'system') {
+      html.setAttribute('data-theme', this.theme);
+      this.themed = true;
+    } else if (this.themed) {
+      // Leave a theme set by whatever hosts the page (e.g. an embedding viewer).
+      html.removeAttribute('data-theme');
+      this.themed = false;
+    }
   }
 
   private save(): void {
