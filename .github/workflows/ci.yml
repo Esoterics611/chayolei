@@ -25,6 +25,8 @@ jobs:
       # Secrets are read at runtime, so the build needs none.
       - run: npm run build
       - run: npm test
+      # The clickable demo: a static, hash-routed build of the new UI.
+      - run: bash scripts/build-demo.sh
 
   contracts:
     name: Contracts — compile and test

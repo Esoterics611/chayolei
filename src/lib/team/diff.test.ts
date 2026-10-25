@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { fakeHash } from './ledger';
 import { diffParagraphs, diffStats, diffWords } from './diff';
 
 describe('diffWords', () => {
@@ -26,5 +27,14 @@ describe('diffParagraphs', () => {
 
   it('handles a first version against nothing', () => {
     expect(diffParagraphs([], ['One.', 'Two.']).map(p => p.kind)).toEqual(['added', 'added']);
+  });
+});
+
+describe('fakeHash', () => {
+  it('fills the requested length without repeating a 4-byte block', () => {
+    const h = fakeHash('Each chapter was translated, reviewed and accepted.', 16);
+    expect(h).toMatch(/^0x[0-9a-f]{32}$/);
+    const blocks = h.slice(2).match(/.{8}/g)!;
+    expect(new Set(blocks).size).toBe(blocks.length);
   });
 });

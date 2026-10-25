@@ -1,0 +1,43 @@
+// Classic pages: boots Firebase auth (or the mock data) on the client.
+// SSR is disabled for the whole app in the root layout (Firebase SDK is client-only).
+
+export const load = async () => {
+  if (typeof window === 'undefined') return {};
+
+  // Check if Firebase is configured
+  const hasFirebase = !!import.meta.env.VITE_FIREBASE_API_KEY;
+
+  if (hasFirebase) {
+    // Dynamic imports so Firebase is only loaded client-side
+    const { auth } = await import('$lib/firebase');
+    const { onAuthStateChanged } = await import('firebase/auth');
+    const { app } = await import('$stores/app.svelte');
+
+    return new Promise<Record<string, never>>((resolve) => {
+      const unsub = onAuthStateChanged(auth, async (user) => {
+        unsub(); // one-shot listener — subsequent auth changes handled by app store
+
+        if (user) {
+          app.isAuthenticated = true;
+          app.currentUserId = user.uid;
+          // Pull tier from JWT claims so isOfficer is correct before Firestore syncs
+          const idTokenResult = await user.getIdTokenResult();
+          app.currentTier = (idTokenResult.claims.tier as 'enlisted' | 'nco' | 'officer') ?? 'enlisted';
+          await app.startListeners();
+        } else {
+          app.isAuthenticated = false;
+          app.currentUserId = null;
+          app.stopListeners();
+        }
+        resolve({});
+      });
+    });
+  } else {
+    // Dev mode — no Firebase config, use mock data
+    const { app } = await import('$stores/app.svelte');
+    // Start listeners will load mock data since USE_FIREBASE is false
+    app.isAuthenticated = true;
+    await app.startListeners();
+    return {};
+  }
+};

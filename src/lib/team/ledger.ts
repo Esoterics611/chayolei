@@ -10,12 +10,14 @@ import { ruleValue } from './rules';
 export const ANCHOR_BATCH = 8;
 const BLOCK_BASE = 18_400_000;
 
-/** FNV-1a over a string, repeated with different seeds to fill `bytes`. */
+/** FNV-1a over a string, repeated with the round appended to fill `bytes`.
+ *  (The round goes at the end: mixed into both the seed and the first
+ *  character, it cancels out and every round comes out the same.) */
 export function fakeHash(input: string, bytes = 32): string {
   let out = '';
   for (let round = 0; out.length < bytes * 2; round++) {
-    let h = 0x811c9dc5 ^ round;
-    const s = `${round}:${input}`;
+    let h = 0x811c9dc5;
+    const s = `${input}#${round}`;
     for (let i = 0; i < s.length; i++) {
       h ^= s.charCodeAt(i);
       h = Math.imul(h, 0x01000193) >>> 0;

@@ -310,7 +310,9 @@ Each phase ships on its own and leaves the app working. Prove acceptance with sc
 | **9. AI roles** | Planner, source finder, reviewer, summarizer as charter roles producing change cards | An AI-proposed breakdown is edited and accepted and shows as AI-assisted |
 | **10. Release and polish** | Releases with ledger credits; accessibility audit; performance budget; usability test with five people from two language groups | A released edition lists every contributor; findings fixed or logged |
 
-**Progress** (update as phases complete): none started as of 2026-10-25.
+**Progress** (update as phases complete):
+- 2026-10-25, branch `claude/ux-redesign`: the whole new UI is built as front-end code on a client-side domain model with sample data (`UX_TECH_DESIGN.md`), in English and Hebrew, light and dark, desktop and phone, and published as a clickable demo (`scripts/build-demo.sh`). Covered: phase 0 (shell, tokens, i18n, palette, TMIM only), 1 (plan: outline and board), 2 (ledger and History tabs, team pulse), 3 (change card, versions, drafts, compare, anchored comments), 4 (accept and pay in one signature, against budget and cap), 5 (decide: rule and money change cards, versioned charter, decision log, members), 6 (treasury: team account, cap, budgets, scheduled pay, statements, wallet), the first-run flow of 7 (charter templates, invite link), Home and threads of 8, releases with credits of 10. The old pages stay at their URLs in `src/routes/(classic)`.
+- Not yet done: the Firestore and contract backend behind `TeamStore` (`UX_TECH_DESIGN.md` §11), real passkeys and per-team contracts (phase 7), notifications (8), AI roles (9), the accessibility audit and usability test (10).
 
 ## 12. Routes today → new home
 

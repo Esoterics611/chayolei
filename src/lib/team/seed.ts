@@ -16,7 +16,13 @@ export interface SeedResult {
 
 export function seedTeams(nowIso: string): SeedResult {
   const now = new Date(nowIso).getTime();
-  const at = (days: number, hours = 0) => new Date(now - days * DAY - hours * HOUR).toISOString();
+  // Seed steps are whole hours apart; a jitter under an hour, the same for equal
+  // times, makes the clock look lived-in without reordering anything.
+  const at = (days: number, hours = 0) => {
+    const time = now - days * DAY - hours * HOUR;
+    const jitter = (Math.imul(Math.floor(time / HOUR), 2654435761) >>> 0) % 47;
+    return new Date(time - jitter * 60_000).toISOString();
+  };
   const brachos = seedBrachos(at);
   const radio = seedRadio(at);
   return {

@@ -40,12 +40,16 @@ src/lib/team/            domain (no UI)
   store.svelte.ts        TeamStore: $state teams, active team, acting member; calls engine; persistence
   ui.svelte.ts           locale, theme, toasts, confirm-and-sign dialog state
   *.test.ts              engine and diff tests (vitest)
-src/lib/ui/              presentational components (no domain logic)
+src/lib/ui/              presentational components and tokens.css (no domain logic)
+src/lib/app/             components that read the store: shell parts, command palette,
+                         shared forms (Dialogs + forms/), ledger sentences (describe.ts),
+                         next-step logic (next.ts), shared actions (actions.ts), plan view
+src/params/              route matchers: deliverable tabs, ledger filters
 src/routes/(app)/        new UI (layout = new shell)
-src/routes/(classic)/    existing pages, unchanged URLs (layout = classic shell)
+src/routes/(classic)/    existing pages, unchanged URLs (layout and auth boot = classic)
 ```
 
-**Rules of the split:** screens read through store getters and call store actions; the store calls `engine.ts`; `engine.ts` is plain TypeScript (testable without Svelte). All amounts are integers of TMIM.
+**Rules of the split:** screens read through store getters and call store actions; the store calls `engine.ts`; `engine.ts` is plain TypeScript (testable without Svelte). All amounts are integers of TMIM. The store saves the demo state to `localStorage` as soon as it seeds, so ids (and links) survive a reload.
 
 ## 4. Domain model (essentials)
 
@@ -131,7 +135,8 @@ Each action checks the acting member's permissions and the charter; failures thr
 | `/decide`, `/decide/log`, `/decide/charter`, `/decide/members` | Decide | Open changes (rules + money), decision log, charter (rules with history, roles), members (roles, record of work) |
 | `/decide/p/[changeId]` | Rule / money change card | Diff of rule or amount, why, decider, tally, vote / approve |
 | `/treasury` | Treasury | Team account, issuance cap meter, budgets table, scheduled pay, statements, my wallet, Request |
-| `/ledger` | Ledger | Filters, day groups, entries with tier marks, expandable proof |
+| `/ledger/[[filter]]` | Ledger | Filters as paths (`/ledger/money`…), day groups, entries with tier marks, expandable proof, 60 at a time |
+| `/wallet` | My wallet | The acting member's TMIM balance, address, paid / put in, history as their gains and losses |
 | `/start` | First run | 3 steps: name & purpose → template → invite; creates and switches team |
 
 **Shell:** a rail on wide screens (team switcher, Home, Plan, Work, Decide, Treasury, then Ledger, search, account), icons-only at medium widths, a bottom bar on phones with the five destinations; a top bar with page title and actions; a persistent "Demo: sample data, not on-chain" marker. **Command palette** (⌘K / Ctrl+K, or the search button): go to any destination, search objectives, deliverables, changes and people, and run actions (new objective, new proposal, request money, switch language, theme, acting member, start a team, reset demo).
@@ -140,7 +145,11 @@ Each action checks the acting member's permissions and the charter; failures thr
 
 ## 8. Components (`src/lib/ui/`)
 
-`AppShell`, `TeamSwitcher`, `AccountMenu`, `CommandPalette`, `Dialog` (native `<dialog>`: focus trap, Esc, inert page), `ConfirmSign` (consequences + simulated passkey, "Signing…" then recorded), `Toasts` (`aria-live`), `PageHeader`, `Tabs` (links with `aria-current`), `ChangeCard` (frame: kind, title, proposer, status, body, decider line, consequences, actions), `TextDiff`, `StageChip`, `TierMark`, `Avatar` (initials; AI badge), `People` (owner → reviewer ✓ approver), `Amount` (tabular TMIM), `Meter` (paid / committed / left; cap), `VoteTally`, `LedgerList`, `EmptyState`, `Field`. Icons: `@lucide/svelte`, with directional icons mirrored in RTL.
+**`src/lib/ui`** (presentational): `Dialog` (native `<dialog>`: focus trap, Esc, inert page; its close button comes last so first focus lands on the content), `ConfirmSign` (consequences + simulated passkey, "Signing…" then recorded), `Toasts` (`aria-live`), `Popover`, `PageHeader`, `Tabs` (links with `aria-current`), `ChangeCard` (frame: kind, title, proposer, status, body, why, tally, decider line, consequences, warnings, actions), `TextDiff` (paragraph + word diff, paragraph numbers, an `annotate` snippet per paragraph for anchored comments), `StageChip`, `StatusChip`, `TierMark`, `Avatar` (initials on a tint from the id; AI badge), `Amount` (tabular TMIM, unit set small), `Meter` (paid / committed / left; cap), `VoteTally` (for / against / abstain / not voted, quorum tick), `EmptyState`.
+
+**`src/lib/app`** (reads the store): `TeamSwitcher`, `AccountMenu` (acting as, language, theme, wallet, reset), `CommandPalette`, `Dialogs` + `forms/` (new objective, new deliverable, propose a rule change, request money, add to team account, request changes), `LedgerList` (the record as a chain: settled entries are square blocks, signed ones round signatures, anchors solid; expandable proof), `NeedsList`, `DeliverableRow`, `DeliverableHeader` (stage, version, people, next step), `VersionList` (commit line with draft, accepted, in review), `Doc`, `People` (owner → reviewer ✓ approver), `Person`, `PlanView` (outline and board), `StageStrip`, `SystemsStrip` (Home: the three systems at a glance), `ChangeWhat` (a rule or money change as a diff or a flow), `DecideHeader`, `BrandMark` (three bars on one base), `TokenMark` (TMIM as a coin carrying that mark), `NotFound`; and `describe.ts` (ledger sentences, icons, filters), `next.ts` (whose move it is), `actions.ts` (take, request review, release), `format.ts`.
+
+Icons: `@lucide/svelte` (`@lucide/svelte/icons/<name>`), with directional icons mirrored in RTL (`.flip-rtl`). Money uses `hand-coins`, not `coins`, which at small sizes reads as the chain link that marks settled entries.
 
 ## 9. Visual system
 
@@ -154,6 +163,7 @@ Each action checks the acting member's permissions and the charter; failures thr
 ## 10. Internationalization and accessibility
 
 - `i18n.ts` holds every UI string in English and Hebrew; `t(key, vars)`; `lt(text)` renders bilingual seed text. Numbers via `Intl.NumberFormat`, dates via `Intl.DateTimeFormat` / `Intl.RelativeTimeFormat`. Locale sets `<html lang dir>`. TMIM is always written in Latin letters.
+- **Bidi:** in Hebrew, `t()` wraps every interpolated value in Unicode isolates (FSI…PDI), together with a `v` written before it or a `%` after it, so names, amounts, versions and arrows keep their order inside right-to-left sentences ("100 TMIM ← 150 TMIM"). Everything people write (documents, comments, messages, version notes) carries `dir="auto"`, so an English document reads left to right inside the Hebrew UI.
 - Landmarks (`nav`, `main`), a skip link, visible focus rings, 24 px minimum targets, keyboard paths for every action, `aria-live` for toasts and signing state, labels on every control, contrast AA in both themes.
 
 ## 11. Swapping in the real backend later
@@ -162,10 +172,11 @@ Each action checks the acting member's permissions and the charter; failures thr
 
 ## 12. Demo build
 
-`scripts/build-demo.sh` copies the repo to a temp dir, removes the `(classic)` group and server code, switches to `adapter-static` with hash routing (`router.type: 'hash'`, `appDir: 'app'`, relative paths), builds with `VITE_HASH_ROUTER=1` (which `nav.ts` reads to produce `#/…` links), and writes `chayolei-new-ui.html` plus its `app/` assets, ready to publish. The demo persists to `localStorage` (try/catch; works without it) and has *Reset demo*.
+`bash scripts/build-demo.sh [out-dir]` (default `demo-build/`, git-ignored; CI runs it) copies the working tree to a temp dir, removes the `(classic)` group and all server code (`api/`, `hooks.server.ts`, `lib/server`) and the root `+layout.ts`, switches to `adapter-static` with hash routing (`router.type: 'hash'`, `appDir: 'app'`, relative paths, fallback page `chayolei-new-ui.html`), builds with `VITE_HASH_ROUTER=1` (which `nav.ts` reads to produce `#/…` links), rewrites the fallback page's root-relative asset links to `./app/…`, and writes `chayolei-new-ui.html` plus its `app/` assets, ready to publish. The demo persists to `localStorage` (try/catch; works without it) and has *Reset demo*.
 
 ## 13. Tests and acceptance
 
-- **Unit (vitest, `npm run test:unit`):** diff; take → assigned; version + review request → in review; accept requires review; accept pays owner and reviewer, updates budget and ledger; budget and cap limits block acceptance; permissions; rule proposal passes and creates a new rule version; fails without quorum; money ≤ limit by role and > limit needs a vote; transfer can't exceed the account; statements add up.
+- **Unit (vitest, `npm run test:unit`; also part of `npm test`), 23 tests:** diff; take → assigned; version + review request → in review; accept requires review; accept pays owner and reviewer, updates budget and ledger; budget and cap limits block acceptance; permissions; rule proposal passes and creates a new rule version; fails without quorum; money ≤ limit by role and > limit needs a vote; transfer can't exceed the account; statements add up.
 - **Checks:** `npm run check` 0 errors; `npm run build` succeeds; classic pages still render.
 - **Visual:** Playwright screenshots of every route in English and Hebrew, light and dark, 1440 px and 390 px; no horizontal scroll; no console errors.
+- **Workflows in the browser** (dev server and the static demo, 2026-10-25, all passing): reviewer comments on a paragraph and marks reviewed; approver accepts and pays through the passkey dialog; the ledger records the payout; members vote a rule change through and the charter shows the new version; a spend within the limit is approved by role; scheduled pay is paid when due; a request above the limit goes to a vote; the command palette finds and opens a deliverable; a contributor takes work, writes v1 and requests review; a new team is started and given its first objective; the language switches to Hebrew.

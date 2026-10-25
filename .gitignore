@@ -45,3 +45,6 @@ __pycache__/
 # Local tooling state
 .claude/settings.local.json
 tmpclaude-*
+
+# Static demo build (scripts/build-demo.sh)
+demo-build/

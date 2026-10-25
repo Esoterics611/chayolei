@@ -30,6 +30,13 @@ describe('seed', () => {
     }
   });
 
+  it('treats only the latest review round as active', () => {
+    const t = brachos();
+    // Chapter 1 had changes requested in round 1, then was accepted in round 2.
+    expect(E.activeWorkChange(t, byTitle(t, 'Chapter 1').id)).toBeUndefined();
+    expect(E.activeWorkChange(t, byTitle(t, 'Chapter 3').id)?.status).toBe('reviewed');
+  });
+
   it('gives each persona something to do', () => {
     const t = brachos();
     const kinds = (m: string) => E.needsYou(t, m, NOW).map(n => n.kind).sort();

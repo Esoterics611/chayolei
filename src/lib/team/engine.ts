@@ -60,9 +60,11 @@ export function workChangesOf(team: Team, deliverableId: string): WorkChange[] {
     .sort((a, b) => b.at.localeCompare(a.at));
 }
 
-/** The review request currently in play for a deliverable, if any. */
+/** The review request currently in play for a deliverable, if any: the latest
+ *  round, while it is open, reviewed or waiting on requested changes. */
 export function activeWorkChange(team: Team, deliverableId: string): WorkChange | undefined {
-  return workChangesOf(team, deliverableId).find(c => c.status === 'open' || c.status === 'reviewed' || c.status === 'changes_requested');
+  const latest = workChangesOf(team, deliverableId).find(c => c.status !== 'superseded');
+  return latest && ['open', 'reviewed', 'changes_requested'].includes(latest.status) ? latest : undefined;
 }
 
 export function isStalled(d: Deliverable, now: string): boolean {
