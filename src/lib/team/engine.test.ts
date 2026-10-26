@@ -155,6 +155,21 @@ describe('rules', () => {
     expect(errKey(() => E.proposeRule(t, 'levi', { ruleKey: 'review_reward', to: 200, title: 'x', why: 'y' }, NOW))).toBe('err.rule_open');
     expect(errKey(() => E.proposeRule(t, 'levi', { ruleKey: 'quorum_pct', to: 40, title: 'x', why: 'y' }, NOW))).toBe('err.rule_unchanged');
   });
+
+  it('refuses values the team contract would refuse', () => {
+    const t = brachos();
+    const propose = (ruleKey: 'quorum_pct' | 'majority_pct' | 'vote_hours' | 'spend_limit', to: number) =>
+      errKey(() => E.proposeRule(t, 'levi', { ruleKey, to, title: 'x', why: 'y' }, NOW));
+    // A 100% majority could never be exceeded: no rule could change again.
+    expect(propose('majority_pct', 100)).toBe('err.rule_range');
+    expect(propose('majority_pct', 40)).toBe('err.rule_range');
+    expect(propose('quorum_pct', 101)).toBe('err.rule_range');
+    expect(propose('vote_hours', 0)).toBe('err.rule_range');
+    expect(propose('vote_hours', 721)).toBe('err.rule_range');
+    expect(propose('spend_limit', 2.5)).toBe('err.invalid_value');
+    expect(propose('spend_limit', -1)).toBe('err.invalid_value');
+    expect(propose('majority_pct', 66)).toBeUndefined();
+  });
 });
 
 describe('money', () => {
@@ -183,6 +198,24 @@ describe('money', () => {
     t.treasury.teamAccount = 100;
     const req = t.changes.find(c => c.kind === 'money' && c.status === 'open')!;
     expect(errKey(() => E.approveMoney(t, 'mendel', req.id, NOW))).toBe('err.insufficient');
+  });
+
+  it('never sets a budget below what has been paid from it', () => {
+    const t = brachos();
+    // The Rashi companion pays Rivka's weekly schedule (150 TMIM, due now).
+    const s = t.treasury.schedules.find(x => x.id === 'sched-rivka')!;
+    const o = E.objective(t, s.objectiveId);
+    const paid = objectiveFigures(t, o).paid;
+    expect(errKey(() => E.requestMoney(t, 'mendel', { action: { type: 'budget', objectiveId: o.id, to: paid - 1 }, title: 'x', why: 'y' }, NOW))).toBe('err.budget_below_paid');
+    // Requested while possible, then overtaken by a payout before the vote ends.
+    const shrink = E.requestMoney(t, 'mendel', { action: { type: 'budget', objectiveId: o.id, to: paid + 100 }, title: 'x', why: 'y' }, NOW);
+    expect(shrink.decidedBy).toBe('vote');
+    for (const m of ['mendel', 'yosef', 'levi', 'shmuel']) E.vote(t, m, shrink.id, 'for', NOW);
+    E.paySchedule(t, 'mendel', s.id, NOW);
+    E.vote(t, 'rivka', shrink.id, 'for', NOW);
+    expect(shrink.status).toBe('failed');
+    expect(o.budget).toBe(8000);
+    expect(t.ledger.at(-1)).toMatchObject({ kind: 'change_failed', data: { reason: 'below_paid' } });
   });
 
   it('pays a due schedule once, then waits a week', () => {

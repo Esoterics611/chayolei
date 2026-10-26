@@ -5,7 +5,7 @@
   import { store } from '$lib/team/store.svelte';
   import { ui } from '$lib/team/ui.svelte';
   import { can } from '$lib/team/rules';
-  import { RULE_ORDER } from '$lib/team/templates';
+  import { PERMISSIONS, RULE_ORDER } from '$lib/team/templates';
   import { lt, t, fmtDate, fmtNum } from '$lib/team/i18n';
   import { href } from '$lib/team/nav';
   import Avatar from '$lib/ui/Avatar.svelte';
@@ -21,7 +21,6 @@
   const canPropose = $derived(can(team, store.me, 'propose'));
   let open = $state<RuleKey | null>(null);
   const rules = $derived(RULE_ORDER.map(k => team.charter.rules.find(r => r.key === k)!).filter(Boolean));
-  const PERMS = ['take_work', 'review_work', 'accept_work', 'release', 'manage_plan', 'propose', 'vote', 'spend'] as const;
   const openRuleChange = (k: RuleKey) => team.changes.find(c => c.kind === 'rule' && c.ruleKey === k && c.status === 'open');
 </script>
 
@@ -92,7 +91,7 @@
         </header>
         <p class="can">{t('decide.charter.can')}</p>
         <ul class="perms">
-          {#each PERMS as p (p)}
+          {#each PERMISSIONS as p (p)}
             <li class:yes={role.permissions.includes(p)}>{#if role.permissions.includes(p)}<Check size={13} />{:else}<span class="no"></span>{/if}{t(`perm.${p}`)}</li>
           {/each}
         </ul>

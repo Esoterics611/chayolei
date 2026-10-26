@@ -75,6 +75,7 @@ const en: Dict = {
   'perm.propose': 'propose changes',
   'perm.vote': 'vote',
   'perm.spend': 'approve spending',
+  'perm.admit': 'admit members',
 
   // Rules
   'rule.deliverable_reward': 'Default deliverable reward',
@@ -285,6 +286,7 @@ const en: Dict = {
   'decide.requestMoney': 'Request money',
   'decide.why': 'Why',
   'decide.rule': 'Rule',
+  'decide.ruleRange': 'From {min} to {max}.',
   'decide.newValue': 'New value',
   'decide.current': 'Current: {value}',
   'decide.proposalTitle': 'Title',
@@ -486,6 +488,8 @@ const en: Dict = {
   'err.insufficient': 'Not enough TMIM: {account} available, {amount} needed.',
   'err.not_due': 'Not due yet.',
   'err.invalid_value': 'Please enter a valid amount.',
+  'err.rule_range': 'This rule takes a whole number from {min} to {max}.',
+  'err.budget_below_paid': 'A budget can’t be less than what has already been paid from it ({paid}).',
   'err.permission.take_work': 'Your role can’t take work.',
   'err.permission.review_work': 'Your role can’t review work.',
   'err.permission.accept_work': 'Your role can’t accept work.',
@@ -494,6 +498,7 @@ const en: Dict = {
   'err.permission.propose': 'Your role can’t propose changes.',
   'err.permission.vote': 'Your role can’t vote.',
   'err.permission.spend': 'Your role can’t approve spending.',
+  'err.permission.admit': 'Your role can’t admit members.',
 
   // Added with the screens
   'plan.objectivePlaceholder': 'e.g. Translate & publish Volume 1',
@@ -728,6 +733,7 @@ const he: Dict = {
   'perm.propose': 'להציע שינויים',
   'perm.vote': 'להצביע',
   'perm.spend': 'לאשר הוצאות',
+  'perm.admit': 'לצרף חברים',
 
   'rule.deliverable_reward': 'תגמול בסיסי לתוצר',
   'rule.deliverable_reward.desc': 'משולם לאחראי כשתוצר מתקבל, אלא אם התכנון קבע סכום אחר.',
@@ -928,6 +934,7 @@ const he: Dict = {
   'decide.requestMoney': 'בקשת כסף',
   'decide.why': 'למה',
   'decide.rule': 'כלל',
+  'decide.ruleRange': 'בין {min} ל־{max}.',
   'decide.newValue': 'ערך חדש',
   'decide.current': 'כרגע: {value}',
   'decide.proposalTitle': 'כותרת',
@@ -1122,6 +1129,8 @@ const he: Dict = {
   'err.insufficient': 'אין מספיק TMIM: זמינים {account}, נדרשים {amount}.',
   'err.not_due': 'עוד לא הגיע הזמן.',
   'err.invalid_value': 'נא להזין סכום תקין.',
+  'err.rule_range': 'הכלל הזה מקבל מספר שלם בין {min} ל־{max}.',
+  'err.budget_below_paid': 'תקציב לא יכול להיות קטן ממה שכבר שולם ממנו ({paid}).',
   'err.permission.take_work': 'התפקיד שלך לא מאפשר לקחת עבודה.',
   'err.permission.review_work': 'התפקיד שלך לא מאפשר לבקר עבודה.',
   'err.permission.accept_work': 'התפקיד שלך לא מאפשר לקבל עבודה.',
@@ -1130,6 +1139,7 @@ const he: Dict = {
   'err.permission.propose': 'התפקיד שלך לא מאפשר להציע שינויים.',
   'err.permission.vote': 'התפקיד שלך לא מאפשר להצביע.',
   'err.permission.spend': 'התפקיד שלך לא מאפשר לאשר הוצאות.',
+  'err.permission.admit': 'התפקיד שלך לא מאפשר לצרף חברים.',
 
   'plan.objectivePlaceholder': 'למשל: תרגום והוצאה לאור של כרך א׳',
   'plan.deliverablePlaceholder': 'למשל: פרק ו׳',
@@ -1299,7 +1309,7 @@ const he: Dict = {
   'shell.tmimOnlyHint': 'קריפטו בלבד, במטבע של הפלטפורמה. בלי כסף פיאט ובלי המרות.',
 };
 
-const DICTS: Record<Locale, Dict> = { en, he };
+export const DICTS: Record<Locale, Dict> = { en, he };
 
 // In right-to-left text every interpolated value (a name, an amount, a version)
 // is a bidi isolate, so Latin and numbers inside Hebrew sentences keep their order.

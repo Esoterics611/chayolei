@@ -4,7 +4,7 @@
   import type { TemplateId } from '$lib/team/types';
   import { store } from '$lib/team/store.svelte';
   import { ui } from '$lib/team/ui.svelte';
-  import { TEMPLATES, RULE_ORDER } from '$lib/team/templates';
+  import { PERMISSIONS, TEMPLATES, RULE_ORDER } from '$lib/team/templates';
   import { fakeHash } from '$lib/team/ledger';
   import { lt, t } from '$lib/team/i18n';
   import { go } from '$lib/team/nav';
@@ -27,7 +27,6 @@
   const tpl = $derived(TEMPLATES[template]);
   const slug = $derived(name.trim().toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '') || 'team');
   const link = $derived(`https://chayolei.app/join/${slug}-${fakeHash(name + you, 3).slice(2)}`);
-  const PERMS = ['take_work', 'review_work', 'accept_work', 'release', 'manage_plan', 'propose', 'vote', 'spend'] as const;
 
   const initials = (s: string) => s.trim().split(/\s+/).map(w => w[0] ?? '').join('').slice(0, 2).toUpperCase() || '?';
 
@@ -116,7 +115,7 @@
             {#each tpl.roles as r (r.id)}
               <li>
                 <span class="rn">{lt(r.name)}</span>
-                <span class="rp">{PERMS.filter(p => r.permissions.includes(p)).map(p => t(`perm.${p}`)).join(' · ')}</span>
+                <span class="rp">{PERMISSIONS.filter(p => r.permissions.includes(p)).map(p => t(`perm.${p}`)).join(' · ')}</span>
               </li>
             {/each}
           </ul>

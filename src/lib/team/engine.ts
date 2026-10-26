@@ -8,8 +8,8 @@ import type {
   Stage, Task, Team, TemplateId, Text, Version, VoteChoice, WorkChange,
 } from './types';
 import { DomainError } from './types';
-import { appendEntry, acceptanceCost, issuedInMonth, objectiveFigures, fakeHash } from './ledger';
-import { can, member, requirePermission, ruleCurrent, ruleValue, voters } from './rules';
+import { appendEntry, acceptanceCost, issuedInMonth, objectiveFigures, objectivePaid, fakeHash } from './ledger';
+import { can, member, requirePermission, requireValidRuleValue, ruleCurrent, ruleValue, voters } from './rules';
 import { charterFromTemplate, TEMPLATES } from './templates';
 
 export const STALL_DAYS = 7;
@@ -400,7 +400,7 @@ export function credits(team: Team, deliverableId: string) {
 export function proposeRule(team: Team, me: string, input: { ruleKey: RuleKey; to: number; title: Text; why: Text }, now: string): RuleChange {
   requirePermission(team, me, 'propose');
   const from = ruleValue(team, input.ruleKey);
-  if (!Number.isFinite(input.to) || input.to < 0) throw new DomainError('err.invalid_value');
+  requireValidRuleValue(input.ruleKey, input.to);
   if (input.to === from) throw new DomainError('err.rule_unchanged');
   if (team.changes.some(c => c.kind === 'rule' && c.ruleKey === input.ruleKey && c.status === 'open')) throw new DomainError('err.rule_open');
   const c: RuleChange = {
@@ -424,6 +424,8 @@ export function requestMoney(team: Team, me: string, input: { action: MoneyActio
   } else {
     const o = objective(team, a.objectiveId);
     if (!Number.isInteger(a.to) || a.to < 0 || a.to === o.budget) throw new DomainError('err.invalid_value');
+    const paid = objectivePaid(team, o.id);
+    if (a.to < paid) throw new DomainError('err.budget_below_paid', { paid });
     amount = Math.abs(a.to - o.budget);
   }
   const decidedBy = amount <= ruleValue(team, 'spend_limit') ? 'role' : 'vote';
@@ -471,10 +473,16 @@ function decide(team: Team, changeId: string, now: string): void {
     appendEntry(team, { kind: 'change_failed', at: now, actorId: c.proposerId, refs: { changeId: c.id }, data: { forPct: Math.round(t.forPct), turnout: Math.round(t.turnoutPct) } });
     return;
   }
-  if (c.kind === 'money' && c.action.type === 'transfer' && c.action.amount > team.treasury.teamAccount) {
+  // Passed, but no longer possible: more than the team account holds, or a
+  // budget below what has been paid from it since it was proposed.
+  const impossible = c.kind !== 'money' ? undefined
+    : c.action.type === 'transfer' && c.action.amount > team.treasury.teamAccount ? 'insufficient'
+    : c.action.type === 'budget' && c.action.to < objectivePaid(team, c.action.objectiveId) ? 'below_paid'
+    : undefined;
+  if (impossible) {
     c.status = 'failed';
     c.decidedAt = now;
-    appendEntry(team, { kind: 'change_failed', at: now, actorId: c.proposerId, refs: { changeId: c.id }, data: { reason: 'insufficient' } });
+    appendEntry(team, { kind: 'change_failed', at: now, actorId: c.proposerId, refs: { changeId: c.id }, data: { reason: impossible } });
     return;
   }
   c.status = 'passed';
@@ -514,6 +522,10 @@ export function approveMoney(team: Team, me: string, changeId: string, now: stri
   if (c.proposerId === me) throw new DomainError('err.self_approve');
   if (c.action.type === 'transfer' && c.action.amount > team.treasury.teamAccount) {
     throw new DomainError('err.insufficient', { account: team.treasury.teamAccount, amount: c.action.amount });
+  }
+  if (c.action.type === 'budget') {
+    const paid = objectivePaid(team, c.action.objectiveId);
+    if (c.action.to < paid) throw new DomainError('err.budget_below_paid', { paid });
   }
   c.status = 'accepted';
   c.decidedAt = now;

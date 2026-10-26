@@ -16,7 +16,8 @@ export type Permission =
   | 'manage_plan'
   | 'propose'
   | 'vote'
-  | 'spend';
+  | 'spend'
+  | 'admit';
 
 export interface Role {
   id: string;
