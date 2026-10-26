@@ -266,7 +266,6 @@ export interface Discussion {
 export interface Treasury {
   totalTmimMinted: number;
   totalTmimDistributed: number;
-  totalTmimRedeemed: number;
   currentBalance: number;
   tmimCirculating: number;
 }
@@ -428,19 +427,8 @@ export interface PaymentStream {
 export interface TreasuryStats {
   tmimCirculating: number;
   tmimTotalMinted: number;
-  usdcBalance: number;
-  ethBalance: number;
-  reserveRatio: number;
-  redemptionRate: number;
   maxMonthlyMint: number;
   currentMonthMinted: number;
-}
-
-export interface RedemptionForm {
-  tmimAmount: number;
-  usdcReceived: number;
-  eligible: boolean;
-  ineligibleReason?: string;
 }
 
 // Rank voting power lookup (mirrors ChayoleiGovernance.sol rankVotingPower array)

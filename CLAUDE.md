@@ -13,7 +13,7 @@ This overrides anything in `docs/` or older code that says otherwise.
 - **Donations are handled separately**, outside the platform. The app does not take, log or acknowledge them, and the contracts never mint TMIM for money sent in.
 - **TMIM is minted only for participation**: accepted deliverables and tasks, reviews and other participation rewards (`docs/SPEC_2_DAO_REQUIREMENTS.md` §2.1, §2.2, §2.4, §2.5).
 
-Still in the code from before this decision: the contracts can redeem TMIM for USDC at a set rate (`ChayoleiTreasury.redeemTmim`, `GovernanceTreasury.redeem`), and today's treasury page shows USDC and a redemption calculator. Redemption will be decided by the owner in the future (`docs/MARKETING_BRIEF.md` §13); until then, don't build UI around USDC or redemption.
+Still in the code from before this decision: the contracts can redeem TMIM for USDC at a set rate (`ChayoleiTreasury.redeemTmim`, `GovernanceTreasury.redeem`). The app no longer shows USDC or redemption anywhere, and its redeem API is gone (2026-10-26). Redemption will be decided by the owner in the future (`docs/MARKETING_BRIEF.md` §13); until then, don't build UI around USDC or redemption.
 
 Docs written before this decision still describe fiat donations, fiscal sponsors, institutional partnerships, USDC payouts and donation-minted TMIM: `docs/GO_TO_MARKET.md`, `docs/INVESTOR_PITCH.md`, `docs/PUBLIC_INTRODUCTION.md`, `docs/TOMCHEI_TMIMIM_OVERVIEW.md`, `docs/SPEC_1_ACADEMIC_UI.md`, `docs/SPEC_2_DAO_REQUIREMENTS.md`, `docs/BACKEND_PLAN.md`. Each carries a note at the top naming what is superseded. Don't build from those parts, and don't reintroduce them in code or copy.
 

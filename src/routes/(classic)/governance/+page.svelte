@@ -192,7 +192,8 @@
                 font-family: var(--font-hebrew);
               "
             >
-              {#each Object.entries(PROPOSAL_TYPE_LABELS) as [value, label]}
+              <!-- Redemption is the owner's decision (CLAUDE.md); not offered as a proposal. -->
+              {#each Object.entries(PROPOSAL_TYPE_LABELS).filter(([value]) => value !== 'redemption_rate') as [value, label]}
                 <option {value}>{label}</option>
               {/each}
             </select>
