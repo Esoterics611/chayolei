@@ -9,6 +9,7 @@
   import RequestMoneyForm from './forms/RequestMoneyForm.svelte';
   import ContributeForm from './forms/ContributeForm.svelte';
   import RequestChangesForm from './forms/RequestChangesForm.svelte';
+  import InviteForm from './forms/InviteForm.svelte';
 
   let open = $state(false);
   $effect(() => { open = !!ui.dialog; });
@@ -21,6 +22,7 @@
     requestMoney: 'decide.requestMoney',
     contribute: 'treasury.contribute',
     requestChanges: 'review.requestChanges',
+    invite: 'invite.title',
   } as const;
   const DESCRIPTIONS: Partial<Record<keyof typeof TITLES, string>> = {
     newObjective: 'plan.objectiveDesc',
@@ -44,6 +46,8 @@
       <ContributeForm done={close} />
     {:else if req.kind === 'requestChanges'}
       <RequestChangesForm done={close} changeId={req.changeId} />
+    {:else if req.kind === 'invite'}
+      <InviteForm done={close} />
     {/if}
   </Dialog>
 {/if}

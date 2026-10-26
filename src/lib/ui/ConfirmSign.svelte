@@ -1,6 +1,6 @@
 <script lang="ts">
-  // Every consequential action is shown with its consequences, then confirmed
-  // with a passkey (simulated in the demo): "Signing…", then recorded.
+  // Every consequential action is shown with its consequences, then confirmed:
+  // "Signing…" while it runs (simulated in the demo), then recorded.
   import { ui } from '$lib/team/ui.svelte';
   import { t } from '$lib/team/i18n';
   import Dialog from './Dialog.svelte';
@@ -18,19 +18,23 @@
   });
 
   function onclose() {
-    if (phase !== 'signing') ui.sign = null;
+    if (phase !== 'signing') ui.signClosed();
   }
 
-  function confirm() {
+  async function confirm() {
     const req = ui.sign;
     if (!req || phase !== 'confirm') return;
     phase = 'signing';
-    setTimeout(() => {
-      const ok = req.onConfirm() !== false;
-      if (!ok) { open = false; ui.sign = null; return; }
-      phase = 'done';
-      setTimeout(() => { open = false; ui.sign = null; }, 650);
-    }, 700);
+    if (ui.demo) await new Promise(r => setTimeout(r, 700));
+    let ok = false;
+    try {
+      ok = (await req.onConfirm()) !== false;
+    } catch (e) {
+      console.error('[sign]', e);
+    }
+    if (!ok) { open = false; ui.signClosed(); return; }
+    phase = 'done';
+    setTimeout(() => { open = false; ui.signClosed(); }, 650);
   }
 </script>
 
@@ -48,11 +52,11 @@
     {/if}
     <p class="final"><Lock size={13} />{t('change.final')}</p>
     {#snippet footer()}
-      <p class="demo">{t('sign.demo')}</p>
+      <p class="demo">{t(ui.demo ? 'sign.demo' : 'sign.live')}</p>
       <button type="button" class="btn" onclick={() => (open = false)} disabled={phase !== 'confirm'}>{t('common.cancel')}</button>
       <button type="button" class="btn btn-primary sign" onclick={confirm} disabled={phase !== 'confirm'} aria-live="polite">
         {#if phase === 'confirm'}
-          <FingerprintPattern size={16} />{ui.sign?.confirmLabel ?? t('sign.confirm')}
+          <FingerprintPattern size={16} />{ui.sign?.confirmLabel ?? t(ui.demo ? 'sign.confirm' : 'sign.confirmLive')}
         {:else if phase === 'signing'}
           <span class="spinner" aria-hidden="true"></span>{t('sign.signing')}
         {:else}

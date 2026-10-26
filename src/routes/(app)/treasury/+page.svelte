@@ -5,7 +5,6 @@
   import type { MoneyChange } from '$lib/team/types';
   import { store } from '$lib/team/store.svelte';
   import { ui } from '$lib/team/ui.svelte';
-  import * as E from '$lib/team/engine';
   import { can, ruleCurrent, ruleValue } from '$lib/team/rules';
   import { issuedInMonth, objectiveFigures, statements } from '$lib/team/ledger';
   import { lt, t, fmtDate, fmtMonth, fmtNum, fmtRelative, fmtTmim } from '$lib/team/i18n';
@@ -53,7 +52,7 @@
         t('treasury.signPayNext', { date: fmtDate(next) }),
       ],
       confirmLabel: t('treasury.payNow'),
-      onConfirm: () => !!store.run((tm, m, n) => { E.paySchedule(tm, m, id, n); return true; }, t('treasury.paid')),
+      onConfirm: async () => !!(await store.do({ type: 'paySchedule', scheduleId: id }, t('treasury.paid'))),
     });
   }
 </script>

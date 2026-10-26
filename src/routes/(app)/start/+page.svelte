@@ -45,14 +45,17 @@
       title: t('start.signCreate', { name: name.trim() }),
       lines: [t('start.signLine1'), t('start.signLine2', { role }), t('start.signLine3')],
       confirmLabel: t('start.create'),
-      onConfirm: () => {
-        const team = store.createTeam({
+      onConfirm: async () => {
+        const team = await store.createTeam({
           name: name.trim(), purpose: purpose.trim(), templateId: template,
-          founder: { name: you.trim(), initials: initials(you), wallet: fakeHash(`${you}|${Date.now()}`, 20) },
+          // The live app uses the signed-in wallet; the demo makes one up.
+          founder: { name: you.trim(), initials: initials(you), wallet: store.live ? '' : fakeHash(`${you}|${Date.now()}`, 20) },
         });
         if (!team) return false;
         ui.toast('success', t('start.created'));
-        go('/plan');
+        // In the live app, the team's real invite link comes next.
+        if (store.live) ui.afterSign = { kind: 'invite' };
+        await go('/plan');
       },
     });
   }
@@ -136,10 +139,14 @@
     <div class="form">
       <div class="panel pad invite">
         <h2 class="q">{t('start.invite')}</h2>
-        <p class="muted">{t('start.inviteHint')}</p>
-        <div class="link"><code>{link}</code><button type="button" class="btn btn-sm" onclick={copy}><Copy size={14} />{t('start.copy')}</button></div>
+        {#if store.live}
+          <p class="muted">{t('start.inviteLive')}</p>
+        {:else}
+          <p class="muted">{t('start.inviteHint')}</p>
+          <div class="link"><code>{link}</code><button type="button" class="btn btn-sm" onclick={copy}><Copy size={14} />{t('start.copy')}</button></div>
+        {/if}
       </div>
-      <p class="passkey"><KeyRound size={16} />{t('start.passkey')}</p>
+      {#if !store.live}<p class="passkey"><KeyRound size={16} />{t('start.passkey')}</p>{/if}
       <div class="form-actions">
         <button type="button" class="btn" onclick={() => (step = 2)}><ArrowLeft size={15} class="flip-rtl" />{t('start.back')}</button>
         <button type="button" class="btn btn-primary" onclick={create}><FingerprintPattern size={15} />{t('start.create')}</button>

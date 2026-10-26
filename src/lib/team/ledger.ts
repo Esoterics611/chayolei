@@ -72,6 +72,19 @@ export function appendEntry(team: Team, e: NewEntry): LedgerEntry {
   return entry;
 }
 
+/** Batches of signed entries whose anchor is confirmed on-chain. */
+export function anchoredBatches(team: Team): Set<number> {
+  const out = new Set<number>();
+  for (const e of team.ledger) if (e.kind === 'anchor' && e.proof.tx) out.add(Number(e.data?.batch ?? 0));
+  return out;
+}
+
+/** Whether an entry's proof is in: a settled entry's transaction, or the
+ *  anchor of a signed entry's batch. (Always true in the demo.) */
+export function isConfirmed(e: LedgerEntry, anchored: Set<number>): boolean {
+  return e.tier === 'settled' ? !!e.proof.tx : anchored.has(e.proof.batch ?? 0);
+}
+
 // ── Derived figures ──────────────────────────────────────────────
 
 export function memberBalance(team: Team, memberId: string): number {

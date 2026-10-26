@@ -70,21 +70,21 @@
   let draft = $state('');
   let generalDraft = $state('');
 
-  function addComment(paragraph: number | undefined, body: string) {
+  async function addComment(paragraph: number | undefined, body: string) {
     if (!c) return false;
-    return !!store.run((tm, m, n) => { E.comment(tm, m, c.id, body, paragraph, n); return true; }, t('review.commented'));
+    return !!(await store.do({ type: 'comment', changeId: c.id, body, paragraph }, t('review.commented')));
   }
-  function submitAnchored(e: SubmitEvent, i: number) {
+  async function submitAnchored(e: SubmitEvent, i: number) {
     e.preventDefault();
-    if (addComment(i, draft)) { draft = ''; composing = null; }
+    if (await addComment(i, draft)) { draft = ''; composing = null; }
   }
-  function submitGeneral(e: SubmitEvent) {
+  async function submitGeneral(e: SubmitEvent) {
     e.preventDefault();
-    if (addComment(undefined, generalDraft)) generalDraft = '';
+    if (await addComment(undefined, generalDraft)) generalDraft = '';
   }
   function markReviewed() {
     if (!c) return;
-    store.run((tm, m, n) => { E.markReviewed(tm, m, c.id, n); return true; }, t('review.marked'));
+    void store.do({ type: 'markReviewed', changeId: c.id }, t('review.marked'));
   }
   function accept() {
     if (!c || !d) return;
@@ -93,7 +93,7 @@
       lines: consequences,
       warnings,
       confirmLabel: t('review.accept'),
-      onConfirm: () => !!store.run((tm, m, n) => { E.acceptAndPay(tm, m, c.id, n); return true; }, t('review.done')),
+      onConfirm: async () => !!(await store.do({ type: 'acceptAndPay', changeId: c.id }, t('review.done'))),
     });
   }
   const statusLabel = $derived(c?.status === 'open' ? t('review.waitingReview', { name: firstName(team, reviewer) }) : undefined);

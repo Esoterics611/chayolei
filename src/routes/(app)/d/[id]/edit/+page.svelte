@@ -42,19 +42,20 @@
 
   function saveDraft() {
     if (!d) return;
-    store.run((tm, m, n) => E.saveDraft(tm, m, d.id, paragraphs, n), t('edit.draftSaved'));
+    void store.do({ type: 'saveDraft', deliverableId: d.id, paragraphs }, t('edit.draftSaved'));
   }
 
-  function saveVersion(thenReview: boolean) {
+  async function saveVersion(thenReview: boolean) {
     if (!d) return;
-    const v = store.run((tm, m, n) => E.saveVersion(tm, m, d.id, paragraphs, note.trim() || t('edit.firstVersion'), n), t('edit.versionSaved', { n: nextN }));
+    const id = d.id;
+    const v = await store.do({ type: 'saveVersion', deliverableId: id, paragraphs, note: note.trim() || t('edit.firstVersion') }, t('edit.versionSaved', { n: nextN }));
     if (!v) return;
     note = '';
     if (thenReview) {
-      const c = store.run((tm, m, n) => E.requestReview(tm, m, d.id, n), t('d.reviewRequested'));
-      if (c) { go(`/d/${d.id}/review/${c.id}`); return; }
+      const c = await store.do({ type: 'requestReview', deliverableId: id }, t('d.reviewRequested'));
+      if (c?.id) { go(`/d/${id}/review/${c.id}`); return; }
     }
-    go(`/d/${d.id}/work`);
+    go(`/d/${id}/work`);
   }
 </script>
 

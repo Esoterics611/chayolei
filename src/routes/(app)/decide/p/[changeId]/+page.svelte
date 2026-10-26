@@ -69,7 +69,7 @@
       title: t('decide.signVote', { choice: t(`decide.vote.${choice}`) }),
       lines: [t('decide.signVoteLine', { title: lt(c.title) }), t('decide.signVoteChange')],
       confirmLabel: t(`decide.vote.${choice}`),
-      onConfirm: () => !!store.run((tm, m, n) => { E.vote(tm, m, c.id, choice, n); return true; }, t('decide.voted')),
+      onConfirm: async () => !!(await store.do({ type: 'vote', changeId: c.id, choice }, t('decide.voted'))),
     });
   }
   function closeNow() {
@@ -78,7 +78,7 @@
       title: t('decide.signClose', { title: lt(c.title) }),
       lines: [t('decide.signCloseLine'), ...(tl ? [t('decide.tally', { for: tl.forVotes, against: tl.against, abstain: tl.abstain })] : [])],
       confirmLabel: t('decide.close'),
-      onConfirm: () => !!store.run((tm, m, n) => { E.closeVoting(tm, m, c.id, n); return true; }),
+      onConfirm: async () => !!(await store.do({ type: 'closeVoting', changeId: c.id })),
     });
   }
   function approve() {
@@ -88,7 +88,7 @@
       lines: consequences,
       warnings,
       confirmLabel: t('decide.approve'),
-      onConfirm: () => !!store.run((tm, m, n) => { E.approveMoney(tm, m, c.id, n); return true; }, t('decide.approved')),
+      onConfirm: async () => !!(await store.do({ type: 'approveMoney', changeId: c.id }, t('decide.approved'))),
     });
   }
   function decline() {
@@ -97,13 +97,13 @@
       title: t('decide.signDecline', { title: lt(c.title) }),
       lines: [t('decide.signDeclineLine')],
       confirmLabel: t('decide.decline'),
-      onConfirm: () => !!store.run((tm, m, n) => { E.declineMoney(tm, m, c.id, n); return true; }, t('decide.declined')),
+      onConfirm: async () => !!(await store.do({ type: 'declineMoney', changeId: c.id }, t('decide.declined'))),
     });
   }
-  function send(e: SubmitEvent) {
+  async function send(e: SubmitEvent) {
     e.preventDefault();
     if (!c) return;
-    const ok = store.run((tm, m, n) => { E.postMessage(tm, m, { type: 'change', id: c.id }, message, n); return true; });
+    const ok = await store.do({ type: 'postMessage', ref: { type: 'change', id: c.id }, body: message });
     if (ok) message = '';
   }
 

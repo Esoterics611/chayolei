@@ -65,19 +65,19 @@
   let taskOwner = $state('');
   let message = $state('');
 
-  function addTask(e: SubmitEvent) {
+  async function addTask(e: SubmitEvent) {
     e.preventDefault();
     if (!d) return;
-    const ok = store.run((tm, m, n) => E.addTask(tm, m, d.id, { title: taskTitle, ownerId: taskOwner || undefined }, n));
+    const ok = await store.do({ type: 'addTask', deliverableId: d.id, title: taskTitle, ownerId: taskOwner || undefined });
     if (ok) { taskTitle = ''; }
   }
   function toggle(id: string, done: boolean) {
-    store.run((tm, m, n) => E.setTaskDone(tm, m, id, done, n));
+    void store.do({ type: 'setTaskDone', taskId: id, done });
   }
-  function send(e: SubmitEvent) {
+  async function send(e: SubmitEvent) {
     e.preventDefault();
     if (!d) return;
-    const ok = store.run((tm, m, n) => { E.postMessage(tm, m, { type: 'deliverable', id: d.id }, message, n); return true; });
+    const ok = await store.do({ type: 'postMessage', ref: { type: 'deliverable', id: d.id }, body: message });
     if (ok) message = '';
   }
 </script>

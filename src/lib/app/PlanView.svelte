@@ -56,7 +56,7 @@
   const byStage = (s: Stage) => shown.filter(d => d.stage === s);
 
   function toggleTask(id: string, done: boolean) {
-    store.run((tm, m, n) => E.setTaskDone(tm, m, id, done, n));
+    void store.do({ type: 'setTaskDone', taskId: id, done });
   }
 </script>
 

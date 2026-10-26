@@ -3,7 +3,7 @@
   // the TMIM it moved; settled entries sit on the chain as blocks, signed ones
   // as signatures. Every entry opens to its proof and links to its object.
   import type { LedgerEntry, Team } from '$lib/team/types';
-  import { groupByDay } from '$lib/team/ledger';
+  import { anchoredBatches, groupByDay, isConfirmed } from '$lib/team/ledger';
   import { fmtDay, fmtRelative, fmtTime, fmtNum, t } from '$lib/team/i18n';
   import TierMark from '$lib/ui/TierMark.svelte';
   import Amount from '$lib/ui/Amount.svelte';
@@ -11,6 +11,7 @@
   import ChevronDown from '@lucide/svelte/icons/chevron-down';
   import Copy from '@lucide/svelte/icons/copy';
   import { ui } from '$lib/team/ui.svelte';
+  import { store } from '$lib/team/store.svelte';
 
   interface Props {
     team: Team;
@@ -26,6 +27,7 @@
   const net = (e: LedgerEntry) => (e.amounts ?? []).filter(a => a.memberId === memberId).reduce((s, a) => s + a.amount, 0);
 
   let open = $state<string | null>(null);
+  const anchored = $derived(anchoredBatches(team));
   const groups = $derived(grouped ? groupByDay(entries) : [{ day: '', entries: [...entries].sort((a, b) => b.seq - a.seq) }]);
   const short = (h: string) => `${h.slice(0, 10)}…${h.slice(-6)}`;
 
@@ -53,7 +55,7 @@
               {/if}
             </div>
             <div class="sub">
-              <TierMark tier={e.tier} label={!compact} />
+              <TierMark tier={e.tier} label={!compact} pending={!isConfirmed(e, anchored)} />
               <span class="time">{grouped ? fmtTime(e.at) : fmtRelative(e.at, now)}</span>
               {#if !compact}
                 <button type="button" class="proof-btn" aria-expanded={open === e.id} onclick={() => (open = open === e.id ? null : e.id)}>
@@ -67,11 +69,13 @@
                   <dt>{t('ledger.tx')}</dt>
                   <dd><code>{short(e.proof.tx)}</code><button type="button" class="copy" onclick={() => copy(e.proof.tx!)} aria-label={t('ledger.tx')}><Copy size={12} /></button></dd>
                   <dt>{t('ledger.block')}</dt><dd><code>{fmtNum(e.proof.block ?? 0)}</code></dd>
+                {:else if e.tier === 'settled'}
+                  <dd class="demo">{t('ledger.pending')}</dd>
                 {:else}
-                  <dt>{t('ledger.sig')}</dt><dd><code>{e.proof.sig}</code></dd>
+                  {#if e.proof.sig}<dt>{t('ledger.sig')}</dt><dd><code>{e.proof.sig}</code></dd>{/if}
                   <dt>{t('ledger.batch', { n: e.proof.batch ?? 0 })}</dt><dd></dd>
                 {/if}
-                <dd class="demo">{t('ledger.demoProof')}</dd>
+                {#if !store.live}<dd class="demo">{t('ledger.demoProof')}</dd>{/if}
               </dl>
             {/if}
           </div>

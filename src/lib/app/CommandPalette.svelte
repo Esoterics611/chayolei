@@ -25,6 +25,7 @@
   import SunMoon from '@lucide/svelte/icons/sun-moon';
   import RotateCcw from '@lucide/svelte/icons/rotate-ccw';
   import UserRound from '@lucide/svelte/icons/user-round';
+  import UserPlus from '@lucide/svelte/icons/user-plus';
   import Target from '@lucide/svelte/icons/target';
   import FileText from '@lucide/svelte/icons/file-text';
   import Search from '@lucide/svelte/icons/search';
@@ -93,11 +94,16 @@
       { id: 'a-lang', group: acts, label: t('palette.switchLanguage'), icon: Languages, run: () => { ui.setLocale(ui.locale === 'en' ? 'he' : 'en'); ui.paletteOpen = false; } },
       { id: 'a-theme', group: acts, label: t('palette.toggleTheme'), hint: t(`account.theme.${ui.theme}`), icon: SunMoon, run: () => { ui.setTheme(ui.theme === 'system' ? 'dark' : ui.theme === 'dark' ? 'light' : 'system'); } },
       { id: 'a-start', group: acts, label: t('team.start'), icon: Sparkles, run: nav('/start') },
-      { id: 'a-reset', group: acts, label: t('account.reset'), icon: RotateCcw, run: () => { ui.paletteOpen = false; store.reset(); go('/'); } },
     );
-    for (const m of team.members) {
-      if (m.id === me) continue;
-      out.push({ id: `p-act-${m.id}`, group: acts, label: t('palette.actAs', { name: lt(m.name) }), hint: rolesOf(team, m.id), icon: UserRound, run: () => { store.actAs(m.id); ui.paletteOpen = false; } });
+    if (can(team, me, 'admit')) {
+      out.push({ id: 'a-invite', group: acts, label: t('invite.title'), icon: UserPlus, run: () => ui.openDialog({ kind: 'invite' }) });
+    }
+    if (!store.live) {
+      out.push({ id: 'a-reset', group: acts, label: t('account.reset'), icon: RotateCcw, run: () => { ui.paletteOpen = false; store.reset(); go('/'); } });
+      for (const m of team.members) {
+        if (m.id === me) continue;
+        out.push({ id: `p-act-${m.id}`, group: acts, label: t('palette.actAs', { name: lt(m.name) }), hint: rolesOf(team, m.id), icon: UserRound, run: () => { store.actAs(m.id); ui.paletteOpen = false; } });
+      }
     }
     for (const o of team.objectives) {
       out.push({ id: `o-${o.id}`, group: t('palette.objectives'), label: lt(o.title), icon: Target, run: nav(`/plan/${o.id}`) });

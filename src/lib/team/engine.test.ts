@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import * as E from './engine';
 import { seedTeams } from './seed';
-import { memberBalance, objectiveFigures, statements, issuedInMonth, ANCHOR_BATCH } from './ledger';
+import { memberBalance, objectiveFigures, statements, issuedInMonth, ANCHOR_BATCH, anchoredBatches, isConfirmed } from './ledger';
 import { ruleValue, ruleCurrent } from './rules';
 import type { Team, WorkChange } from './types';
 import { DomainError } from './types';
@@ -241,6 +241,26 @@ describe('ledger', () => {
     const signed = t.ledger.filter(e => e.tier === 'signed').length;
     const anchors = t.ledger.filter(e => e.kind === 'anchor').length;
     expect(anchors).toBe(Math.floor(signed / ANCHOR_BATCH));
+  });
+});
+
+describe('proofs', () => {
+  it('are stand-ins in the demo, and pending in a live team until the chain confirms', () => {
+    const demo = brachos();
+    const anchoredDemo = anchoredBatches(demo);
+    // Every settled entry has its stand-in transaction; signed entries wait
+    // only in the batch still filling up, which has no anchor yet.
+    const waiting = demo.ledger.filter(e => !isConfirmed(e, anchoredDemo));
+    expect(waiting.every(e => e.tier === 'signed' && e.proof.batch === anchoredDemo.size + 1)).toBe(true);
+    expect(waiting.length).toBeLessThan(ANCHOR_BATCH);
+
+    const live = E.createTeam({ name: 'Live', purpose: '', templateId: 'editorial', live: true, founder: { id: 'u1', name: 'A', initials: 'A', wallet: '0x1' } }, NOW);
+    E.addObjective(live, 'u1', { title: 'Obj', description: '' }, NOW);
+    const [created, objective] = live.ledger;
+    expect(created.proof).toEqual({});
+    expect(objective.proof).toEqual({ batch: 1 });
+    const anchored = anchoredBatches(live);
+    expect(live.ledger.some(e => isConfirmed(e, anchored))).toBe(false);
   });
 });
 

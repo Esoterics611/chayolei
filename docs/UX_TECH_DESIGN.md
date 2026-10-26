@@ -1,12 +1,12 @@
 # New UI — Technical Design
 
-> Written 2026-10-25 on branch `claude/ux-redesign`. Implements the design in `UX_REDESIGN.md` (read it first). This document is what the code is built against; keep it in sync when the code moves.
+> Written 2026-10-25 on branch `claude/ux-redesign`; updated 2026-10-26 for the live backend. Implements the design in `UX_REDESIGN.md` (read it first). This document is what the code is built against; keep it in sync when the code moves.
 
 ## 1. Scope of this branch
 
-**Builds the whole new user experience as working front-end code on a client-side domain model with sample data.** Every screen, workflow and rule in the design works in the browser: taking work, saving versions, review, accept-and-pay, proposals and votes that change the charter, money requests, the ledger, statements, starting a team. Nothing touches Firestore or the chain yet; the sample data and actions live in one store behind a small interface, so a Firestore/contract implementation can replace it later without touching screens (§11).
+**Builds the whole new user experience as working front-end code on a client-side domain model with sample data.** Every screen, workflow and rule in the design works in the browser: taking work, saving versions, review, accept-and-pay, proposals and votes that change the charter, money requests, the ledger, statements, starting a team. The sample data and actions live in one store behind a small interface. Since 2026-10-26 the same screens also run on a live backend (teams in Firestore, written by the server through the same engine; `TEAM_BACKEND.md`), chosen by `VITE_TEAM_BACKEND` (§11). The chain is not connected yet.
 
-**The old UI stays reachable** at its current URLs (campaigns, assignments, governance…) in a `(classic)` route group, so nothing is lost while the new UI matures. The new UI owns `/`, `/plan`, `/work`, `/d/…`, `/decide`, `/treasury`, `/ledger` and `/start`. The classic dashboard and classic treasury page are retired (the new Treasury is TMIM-only, as the economic model requires).
+**The old UI stays reachable** at its current URLs (campaigns, assignments, governance…) in a `(classic)` route group, so nothing is lost while the new UI matures. The new UI owns `/`, `/plan`, `/work`, `/d/…`, `/decide`, `/treasury`, `/ledger`, `/wallet`, `/start` and `/join/…`. The classic dashboard and classic treasury page are retired (the new Treasury is TMIM-only, as the economic model requires).
 
 **The clickable demo** is a static build of this same code (`scripts/build-demo.sh`), published as an artifact.
 
@@ -37,7 +37,10 @@ src/lib/team/            domain (no UI)
   diff.ts                paragraph + word diff
   i18n.ts                messages (en, he), t(), number/date formatting
   nav.ts                 href(), go(), currentPath(): path or hash routing
-  store.svelte.ts        TeamStore: $state teams, active team, acting member; calls engine; persistence
+  commands.ts            every member action as data (Command), applied by applyCommand
+  persist.ts             a Team as Firestore documents (core + ledger, messages, versions)
+  live.ts                the live app's client: wallet sign-in, listeners, API calls
+  store.svelte.ts        TeamStore: teams, active team, acting member; store.do(command) on the demo or live backend
   ui.svelte.ts           locale, theme, toasts, confirm-and-sign dialog state
   *.test.ts              engine and diff tests (vitest)
 src/lib/ui/              presentational components and tokens.css (no domain logic)
@@ -166,9 +169,9 @@ Icons: `@lucide/svelte` (`@lucide/svelte/icons/<name>`), with directional icons 
 - **Bidi:** in Hebrew, `t()` wraps every interpolated value in Unicode isolates (FSI…PDI), together with a `v` written before it or a `%` after it, so names, amounts, versions and arrows keep their order inside right-to-left sentences ("100 TMIM ← 150 TMIM"). Everything people write (documents, comments, messages, version notes) carries `dir="auto"`, so an English document reads left to right inside the Hebrew UI.
 - Landmarks (`nav`, `main`), a skip link, visible focus rings, 24 px minimum targets, keyboard paths for every action, `aria-live` for toasts and signing state, labels on every control, contrast AA in both themes.
 
-## 11. Swapping in the real backend later
+## 11. The live backend
 
-`TeamStore` is the seam. A later `FirestoreTeamRepository` maps: `Team` ← makom (generalized) + per-team charter doc; `Objective` ← mivtza; `Deliverable` ← masima (+ new `versions` subcollection); `Task` ← tafkid; `Change` ← new `changes` collection (rule changes also to `ChayoleiGovernance` proposals); `LedgerEntry` ← new `ledger` collection written by API routes and the chain listener; accept-and-pay → the rewards contract via the approve API. Screens don't change.
+Done 2026-10-26; `TEAM_BACKEND.md` has the details. `TeamStore` is the seam: screens send a `Command` with `store.do()`; in the demo the store applies it in the browser, in the live app (`VITE_TEAM_BACKEND=firestore`) it posts it to `/api/teams/[id]/commands`, where the server applies it with the same engine inside a Firestore transaction. A team is a core document plus `ledger`, `messages` and `versions` subcollections; a member's id is their sign-in uid. Live teams carry no stand-in proofs: the ledger shows settled entries as waiting for the chain until the chain bridge (next, `TEAM_CONTRACTS.md`) confirms them. The classic collections (makomot, mivtzaot, masimot…) are not migrated; live teams start fresh.
 
 ## 12. Demo build
 
@@ -176,7 +179,9 @@ Icons: `@lucide/svelte` (`@lucide/svelte/icons/<name>`), with directional icons 
 
 ## 13. Tests and acceptance
 
-- **Unit (vitest, `npm run test:unit`; also part of `npm test`), 23 tests:** diff; take → assigned; version + review request → in review; accept requires review; accept pays owner and reviewer, updates budget and ledger; budget and cap limits block acceptance; permissions; rule proposal passes and creates a new rule version; fails without quorum; money ≤ limit by role and > limit needs a vote; transfer can't exceed the account; statements add up.
+- **Unit (vitest, `npm run test:unit`; also part of `npm test`), 28 tests:** diff; take → assigned; version + review request → in review; accept requires review; accept pays owner and reviewer, updates budget and ledger; budget and cap limits block acceptance; permissions; rule proposal passes and creates a new rule version; fails without quorum; rule values the contract would refuse; money ≤ limit by role and > limit needs a vote; transfer can't exceed the account; a budget never below what was paid; statements add up; live proofs stay pending; both dictionaries have the same keys and placeholders.
+- **Against the Firestore emulator (`npm test`):** the team service (start, the work flow through payment, charter and input refusals, private drafts, concurrent writers, invites) and the access rules (`TEAM_BACKEND.md` §7).
+- **Browser, repeatable:** `scripts/e2e/run-live.sh` (the live app on the emulators with two simulated wallets: sign in, start a team, invite, join, a budget by vote, take, version, review, accept and pay) and `scripts/e2e/run-demo.sh` (the static demo: a vote, an acceptance, the rule-range check, Hebrew). Both passing 2026-10-26.
 - **Checks:** `npm run check` 0 errors; `npm run build` succeeds; classic pages still render.
 - **Visual:** Playwright screenshots of every route in English and Hebrew, light and dark, 1440 px and 390 px; no horizontal scroll; no console errors.
 - **Workflows in the browser** (dev server and the static demo, 2026-10-25, all passing): reviewer comments on a paragraph and marks reviewed; approver accepts and pays through the passkey dialog; the ledger records the payout; members vote a rule change through and the charter shows the new version; a spend within the limit is approved by role; scheduled pay is paid when due; a request above the limit goes to a vote; the command palette finds and opens a deliverable; a contributor takes work, writes v1 and requests review; a new team is started and given its first objective; the language switches to Hebrew.

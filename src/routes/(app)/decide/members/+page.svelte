@@ -2,6 +2,8 @@
   // Members: charter roles and each person's record of work, from the ledger.
   // No leaderboard: people are listed in the order they joined.
   import { store } from '$lib/team/store.svelte';
+  import { ui } from '$lib/team/ui.svelte';
+  import { can } from '$lib/team/rules';
   import * as E from '$lib/team/engine';
   import { memberBalance } from '$lib/team/ledger';
   import { lt, t, fmtDate, fmtNum } from '$lib/team/i18n';
@@ -12,6 +14,7 @@
   import BadgeCheck from '@lucide/svelte/icons/badge-check';
   import CircleCheck from '@lucide/svelte/icons/circle-check';
   import BookOpenCheck from '@lucide/svelte/icons/book-open-check';
+  import UserPlus from '@lucide/svelte/icons/user-plus';
 
   const team = $derived(store.team);
   function record(id: string) {
@@ -25,6 +28,10 @@
 <svelte:head><title>{t('decide.tab.members')} · {lt(team.name)}</title></svelte:head>
 
 <DecideHeader subtitle={t('decide.membersCount', { n: team.members.filter(m => !m.ai).length })} />
+
+{#if can(team, store.me, 'admit')}
+  <p class="invite"><button type="button" class="btn" onclick={() => ui.openDialog({ kind: 'invite' })}><UserPlus size={15} />{t('invite.title')}</button></p>
+{/if}
 
 <ul class="members">
   {#each team.members as m (m.id)}
@@ -55,6 +62,7 @@
 </ul>
 
 <style>
+  .invite { display: flex; justify-content: flex-end; margin-block-end: var(--s4); }
   .members { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: var(--s4); }
   .members > li { display: grid; grid-template-columns: 1fr auto; gap: 14px 16px; padding: var(--s5); }
   .who { grid-column: 1 / -1; display: flex; gap: 14px; align-items: center; }

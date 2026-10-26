@@ -1,7 +1,6 @@
 <script lang="ts">
   import { untrack } from 'svelte';
   import { store } from '$lib/team/store.svelte';
-  import * as E from '$lib/team/engine';
   import { can, ruleCurrent } from '$lib/team/rules';
   import { lt, t, fmtNum } from '$lib/team/i18n';
   import { dateToIso } from './dates';
@@ -23,15 +22,12 @@
   const reviewers = $derived(team.members.filter(m => can(team, m.id, 'review_work')));
   const approvers = $derived(team.members.filter(m => can(team, m.id, 'accept_work')));
 
-  function submit(e: SubmitEvent) {
+  async function submit(e: SubmitEvent) {
     e.preventDefault();
-    const d = store.run(
-      (tm, me, now) => E.addDeliverable(tm, me, objective, {
-        title, scope, reward: Number(reward), reviewerId: reviewerId || undefined,
-        approverId: approverId || owner || undefined, due: dateToIso(due),
-      }, now),
-      t('plan.created'),
-    );
+    const d = await store.do({
+      type: 'addDeliverable', objectiveId: objective, title, scope, reward: Number(reward),
+      reviewerId: reviewerId || undefined, approverId: approverId || owner || undefined, due: dateToIso(due),
+    }, t('plan.created'));
     if (d) done();
   }
 </script>

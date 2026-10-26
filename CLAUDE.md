@@ -32,6 +32,7 @@ All three share one ledger, and every change to work, rules or money follows one
 - `docs/PITCH_ARTIFACT_PROMPT.md`: a self-contained prompt for a separate session to build a pitch artifact.
 - `docs/DECISIONS.md`: what the owner has decided, what is open, and what the code assumes until then. Record new decisions there.
 - `docs/TEAM_CONTRACTS.md`: the per-team contracts (`contracts/contracts/team/`): what is on-chain, what the chain and the app each enforce, platform powers.
+- `docs/TEAM_BACKEND.md`: the live backend: teams in Firestore, written only by the server through the same engine (`VITE_TEAM_BACKEND=firestore`; the demo is the default).
 - `docs/UX_TECH_DESIGN.md`: how the new UI is built. Domain in `src/lib/team` (engine, ledger, seed, i18n, store; `npm run test:unit`), components in `src/lib/ui` (presentational) and `src/lib/app` (read the store), screens in `src/routes/(app)`; the old pages live on in `src/routes/(classic)`. Every string goes in both dictionaries of `src/lib/team/i18n.ts`. `bash scripts/build-demo.sh` builds the clickable demo.
 
 "Independent of the banking and legal system" means a team can organize, decide and pay without needing a bank account, a registered company or an institution. It does not mean the product is a bank, a legal entity or a way around the law; see the brief's "claims we don't make".

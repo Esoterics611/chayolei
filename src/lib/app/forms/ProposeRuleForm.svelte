@@ -4,7 +4,6 @@
   import type { RuleKey } from '$lib/team/types';
   import { store } from '$lib/team/store.svelte';
   import { ui } from '$lib/team/ui.svelte';
-  import * as E from '$lib/team/engine';
   import { RULE_RANGE, ruleCurrent, ruleValue } from '$lib/team/rules';
   import { RULE_ORDER, RULE_UNITS } from '$lib/team/templates';
   import { t, fmtNum } from '$lib/team/i18n';
@@ -41,9 +40,9 @@
         t('decide.opensVote', { hours: t('unit.hours', { n: fmtNum(hours) }) }),
         t('decide.ifPasses.rule'),
       ],
-      onConfirm: () => {
-        const c = store.run((tm, me, now) => E.proposeRule(tm, me, { ruleKey: key, to: value, title: finalTitle, why }, now), t('decide.proposed'));
-        if (!c) return false;
+      onConfirm: async () => {
+        const c = await store.do({ type: 'proposeRule', ruleKey: key, to: value, title: finalTitle, why }, t('decide.proposed'));
+        if (!c?.id) return false;
         done();
         go(`/decide/p/${c.id}`);
       },

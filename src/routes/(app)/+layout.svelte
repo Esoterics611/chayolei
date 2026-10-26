@@ -19,6 +19,7 @@
   import TokenMark from '$lib/app/TokenMark.svelte';
   import ConfirmSign from '$lib/ui/ConfirmSign.svelte';
   import Toasts from '$lib/ui/Toasts.svelte';
+  import LiveGate from '$lib/app/LiveGate.svelte';
   import House from '@lucide/svelte/icons/house';
   import ListTree from '@lucide/svelte/icons/list-tree';
   import PenLine from '@lucide/svelte/icons/pen-line';
@@ -45,6 +46,14 @@
   const badge = (path: string) => (path === '/' ? needs : path === '/decide' ? openDecisions : 0);
   const mod = isMac() ? '⌘' : 'Ctrl';
 
+  // Live app without an open team: starting a team (once signed in) and
+  // joining by invite (signed in or not) work on their own; anything else
+  // waits behind the gate (loading, sign in, or start your first team).
+  const joining = $derived(inSection(page.url, '/join'));
+  const starting = $derived(inSection(page.url, '/start'));
+  const gated = $derived(store.live && !store.team);
+  const bare = $derived(gated && (joining || (starting && store.status === 'ready')));
+
   onNavigate((navigation) => {
     if (!document.startViewTransition || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     return new Promise((resolve) => {
@@ -69,6 +78,18 @@
 
 <svelte:window {onkeydown} />
 
+{#if bare}
+<div class="ui bare" dir={ui.dir} lang={ui.locale}>
+  <main id="main" tabindex="-1">{@render children()}</main>
+  <ConfirmSign />
+  <Toasts />
+</div>
+{:else if gated}
+<div class="ui" dir={ui.dir} lang={ui.locale}>
+  <LiveGate />
+  <Toasts />
+</div>
+{:else}
 <div class="ui shell" dir={ui.dir} lang={ui.locale}>
   <button type="button" class="skip" onclick={skip}>{t('nav.skip')}</button>
 
@@ -105,7 +126,7 @@
         <span class="kbd">{mod} K</span>
       </button>
       <span class="spacer"></span>
-      <span class="demo" title={t('demo.badge')}><span class="dot" aria-hidden="true"></span><span class="long">{t('demo.badge')}</span><span class="short">{t('demo.short')}</span></span>
+      {#if !store.live}<span class="demo" title={t('demo.badge')}><span class="dot" aria-hidden="true"></span><span class="long">{t('demo.badge')}</span><span class="short">{t('demo.short')}</span></span>{/if}
       <div class="acct-full"><AccountMenu /></div>
       <div class="acct-compact"><AccountMenu compact /></div>
     </header>
@@ -132,9 +153,12 @@
   <ConfirmSign />
   <Toasts />
 </div>
+{/if}
 
 <style>
   :global(html), :global(body) { margin: 0; background: var(--surface); }
+  .bare { min-height: 100dvh; background: var(--surface); }
+  .bare main { max-width: calc(var(--content) + 2 * var(--s8)); margin-inline: auto; padding: var(--s8) var(--s6) var(--s12); outline: none; }
   .shell {
     display: grid;
     grid-template-columns: var(--rail) minmax(0, 1fr);
