@@ -65,6 +65,9 @@ export interface Charter {
   rules: Rule[];
 }
 
+/** An AI helper whose suggestion a member accepted (UX_REDESIGN.md §8). */
+export type Assist = 'planner';
+
 export interface Objective {
   id: string;
   title: Text;
@@ -114,6 +117,8 @@ export interface Deliverable {
   acceptedVersionId?: string;
   lastActivityAt: string;
   releasedAt?: string;
+  /** Added from an AI helper's suggestion. */
+  assist?: Assist;
 }
 
 export interface Task {
@@ -123,6 +128,8 @@ export interface Task {
   ownerId?: string;
   due?: string;
   done: boolean;
+  /** Added from an AI helper's suggestion. */
+  assist?: Assist;
 }
 
 export type VoteChoice = 'for' | 'against' | 'abstain';

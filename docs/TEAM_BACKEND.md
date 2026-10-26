@@ -42,6 +42,7 @@ A member's id **is** their sign-in uid (`wallet_<address>`), so the access rules
 | `POST /api/teams/[id]/invites` | a join link (needs the *admit* permission); 14 days, 25 uses |
 | `GET /api/invites/[token]` | what the link shows before sign-in: name, purpose, roles, rules, member count |
 | `POST /api/invites/[token]/accept` `{ name }` | join with the charter's joiner role; opening it again is harmless |
+| `POST /api/teams/[id]/plan` `{ objectiveId, locale }` | the AI planner's suggested breakdown of an objective (§6a); writes nothing |
 
 All but the invite preview need `Authorization: Bearer <Firebase ID token>`.
 
@@ -72,6 +73,19 @@ With `TEAM_FACTORY_ADDRESS`, `TEAM_FORWARDER_ADDRESS`, `VITE_TMIM_TOKEN_ADDRESS`
 
 **Trust.** The relayer can't act for a member: the contract sees only what the member signed, and the server checks each request against the action. It can refuse to relay, and it anchors signed entries, which the server records under the signed-in member (not yet signed by them one by one). The platform can stop a team's minting (`TeamFactory` allowance), nothing else.
 
+## 6a. The AI planner (`src/lib/server/planner.ts`)
+
+The planner suggests how to break an objective into deliverables and tasks (`UX_REDESIGN.md` §8, phase 9). It only suggests:
+
+1. A member who may change the plan (*manage_plan*) opens **Suggest deliverables** on an objective. The dialog says what will be sent before anything is.
+2. The server checks the member, counts the request against the team's daily allowance (`AI_DAILY`, 40; kept in `teams/{id}/system/ai`, which no browser can read), and asks Claude (`claude-opus-5-5`, or `TEAM_AI_MODEL`) for structured output in the shape of `PLAN_SCHEMA`. A request the model declines is retried server-side on the model Anthropic recommends (`fallbacks: "default"`, beta `server-side-fallback-2026-07-01`); if every model declines, the member is told so.
+3. The answer is checked and trimmed (`readPlan`: at most 8 deliverables of 6 tasks, titles and scopes cut to length) and returned. **Nothing is written.**
+4. The member edits it (drops, renames, re-prices, adds or removes tasks) and adds what they keep with one `addPlan` command, checked by the engine like any other action. Each deliverable and task it adds carries `assist: 'planner'`, and so does its ledger entry: the plan, the deliverable's header, its credits and the ledger all say *AI-assisted*.
+
+**What Claude is shown** (`plannerPrompt`): the team's name and purpose; the objective's title, description, due date and budget left; the team's standard deliverable reward; the objective's existing deliverables (title, scope, reward, stage). Never members, wallets, documents, comments or threads. The team's texts are framed as material to plan, not as instructions.
+
+**Configuration:** `ANTHROPIC_API_KEY` (a secret; without it the planner answers *isn't set up on this server*, 503) and optionally `TEAM_AI_MODEL`. Refusals map to keys the UI explains: `err.ai.unavailable` (503), `err.ai.busy` and `err.ai.limit` (429), `err.ai.failed` (502), `err.ai.declined` (422). The demo calls no AI: it shows a fixed sample breakdown, labelled as one.
+
 ## 7. Running it
 
 ```bash
@@ -82,7 +96,7 @@ npm test
 # The chain bridge on a local Hardhat node (also in CI)
 bash scripts/e2e/run-chain.sh
 # Browser tests (Playwright with Chromium available to Node)
-bash scripts/e2e/run-live.sh          # emulators + dev server in live mode, two simulated wallets
+bash scripts/e2e/run-live.sh          # emulators + dev server in live mode, two simulated wallets, a stand-in for Claude
 E2E=1 bash scripts/e2e/run-chain.sh   # the same, recording on a local chain
 bash scripts/e2e/run-demo.sh          # the static demo
 ```
@@ -94,4 +108,4 @@ Local live app: start the emulators (`npx firebase emulators:start --only firest
 - **Size:** each action reads the whole team. Comfortable for a small team's first years (thousands of entries); later, keep running balances on the core and read only recent entries. The core document (changes with their comments) stays far below Firestore's 1 MB for small teams; very long comment threads would move to a subcollection.
 - **One relayer per server instance:** the relayer counts its own nonces in memory, so run one instance per relayer key (or one relayer service).
 - **Reconciliation:** the app records what happens through it. A call made straight to a team's contract (not through the app) lands on-chain but not in the ledger; a listener that reconciles the two is still to come.
-- **Not yet:** passkey sign-in and sponsored fees for contributions (members' own transfers pay their fee), notifications, rate limits on starting teams and on invites, and moving the classic app's campaigns and assignments into teams (new teams start fresh).
+- **Not yet:** passkey sign-in and sponsored fees for contributions (members' own transfers pay their fee), push notifications, rate limits on starting teams and on invites, and moving the classic app's campaigns and assignments into teams (new teams start fresh).

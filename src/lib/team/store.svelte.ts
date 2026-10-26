@@ -16,6 +16,7 @@ import { member } from './rules';
 import { t } from './i18n';
 import { ui } from './ui.svelte';
 import type { ChainInfo, InviteInfo, LiveClient, Refusal, Signed } from './live';
+import type { PlanSuggestion } from './planner';
 
 /** The live app, on Firestore; otherwise the demo. */
 export const LIVE = import.meta.env.VITE_TEAM_BACKEND === 'firestore';
@@ -218,6 +219,25 @@ class TeamStore {
     this.now = new Date().toISOString();
     if (success) ui.toast('success', success);
     return r.value.result;
+  }
+
+  /** The AI planner's suggested breakdown of an objective, to edit before
+   *  adding it with `addPlan`. The demo calls no AI: it shows a sample, labelled so. */
+  async suggestPlan(objectiveId: string): Promise<PlanSuggestion | undefined> {
+    const team = this.team;
+    if (!team) return undefined;
+    if (!LIVE) {
+      const { samplePlan } = await import('./planner');
+      try {
+        return samplePlan(team, objectiveId, ui.locale);
+      } catch (e) {
+        if (e instanceof DomainError) { this.explain(e); return undefined; }
+        throw e;
+      }
+    }
+    const r = await (await this.liveClient()).suggestPlan(team.id, objectiveId, ui.locale);
+    if (!r.ok) { this.explain(r.error); return undefined; }
+    return r.value;
   }
 
   async createTeam(input: Parameters<typeof E.createTeam>[0]): Promise<Team | undefined> {

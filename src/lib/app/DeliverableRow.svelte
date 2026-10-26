@@ -10,6 +10,7 @@
   import Amount from '$lib/ui/Amount.svelte';
   import People from './People.svelte';
   import { objectiveTitle } from './format';
+  import AiMark from '$lib/ui/AiMark.svelte';
   import ListChecks from '@lucide/svelte/icons/list-checks';
   import GitCommitHorizontal from '@lucide/svelte/icons/git-commit-horizontal';
   import MessageSquare from '@lucide/svelte/icons/message-square';
@@ -43,6 +44,7 @@
       {#if tasks.length}<span class="m"><ListChecks size={13} />{t('plan.tasks', { done: fmtNum(done), total: fmtNum(tasks.length) })}</span>{/if}
       {#if comments}<span class="m"><MessageSquare size={13} />{fmtNum(comments)}</span>{/if}
       {#if d.due}<span class="m"><CalendarClock size={13} />{fmtDate(d.due)}</span>{/if}
+      {#if d.assist}<AiMark compact />{/if}
     </div>
   </div>
   <div class="stage"><StageChip stage={d.stage} {stalledDays} /></div>

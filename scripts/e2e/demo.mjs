@@ -1,5 +1,6 @@
 // Smoke test of the static demo build (scripts/build-demo.sh): a vote, an
-// acceptance, the rule-range check and Hebrew. Run with scripts/e2e/run-demo.sh.
+// acceptance, the AI planner's flow, the rule-range check and Hebrew.
+// Run with scripts/e2e/run-demo.sh.
 import { createRequire } from 'node:module';
 import { mkdirSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
@@ -57,6 +58,28 @@ try {
   await confirm();
   await page.getByText('Accepted and paid').first().waitFor({ timeout: 10000 });
   await shot(page, 'demo-03-accepted');
+
+  // The AI planner (a labelled sample in the demo): suggest, edit, add; the
+  // added deliverables show as AI-assisted in the plan and the ledger.
+  await page.goto(FILE + '#/plan');
+  await page.getByRole('link', { name: 'Rashi companion' }).first().click();
+  await page.getByRole('button', { name: 'Suggest deliverables' }).first().click();
+  const planner = page.locator('dialog[open]');
+  await planner.getByRole('button', { name: 'Suggest', exact: true }).click();
+  await planner.getByText('A sample breakdown, not from an AI.').waitFor({ timeout: 5000 });
+  await planner.getByRole('checkbox', { name: 'Include' }).nth(3).uncheck();
+  await planner.getByLabel('Title').first().fill('Rashi: scope and sources');
+  await page.waitForTimeout(300);
+  await shot(page, 'demo-05-planner');
+  await planner.getByRole('button', { name: 'Add 3 to the plan' }).click();
+  await page.getByText('Added 3 to the plan, marked AI-assisted').first().waitFor({ timeout: 5000 });
+  await page.getByRole('link', { name: 'Rashi: scope and sources' }).first().click();
+  await page.getByRole('heading', { level: 1, name: 'Rashi: scope and sources' }).waitFor({ timeout: 5000 });
+  await page.locator('main .dh').getByText('AI-assisted').waitFor({ timeout: 5000 });
+  await page.waitForTimeout(400); // past the view transition
+  await shot(page, 'demo-06-ai-assisted');
+  await page.goto(FILE + '#/ledger');
+  await page.getByText('“Rashi: scope and sources” from the AI planner’s suggestion').first().waitFor({ timeout: 5000 });
 
   // The proposal form refuses a 100% majority.
   await page.goto(FILE + '#/decide');

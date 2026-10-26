@@ -1,8 +1,11 @@
 // End-to-end check of the live app (VITE_TEAM_BACKEND=firestore) against the
 // Firebase emulators, with two simulated browser wallets: sign in, start a
 // team, invite, join, pass a budget by vote, take work, version it, review,
-// accept and pay. Run it with scripts/e2e/run-live.sh.
+// accept and pay, and plan with the AI planner (Claude stood in for by a
+// local server on port 4321: the runners point the app's ANTHROPIC_BASE_URL
+// at it). Run it with scripts/e2e/run-live.sh.
 import { createRequire } from 'node:module';
+import { createServer } from 'node:http';
 import { mkdirSync } from 'node:fs';
 const { chromium } = createRequire(import.meta.url)('playwright');
 const { Wallet, getBytes } = createRequire(new URL('../../package.json', import.meta.url))('ethers');
@@ -53,6 +56,29 @@ export async function confirmSign(page) {
   await dialog.locator('button.sign').click();
   await dialog.waitFor({ state: 'detached', timeout: 20000 });
 }
+
+// A stand-in for the Claude Messages API, answering every request with one plan.
+const planAsks = [];
+const standIn = createServer((req, res) => {
+  let data = '';
+  req.on('data', c => (data += c));
+  req.on('end', () => {
+    planAsks.push({ url: req.url, beta: req.headers['anthropic-beta'], body: JSON.parse(data || '{}') });
+    const plan = {
+      note: 'Assumes one translator per chapter.',
+      deliverables: [
+        { title: 'Chapter 2', scope: 'Mishnah and English, with notes.', reward: 500, tasks: ['Translate', 'Annotate'] },
+        { title: 'Chapter 3', scope: 'Mishnah and English, with notes.', reward: 500, tasks: [] },
+      ],
+    };
+    res.writeHead(200, { 'content-type': 'application/json' });
+    res.end(JSON.stringify({
+      id: 'msg_e2e', type: 'message', role: 'assistant', model: 'claude-opus-5-5', stop_reason: 'end_turn', stop_sequence: null,
+      usage: { input_tokens: 1, output_tokens: 1 }, content: [{ type: 'text', text: JSON.stringify(plan) }],
+    }));
+  });
+});
+await new Promise(r => standIn.listen(4321, '127.0.0.1', r));
 
 // A clean slate in the emulators.
 const PROJECT = process.env.GCLOUD_PROJECT ?? 'demo-chayolei';
@@ -168,10 +194,32 @@ try {
   }
   await shot(m.page, '11-ledger');
   console.log(`OK: accepted and paid; Levi holds 1,200 TMIM${CHAIN ? ', recorded on-chain' : ''}`);
+
+  // ── The AI planner: Mendel asks, drops one suggestion, renames the other, adds it ──
+  await m.page.goto(BASE + '/plan/' + objectiveId);
+  await m.page.getByRole('button', { name: 'Suggest deliverables' }).first().click();
+  await dlg(m.page).getByText('Anthropic’s Claude', { exact: false }).waitFor({ timeout: 10000 });
+  await dlg(m.page).getByRole('button', { name: 'Suggest', exact: true }).click();
+  await dlg(m.page).getByText('Suggested by AI.', { exact: false }).waitFor({ timeout: 20000 });
+  await dlg(m.page).getByRole('checkbox', { name: 'Include' }).nth(1).uncheck();
+  await dlg(m.page).getByLabel('Title').first().fill('Chapter 2, with notes');
+  await dlg(m.page).getByRole('button', { name: 'Add 1 to the plan' }).click();
+  await dlg(m.page).waitFor({ state: 'detached', timeout: 20000 });
+  await l.page.goto(BASE + '/plan/' + objectiveId);
+  await l.page.getByRole('link', { name: 'Chapter 2, with notes' }).click({ timeout: 20000 });
+  await l.page.locator('main .dh').getByText('AI-assisted').waitFor({ timeout: 20000 });
+  await shot(l.page, '12-ai-assisted');
+  const ask = planAsks.at(-1);
+  if (!ask || !String(ask.beta).includes('server-side-fallback-2026-07-01') || ask.body.fallbacks !== 'default') {
+    throw new Error('the planner did not ask Claude as expected: ' + JSON.stringify(ask ?? null).slice(0, 300));
+  }
+  if (!ask.body.messages[0].content.includes('"title": "Volume 1"')) throw new Error('the planner was not shown the objective');
+  console.log('OK: the AI planner suggested, the lead edited and added; shown as AI-assisted');
 } catch (e) {
   // Leave a picture of every open page for whoever reads the failure.
   for (const [i, page] of browser.contexts().flatMap(c => c.pages()).entries()) await shot(page, `fail-${i}`).catch(() => {});
   throw e;
 } finally {
   await browser.close();
+  standIn.close();
 }

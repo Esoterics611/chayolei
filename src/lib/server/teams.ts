@@ -80,7 +80,7 @@ async function mutate<T>(teamId: string, fn: (team: Team, now: string, tx: Trans
   });
 }
 
-function requireMember(team: Team, uid: string): void {
+export function requireMember(team: Team, uid: string): void {
   if (!team.members.some(m => m.id === uid)) throw new DomainError('err.not_your_team');
 }
 
@@ -107,7 +107,7 @@ function profile(input: unknown): { name: string; initials: string } {
 // ── On-chain teams ───────────────────────────────────────────────
 
 /** The whole team, read outside a transaction (to prepare or check an action). */
-async function loadTeam(teamId: string): Promise<Team> {
+export async function loadTeam(teamId: string): Promise<Team> {
   const ref = teams().doc(teamId);
   const [core, ledger, messages, versions] = await Promise.all([
     ref.get(), ref.collection('ledger').get(), ref.collection('messages').get(), ref.collection('versions').get(),

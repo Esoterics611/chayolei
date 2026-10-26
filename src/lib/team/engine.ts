@@ -4,7 +4,7 @@
 // refusals throw DomainError with an i18n key. `now` is an ISO timestamp.
 
 import type {
-  Change, Deliverable, MoneyAction, MoneyChange, Member, Objective, RuleChange, RuleKey,
+  Assist, Change, Deliverable, MoneyAction, MoneyChange, Member, Objective, RuleChange, RuleKey,
   Stage, Task, Team, TemplateId, Text, Version, VoteChoice, WorkChange,
 } from './types';
 import { DomainError } from './types';
@@ -153,7 +153,7 @@ export function addObjective(team: Team, me: string, input: { title: Text; descr
 
 export function addDeliverable(
   team: Team, me: string, objectiveId: string,
-  input: { title: Text; scope: Text; reviewerId?: string; approverId?: string; reward?: number; due?: string },
+  input: { title: Text; scope: Text; reviewerId?: string; approverId?: string; reward?: number; due?: string; assist?: Assist },
   now: string,
 ): Deliverable {
   requirePermission(team, me, 'manage_plan');
@@ -163,22 +163,45 @@ export function addDeliverable(
     id: newId('d'), objectiveId: o.id, title: input.title, scope: input.scope,
     reviewerId: input.reviewerId, approverId: input.approverId ?? o.ownerId,
     reward: input.reward ?? ruleValue(team, 'deliverable_reward'), due: input.due,
-    stage: 'open', versions: [], lastActivityAt: now,
+    stage: 'open', versions: [], lastActivityAt: now, assist: input.assist,
   };
   team.deliverables.push(d);
-  appendEntry(team, { kind: 'deliverable_created', at: now, actorId: me, refs: { objectiveId: o.id, deliverableId: d.id }, data: { reward: d.reward } });
+  appendEntry(team, {
+    kind: 'deliverable_created', at: now, actorId: me, refs: { objectiveId: o.id, deliverableId: d.id },
+    data: input.assist ? { reward: d.reward, assist: input.assist } : { reward: d.reward },
+  });
   return d;
 }
 
-export function addTask(team: Team, me: string, deliverableId: string, input: { title: Text; ownerId?: string; due?: string }, now: string): Task {
+export function addTask(team: Team, me: string, deliverableId: string, input: { title: Text; ownerId?: string; due?: string; assist?: Assist }, now: string): Task {
   const d = deliverable(team, deliverableId);
   if (d.ownerId !== me && !can(team, me, 'manage_plan')) throw new DomainError('err.not_owner');
   if (!String(typeof input.title === 'string' ? input.title : input.title.en).trim()) throw new DomainError('err.empty');
-  const t: Task = { id: newId('t'), deliverableId: d.id, title: input.title, ownerId: input.ownerId, due: input.due, done: false };
+  const t: Task = { id: newId('t'), deliverableId: d.id, title: input.title, ownerId: input.ownerId, due: input.due, done: false, assist: input.assist };
   team.tasks.push(t);
   touch(d, now);
-  appendEntry(team, { kind: 'task_created', at: now, actorId: me, refs: { deliverableId: d.id, taskId: t.id, objectiveId: d.objectiveId } });
+  appendEntry(team, {
+    kind: 'task_created', at: now, actorId: me, refs: { deliverableId: d.id, taskId: t.id, objectiveId: d.objectiveId },
+    ...(input.assist ? { data: { assist: input.assist } } : {}),
+  });
   return t;
+}
+
+/** A breakdown of an objective, added at once: what a lead accepts from the
+ *  AI planner after editing it, marked with the helper that suggested it. */
+export function addPlan(
+  team: Team, me: string, objectiveId: string,
+  items: { title: Text; scope: Text; reward?: number; tasks?: Text[] }[],
+  assist: Assist | undefined, now: string,
+): Deliverable[] {
+  requirePermission(team, me, 'manage_plan');
+  objective(team, objectiveId);
+  if (!items.length) throw new DomainError('err.empty');
+  return items.map(item => {
+    const d = addDeliverable(team, me, objectiveId, { title: item.title, scope: item.scope, reward: item.reward, assist }, now);
+    for (const title of item.tasks ?? []) addTask(team, me, d.id, { title, assist }, now);
+    return d;
+  });
 }
 
 export function setTaskDone(team: Team, me: string, taskId: string, done: boolean, now: string): void {

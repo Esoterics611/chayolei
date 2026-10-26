@@ -27,7 +27,9 @@ Chayolei is **not** a bank, an employer, a legal entity or an investment. TMIM p
 - ✅ **The chain bridge**: with the team contracts configured, each settled action is signed by the member, relayed by the platform (which pays the fee) and recorded with its transaction. Tested end to end in the browser on a local chain.
 - ✅ The original app's pages, at their old URLs, with on-chain governance votes counted once.
 - 🔄 Deploying the team contracts to Base Sepolia; redeploying the governance contracts with audit fixes L-1, L-2, M-2.
-- ⬜ Passkey sign-in and sponsored fees for every action; notifications; AI helpers; an accessibility audit and usability test (`docs/UX_REDESIGN.md` §11).
+- ✅ **Notifications** in the app; an **accessibility audit** (WCAG 2.2 A/AA, every screen, both languages and themes, desktop and phone) and a size budget, in CI.
+- ✅ **The AI planner:** suggests a breakdown of an objective that a lead edits and adds; what is added shows as AI-assisted. Needs `ANTHROPIC_API_KEY` on the server ([`docs/TEAM_BACKEND.md`](docs/TEAM_BACKEND.md) §6a); the demo shows a labelled sample.
+- ⬜ Passkey sign-in and sponsored fees for every action; push notifications; the other AI helpers; a usability test (`docs/UX_REDESIGN.md` §11).
 - ⬜ External audit; Base mainnet.
 
 Open questions for the owner, and what the code assumes meanwhile, are in [`docs/DECISIONS.md`](docs/DECISIONS.md).

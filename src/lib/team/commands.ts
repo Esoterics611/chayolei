@@ -4,7 +4,7 @@
 // list of actions keeps the two in step and lets the server check every
 // action against the charter itself.
 
-import type { MoneyAction, RuleKey, Team, Text, VoteChoice } from './types';
+import type { Assist, MoneyAction, RuleKey, Team, Text, VoteChoice } from './types';
 import { DomainError } from './types';
 import * as E from './engine';
 
@@ -15,6 +15,11 @@ export type Command =
       reviewerId?: string; approverId?: string; reward?: number; due?: string;
     }
   | { type: 'addTask'; deliverableId: string; title: string; ownerId?: string; due?: string }
+  | {
+      /** A breakdown of an objective added at once, e.g. the AI planner's after the lead edited it. */
+      type: 'addPlan'; objectiveId: string; assist?: Assist;
+      deliverables: { title: string; scope: string; reward?: number; tasks?: string[] }[];
+    }
   | { type: 'setTaskDone'; taskId: string; done: boolean }
   | { type: 'take'; deliverableId: string }
   | { type: 'saveDraft'; deliverableId: string; paragraphs: string[] }
@@ -63,6 +68,10 @@ export function applyCommand(team: Team, me: string, cmd: Command, now: string):
           reward: cmd.reward, due: cmd.due,
         }, now).id,
       };
+    case 'addPlan': {
+      const items = cmd.deliverables.map(x => ({ title: text(x.title), scope: text(x.scope), reward: x.reward, tasks: strings(x.tasks) }));
+      return { id: E.addPlan(team, me, cmd.objectiveId, items, cmd.assist, now)[0]?.id };
+    }
     case 'addTask':
       return { id: E.addTask(team, me, cmd.deliverableId, { title: text(cmd.title), ownerId: cmd.ownerId, due: cmd.due }, now).id };
     case 'setTaskDone':
@@ -124,6 +133,8 @@ const strings = (xs: unknown): string[] => (Array.isArray(xs) ? xs.map(x => Stri
 
 // Limits that keep one team's records a sensible size.
 export const LIMITS = { title: 200, body: 20_000, paragraphs: 2_000, document: 400_000 };
+/** How much one addPlan may add. */
+export const PLAN_LIMITS = { deliverables: 8, tasks: 6 };
 
 const CHOICES = new Set(['for', 'against', 'abstain']);
 const RULE_KEYS = new Set<RuleKey>([
@@ -163,6 +174,18 @@ function checkInput(team: Team, cmd: Command): void {
       if (cmd.reward !== undefined && (!Number.isInteger(cmd.reward) || cmd.reward < 0)) bad();
       break;
     case 'addTask': str(cmd.title, LIMITS.title); memberId(cmd.ownerId); date(cmd.due); break;
+    case 'addPlan':
+      if (cmd.assist !== undefined && cmd.assist !== 'planner') bad();
+      if (!Array.isArray(cmd.deliverables) || !cmd.deliverables.length || cmd.deliverables.length > PLAN_LIMITS.deliverables) bad();
+      for (const x of cmd.deliverables as unknown[]) {
+        if (!x || typeof x !== 'object') bad();
+        const d = x as Record<string, unknown>;
+        str(d.title, LIMITS.title); str(d.scope, LIMITS.body);
+        if (d.reward !== undefined && (!Number.isInteger(d.reward) || (d.reward as number) < 0)) bad();
+        if (d.tasks !== undefined && (!Array.isArray(d.tasks) || d.tasks.length > PLAN_LIMITS.tasks)) bad();
+        for (const task of (d.tasks as unknown[] | undefined) ?? []) str(task, LIMITS.title);
+      }
+      break;
     case 'setTaskDone': if (typeof cmd.done !== 'boolean') bad(); break;
     case 'saveDraft': doc(cmd.paragraphs); break;
     case 'saveVersion': doc(cmd.paragraphs); str(cmd.note, LIMITS.title); break;
@@ -196,7 +219,7 @@ function checkInput(team: Team, cmd: Command): void {
 }
 
 const TYPES: Record<CommandType, true> = {
-  addObjective: true, addDeliverable: true, addTask: true, setTaskDone: true, take: true, saveDraft: true,
+  addObjective: true, addDeliverable: true, addPlan: true, addTask: true, setTaskDone: true, take: true, saveDraft: true,
   saveVersion: true, requestReview: true, comment: true, markReviewed: true, requestChanges: true,
   acceptAndPay: true, release: true, proposeRule: true, requestMoney: true, vote: true, closeVoting: true,
   approveMoney: true, declineMoney: true, contribute: true, paySchedule: true, postMessage: true,

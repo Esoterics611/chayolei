@@ -25,6 +25,7 @@ export interface SignRequest {
 export type DialogRequest =
   | { kind: 'newObjective' }
   | { kind: 'newDeliverable'; objectiveId?: string }
+  | { kind: 'suggestPlan'; objectiveId: string }
   | { kind: 'proposeRule'; ruleKey?: RuleKey }
   | { kind: 'requestMoney'; type?: 'transfer' | 'budget'; objectiveId?: string; to?: string }
   | { kind: 'contribute' }

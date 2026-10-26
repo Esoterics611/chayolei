@@ -32,7 +32,7 @@ gcloud builds submit --project "$PROJECT" --config cloudbuild.yaml --substitutio
 runtime_env="FIREBASE_PROJECT_ID=${PROJECT}"
 for v in BASE_SEPOLIA_RPC_URL VITE_GOVERNANCE_ADDRESS VITE_CHAYOLEI_REGISTRY_ADDRESS \
          VITE_MASIMA_REWARDS_ADDRESS VITE_TMIM_TOKEN_ADDRESS GOVERNANCE_START_BLOCK \
-         TEAM_FACTORY_ADDRESS TEAM_FORWARDER_ADDRESS TEAM_CHAIN_RPC_URL TEAM_EXPLORER_URL; do
+         TEAM_FACTORY_ADDRESS TEAM_FORWARDER_ADDRESS TEAM_CHAIN_RPC_URL TEAM_EXPLORER_URL TEAM_AI_MODEL; do
   val="$(env_val "$v")"
   [ -n "$val" ] && runtime_env+=",${v}=${val}"
 done
@@ -44,6 +44,10 @@ if [ -n "$(env_val TEAM_FACTORY_ADDRESS)" ]; then
   # and one instance relays, since the relayer counts its nonces in memory.
   secrets+=",TEAM_RELAYER_PRIVATE_KEY=team-relayer-private-key:latest"
   scaling+=(--max-instances 1)
+fi
+if [ "$(env_val TEAM_AI)" = "1" ]; then
+  # The AI planner's Claude API key, from Secret Manager (docs/DEPLOY.md).
+  secrets+=",ANTHROPIC_API_KEY=anthropic-api-key:latest"
 fi
 
 echo "Deploying ${SERVICE} to ${REGION}"

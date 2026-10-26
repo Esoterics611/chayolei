@@ -10,6 +10,7 @@ npx firebase emulators:exec --only firestore,auth --project "$GCLOUD_PROJECT" '
       FIREBASE_PROJECT_ID=demo-chayolei VITE_FIREBASE_API_KEY=demo-key \
       VITE_FIREBASE_PROJECT_ID=demo-chayolei VITE_FIREBASE_AUTH_DOMAIN=localhost \
       VITE_FIREBASE_EMULATORS=1 VITE_TEAM_BACKEND=firestore \
+      ANTHROPIC_API_KEY=e2e-key ANTHROPIC_BASE_URL=http://127.0.0.1:4321 \
       node_modules/.bin/vite dev --port 5173 --strictPort > /dev/null 2>&1 &
   server=$!
   trap "kill $server" EXIT

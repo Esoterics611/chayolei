@@ -9,7 +9,8 @@ import { TMIM } from './chain';
 import type { ForwardRequest } from './chain';
 import { fromDocs } from './persist';
 import type { StoredVersion, TeamCore } from './persist';
-import type { LedgerEntry, Message, Team, TemplateId } from './types';
+import type { LedgerEntry, Locale, Message, Team, TemplateId } from './types';
+import type { PlanSuggestion } from './planner';
 
 export interface Refusal {
   key: string;
@@ -144,6 +145,12 @@ export class LiveClient {
 
   send(teamId: string, command: Command, signed?: Signed): Promise<Reply<{ result: CommandResult; team: Team }>> {
     return this.call(`/api/teams/${encodeURIComponent(teamId)}/commands`, { command, signed });
+  }
+
+  /** The AI planner's suggested breakdown of an objective; nothing is written. */
+  async suggestPlan(teamId: string, objectiveId: string, locale: Locale): Promise<Reply<PlanSuggestion>> {
+    const r = await this.call<{ suggestion: PlanSuggestion }>(`/api/teams/${encodeURIComponent(teamId)}/plan`, { objectiveId, locale });
+    return r.ok ? { ok: true, value: r.value.suggestion } : r;
   }
 
   prepareTeam(input: TeamInput): Promise<Reply<Prepare<{ request: ForwardRequest }>>> {

@@ -9,8 +9,8 @@ The app is a SvelteKit server (`@sveltejs/adapter-node`): 37 API routes plus the
 | Value | Where it comes from | Why |
 |---|---|---|
 | `VITE_FIREBASE_*`, `VITE_GOVERNANCE_ADDRESS`, `VITE_TEAM_BACKEND` | `.env` → Cloud Build build args | Baked into the browser bundle at build time; public by nature. `VITE_TEAM_BACKEND=firestore` makes the new UI the live app (`TEAM_BACKEND.md`) |
-| Contract addresses, `BASE_SEPOLIA_RPC_URL`, `GOVERNANCE_START_BLOCK`, `TEAM_FACTORY_ADDRESS`, `TEAM_FORWARDER_ADDRESS`, `TEAM_CHAIN_RPC_URL`, `TEAM_EXPLORER_URL` | `.env` → Cloud Run env vars | Read by the server at runtime |
-| `DEPLOYER_PRIVATE_KEY`, `ATTESTATION_SIGNER_PRIVATE_KEY`, `TEAM_RELAYER_PRIVATE_KEY` | **Secret Manager** → Cloud Run secrets | Never in the image, never in `.env` on the deploy machine's command line. The relayer's secret is needed only when `TEAM_FACTORY_ADDRESS` is set |
+| Contract addresses, `BASE_SEPOLIA_RPC_URL`, `GOVERNANCE_START_BLOCK`, `TEAM_FACTORY_ADDRESS`, `TEAM_FORWARDER_ADDRESS`, `TEAM_CHAIN_RPC_URL`, `TEAM_EXPLORER_URL`, `TEAM_AI_MODEL` | `.env` → Cloud Run env vars | Read by the server at runtime |
+| `DEPLOYER_PRIVATE_KEY`, `ATTESTATION_SIGNER_PRIVATE_KEY`, `TEAM_RELAYER_PRIVATE_KEY`, `ANTHROPIC_API_KEY` | **Secret Manager** → Cloud Run secrets | Never in the image, never in `.env` on the deploy machine's command line. The relayer's secret is needed only when `TEAM_FACTORY_ADDRESS` is set; the Claude API key only with `TEAM_AI=1` |
 | Firebase Admin credentials | Cloud Run's runtime service account | `FIREBASE_CLIENT_EMAIL` / `FIREBASE_PRIVATE_KEY` are for local development only |
 
 ## One-time setup
@@ -57,6 +57,7 @@ firebase deploy --only hosting,firestore     # route the domain to Cloud Run; ru
 
 - **The listener needs an always-on instance.** The script deploys with `--min-instances 1 --no-cpu-throttling`; otherwise Cloud Run stops the CPU between requests and the listener stops polling. That instance runs (and costs) around the clock. Two or more instances are safe: every listener handler is idempotent, so the cost of more is extra RPC calls, not double counting.
 - **Firestore indexes:** the vote listener in the browser uses a collection-group query on `votes.walletAddress`; `firebase deploy --only firestore` creates that index.
+- **The AI planner.** Create the secret (`gcloud secrets create anthropic-api-key --data-file=-`, grant the runtime account access as above) and set `TEAM_AI=1` in `.env`; the script then passes it to Cloud Run as `ANTHROPIC_API_KEY`. Without it the planner says it isn't set up and the rest of the app is unaffected (`TEAM_BACKEND.md` §6a).
 - **Live teams on-chain.** With `TEAM_FACTORY_ADDRESS` in `.env`, create the secret first (`gcloud secrets create team-relayer-private-key --data-file=-`, and grant the runtime account access as above). The relayer pays every team's network fees: keep it funded with Base Sepolia ETH. The script then deploys with `--max-instances 1`, since the relayer counts its nonces in memory. Deploy the team contracts with `contracts/scripts/deploy-teams.ts` and `TEAM_ANCHORER` set to the relayer's address (`TEAM_CONTRACTS.md` §6).
 - **Contracts are separate.** This deploys the web app only. The contract changes on this branch (no minting for money sent in; audit fixes L-1, L-2, M-2) need their own redeploy (`contracts/scripts/`), followed by updated addresses in `.env` and a new app deploy.
 - **Local development is unchanged:** `npm run dev` with a `.env` that includes `FIREBASE_CLIENT_EMAIL` and `FIREBASE_PRIVATE_KEY`.

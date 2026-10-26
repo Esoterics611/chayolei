@@ -44,12 +44,19 @@ try {
     '/decide/charter', '/decide/members', pick(/^#\/decide\/p\//)?.slice(1), '/treasury', '/ledger', '/ledger/money', '/wallet', '/start']
     .filter(Boolean);
   console.log(`Auditing ${routes.length} routes × 2 languages × 2 themes × 2 sizes`);
+  // Demo ids are random per browser: every context gets this one's sample
+  // data, so the screens behind the collected links exist there too.
+  const demo = await page.evaluate(() => localStorage.getItem('chayolei-demo-v1'));
+  if (!demo) throw new Error('the demo saved no data');
 
   for (const [size, viewport] of Object.entries(VIEWPORTS)) {
     for (const locale of ['en', 'he']) {
       for (const theme of ['light', 'dark']) {
         const ctx = await browser.newContext({ viewport });
-        await ctx.addInitScript(([l, th]) => localStorage.setItem('chayolei-ui-v1', JSON.stringify({ locale: l, theme: th })), [locale, theme]);
+        await ctx.addInitScript(([l, th, data]) => {
+          localStorage.setItem('chayolei-ui-v1', JSON.stringify({ locale: l, theme: th }));
+          localStorage.setItem('chayolei-demo-v1', data);
+        }, [locale, theme, demo]);
         const p = await ctx.newPage();
         for (const r of routes) {
           await p.goto(BASE + '#' + r);
@@ -58,7 +65,18 @@ try {
           await p.waitForLoadState('networkidle');
           await p.waitForFunction(() => getComputedStyle(document.querySelector('.ui')).fontFamily.includes('Plex'));
           await p.waitForTimeout(150);
+          if (await p.getByText(/^(That item doesn’t exist any more|הפריט הזה כבר לא קיים)/).count()) throw new Error(`${r} shows "not found" (${locale} ${theme} ${size})`);
           await audit(p, `${r} ${locale} ${theme} ${size}`);
+        }
+        // The AI planner's dialog, holding a suggestion to edit.
+        const objective = routes.find(r => r.startsWith('/plan/'));
+        if (objective) {
+          await p.goto(BASE + '#' + objective);
+          await p.getByRole('button', { name: /Suggest deliverables|הצעת תוצרים/ }).first().click();
+          await p.locator('dialog[open] .form-actions .btn-primary').click();
+          await p.locator('dialog[open] fieldset').first().waitFor();
+          await p.waitForTimeout(250);
+          await audit(p, `planner dialog ${locale} ${theme} ${size}`);
         }
         await ctx.close();
       }
