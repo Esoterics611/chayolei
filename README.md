@@ -1,194 +1,99 @@
-# Chayolei Beis Dovid
+# Chayolei
 
-**חיילי בית דוד** — Soldiers of the House of David.
+**A parallel bank, corporation and workforce system for small teams, on one decentralized ledger.**
 
-A digital network for Torah scholarship and leadership. Local yeshivot and kollelim connected into a global research and publishing community, governed as a DAO with real token economics.
+A team can organize, decide and pay its people without needing a bank account, a registered company or an institution, from anywhere:
 
-> The Rebbe Rashab founded Tomchei Tmimim in 1897 with 18 students. Their mission: train soldiers of Torah who could hold the line against a world trying to erase Jewish life. Eighteen became thousands. They outlasted the Tsar, the Soviets, and seventy years of communist suppression.
->
-> The threat today is different — apathy, assimilation, a generation with access to everything except depth. This platform is the same fight with new tools.
-
----
-
-## The Problem with Existing Platforms
-
-You can watch a shiur on YouTube. You cannot submit a research paper, have your work peer-reviewed, earn standing in a community, rank up based on contribution, or vote on how your community allocates its funds.
-
-Existing platforms are consumption tools. Chayolei is a production and governance system.
-
----
-
-## How It Works
-
-### The Student Lifecycle
-
-```
-ENLIST  →  Sign up, get assigned to a makom (location), receive starting rank
-LEARN   →  Pick up masimot (assignments) from active mivtzaot (campaigns)
-SUBMIT  →  Write the paper, the source analysis, the chapter draft
-REVIEW  →  Peer-review others' work. Get reviewed. Earn TMIM for both.
-RANK UP →  Verified contribution promotes you: Turai → Samal → Seren → Aluf
-GOVERN  →  Vote on which mivtzaot to fund, where the treasury goes
-```
-
-### Core Concepts
-
-| Term | Meaning |
-|---|---|
-| **Mivtza** (מבצע) | A campaign — a course, research group, collaborative sefer project, or chaburah. Instructors set the objective and break it into work. |
-| **Masimah** (משימה) | An assignment within a mivtza — a paper, source analysis, chapter draft, or presentation. Not a worksheet. Scholarship. |
-| **Tafkid** (תפקיד) | A sub-task or role. The atomic unit of work. |
-| **Anash** | The community — all registered members across all makomot. |
-| **Makom** | A local community node: a city, a yeshiva, a kollel. |
-| **Farbrengen** | Community discussion space. On-chain governance proposals live here too. |
-
-### Rank System
-
-Talmidim progress through IDF ranks based on accumulated TMIM and verified contribution. Rank is not honorary — it determines voting power, earning multipliers, and leadership eligibility.
-
-| Rank | Hebrew | Multiplier | TMIM threshold |
-|---|---|---|---|
-| Turai | טוראי | 1.0× | 0 |
-| Rav Turai | רב טוראי | 1.2× | 200 |
-| Samal | סמל | 1.5× | 800 |
-| Samal Rishon | סמ"ר | 2.0× | 2,000 |
-| Rav Samal | רס"מ | 2.5× | 5,000 |
-| Segen | סגן | 3.0× | 10,000 |
-| Seren | סרן | 4.0× | 20,000 |
-| Rav Seren | רב סרן | 5.0× | 40,000 |
-| Sgan Aluf | סגן אלוף | 7.0× | 75,000 |
-| Aluf | אלוף | 10.0× | 150,000 |
-
----
-
-## Token Economics (TMIM)
-
-The platform token is **TMIM** (תמים — *complete, pure*). Every talmid has a wallet.
-
-**Earning.** TMIM is minted only for participation: completing masimot, peer reviewing, participating in farbrengens, and maintaining learning streaks. All rewards scale with rank multiplier. Money sent in never mints TMIM.
-
-**Crypto only, in our own coin.** Inside the platform everything is TMIM: budgets, rewards, payouts, balances, statements. There is no fiat anywhere: no card, bank or payment-app flows, no on- or off-ramps, and no fiscal sponsor or other institutional connection. Members may swap TMIM for other crypto and cash out through an exchange such as Coinbase; that happens outside the platform. Donations, if any, are handled separately, outside the platform.
-
-**Redemption.** The contracts can still redeem TMIM for USDC at a governance-set rate; whether that stays is an open decision ([`docs/MARKETING_BRIEF.md`](docs/MARKETING_BRIEF.md) §13), and the redesigned app shows TMIM only.
-
-**Governance.** Voting power = `TMIM balance × rank multiplier`. Talmidim vote on mivtza funding, treasury allocations, and new makomot. Not a suggestion box — real on-chain authority over real funds.
-
-The more a talmid learns, produces, and contributes — the more they earn, the higher they rank, the more say they have. **Merit is the only currency.**
-
----
-
-## Architecture
-
-| Layer | Stack |
-|---|---|
-| **Web app** | SvelteKit 2, Svelte 5 runes, Tailwind CSS v4, TypeScript |
-| **Backend** | Firebase (Firestore, Cloud Functions), EIP-712 attestation signer |
-| **Smart contracts** | Solidity, Hardhat, OpenZeppelin, deployed on Base Sepolia |
-| **Chain** | Base (L2 Ethereum) |
-
-### Smart Contracts (Base Sepolia)
-
-| Contract | Address | Purpose |
+| | The team gets | Instead of |
 |---|---|---|
-| TMIMToken | `0x1A66CeE19C53956022f01842043d79d594BFb8E5` | ERC-20 governance and reward token |
-| ChayoleiRegistry | `0xFA9Da3852829B3Fd94F05cFd7C160127980242fa` | Talmid registration and rank tracking |
-| MasimaRewardsV2 | `0x884f4B3E9c91831a5864b2E4b6B0CE342D7bF429` | On-chain reward distribution for masimot |
-| ChayoleiGovernance | `0xa7E7098012C6DE7395128f8d3afE606C3C9Fc084` | DAO governance with EIP-712 rank attestation |
-| ChayoleiTreasury | `0x3DB8a8A81f75eA2bAbDb481203AE4Db6C4dDA420` | TMIM treasury and redemption |
-| GovernanceTreasury | `0xBBedE83f5B488500b6CB42A5519dc9E56c9A9B7E` | Proposal execution treasury |
+| **Banking** | A treasury in TMIM: budgets, payouts on acceptance, scheduled pay, monthly statements | A bank account, payroll, an accountant |
+| **Corporate organization** | A versioned charter (roles and rules), proposals and votes, a decision log | Registration, bylaws, board minutes |
+| **Workforce** | Objectives → deliverables → tasks, with an owner, a reviewer and an approver; GitHub-style versions and reviews of any work; each person's record of work | A task tracker, a shared drive, HR records |
 
-### Web App Routes
+All three share one ledger, and every change to the work, the rules or the money follows one pattern: **propose → decide → record**. Accepting a deliverable pays its owner and reviewer in the same signed action.
+
+Chayolei was born as *Chayolei Beis Dovid*, a network for Torah scholarship and publishing; its first teams are editorial groups producing seforim. The product is for any small team. ([Positioning](docs/MARKETING_BRIEF.md).)
+
+## Crypto only, in TMIM
+
+Inside the platform every amount is **TMIM**: budgets, rewards, payouts, balances, statements. TMIM is minted only for participation (accepted work, reviews). There is no fiat anywhere: no cards, banks, payment apps, on-ramps or off-ramps. A member may swap TMIM and cash out through an exchange of their choice; that happens outside the platform. ([The economic model](CLAUDE.md).)
+
+Chayolei is **not** a bank, an employer, a legal entity or an investment. TMIM promises no value or return. Teams remain responsible for the laws that apply to them. ([Claims we don't make](docs/MARKETING_BRIEF.md).)
+
+## Status (2026-10-26)
+
+- ✅ **The new UI** for teams: Home, Plan, Work, Decide, Treasury, Ledger, in English and Hebrew, light and dark, desktop and phone. It runs as a clickable **demo** on sample data, or as the **live app** on Firestore (`VITE_TEAM_BACKEND=firestore`), where members sign in with a wallet, start teams, invite and join by link, and every action is checked by the server against the team's charter.
+- ✅ **Per-team contracts** (`TeamFactory`, `Team`): each team's charter, votes, budgets, team account and payouts on-chain, under the team's monthly cap and a platform allowance. 31 tests.
+- ✅ **The chain bridge**: with the team contracts configured, each settled action is signed by the member, relayed by the platform (which pays the fee) and recorded with its transaction. Tested end to end in the browser on a local chain.
+- ✅ The original app's pages, at their old URLs, with on-chain governance votes counted once.
+- 🔄 Deploying the team contracts to Base Sepolia; redeploying the governance contracts with audit fixes L-1, L-2, M-2.
+- ⬜ Passkey sign-in and sponsored fees for every action; notifications; AI helpers; an accessibility audit and usability test (`docs/UX_REDESIGN.md` §11).
+- ⬜ External audit; Base mainnet.
+
+Open questions for the owner, and what the code assumes meanwhile, are in [`docs/DECISIONS.md`](docs/DECISIONS.md).
+
+## Repository
 
 ```
-/                     Dashboard — active mivtzaot, rank, TMIM balance
-/mivtzaot             Campaign board — browse and enroll
-/mivtzaot/[id]        Campaign detail — masimot, progress, tafkidim
-/masimot              My assignments across all active mivtzaot
-/masimot/new          Create a new masimah (instructor role)
-/tafkidim             Task board (kanban)
-/anash                Community directory — all talmidim, ranks, locations
-/anash/[id]           Talmid profile
-/review               Mashpia review room — approve submitted work
-/governance           Active proposals, voting
-/governance/[id]      Proposal detail and vote
-/treasury             TMIM balance, redemption to USDC, treasury stats
-/farbrengen           Community discussion
-/signup               Onboarding flow
-/settings             Profile, wallet connection, makom assignment
+src/lib/team/          domain: engine, ledger, commands, persistence, chain calls, i18n, store
+src/lib/ui, src/lib/app components (presentational / reading the store)
+src/routes/(app)/      the new UI: /, /plan, /work, /d/…, /decide, /treasury, /ledger, /wallet, /start, /join/…
+src/routes/(classic)/  the original pages (campaigns, assignments, governance…)
+src/routes/api/        server routes: teams, invites, chain info, auth, and the original API
+src/lib/server/        Firestore admin, team service, chain bridge, governance listener
+contracts/             Solidity (Hardhat): TMIM, the original governance and rewards, contracts/team/
+scripts/               demo build, deploy, browser tests (scripts/e2e)
+docs/                  positioning, decisions, UX plan, technical design, backend, contracts
 ```
 
----
-
-## Current Status
-
-**Live backend. Testnet contracts. No mock data.**
-
-- ✅ SvelteKit app running with live Firebase — all state from real Firestore listeners
-- ✅ 8 Solidity contracts deployed and verified on Base Sepolia
-- ✅ EIP-712 rank attestation on governance (C1 security fix shipped)
-- ✅ 178 passing contract tests; app tests against the Firestore emulator; CI on every pull request
-- ✅ On-chain votes recorded exactly once in Firestore; the chain listener resumes from a checkpoint (C2)
-- ✅ Wallet sign-in with a browser wallet
-- 🔄 Audit fixes L-1, L-2, M-2 and participation-only minting are in the source; contracts need redeploying
-- 🔄 UI redesign around teams producing and publishing: [`docs/UX_REDESIGN.md`](docs/UX_REDESIGN.md)
-- ⬜ External audit
-- ⬜ Base mainnet deployment
-
----
-
-## Setup
-
-### Prerequisites
-
-- Node.js 20+
-- A Firebase project (Firestore + Cloud Functions)
-- A funded Base Sepolia wallet for contract interaction
-
-### Web App
+## Running it
 
 ```bash
-cd chayolei
 npm install
-cp .env.example .env
-# Fill in your Firebase and contract values in .env
-npm run dev
+npm run dev                         # the demo at http://localhost:5173 (sample data in your browser)
+bash scripts/build-demo.sh          # a static, shareable build of the demo
+
+npm run check                       # types
+npm run test:unit                   # engine, ledger, dictionaries, persistence
+npm test                            # everything, against the Firestore emulator (needs Java)
+bash scripts/e2e/run-chain.sh       # the chain bridge on a local Hardhat node
+bash scripts/e2e/run-live.sh        # the live app in a browser, on the emulators (needs Playwright)
+
+cd contracts && npm install && npx hardhat test   # 209 contract tests
 ```
 
-### Contracts
+The live app locally, the environment it needs and how it is deployed: [`docs/TEAM_BACKEND.md`](docs/TEAM_BACKEND.md) §7, [`.env.example`](.env.example), [`docs/DEPLOY.md`](docs/DEPLOY.md).
 
-```bash
-cd contracts
-npm install
-cp .env.example .env
-# Fill in DEPLOYER_PRIVATE_KEY, BASE_SEPOLIA_RPC_URL, BASESCAN_API_KEY
-npx hardhat test
-npx hardhat run scripts/deploy.ts --network baseSepolia
-```
+## Contracts on Base Sepolia
 
-### Deploying the web app
+As last recorded in this repository (`contracts/audit/README.md`, 2026-05-11). They predate the 2026-10-25 changes (no minting for money sent in; audit fixes L-1, L-2, M-2), which need a redeploy to take effect. The team contracts are not deployed yet.
 
-Cloud Run behind Firebase Hosting: see [`docs/DEPLOY.md`](docs/DEPLOY.md).
+| Contract | Address |
+|---|---|
+| TMIMToken | `0x1A66CeE19C53956022f01842043d79d594BFb8E5` |
+| ChayoleiRegistry | `0xFA9Da3852829B3Fd94F05cFd7C160127980242fa` |
+| MasimaRewardsV2 | `0x884f4B3E9c91831a5864b2E4b6B0CE342D7bF429` |
+| ChayoleiGovernance (C4) | `0x1589ca8E04be8e8F76261EacDE2f1C6687B356e8` |
+| ChayoleiTreasury | `0x3DB8a8A81f75eA2bAbDb481203AE4Db6C4dDA420` |
+| GovernanceTreasury | `0xBBedE83f5B488500b6CB42A5519dc9E56c9A9B7E` |
 
----
+An earlier governance deployment (C1) was at `0xa7E7098012C6DE7395128f8d3afE606C3C9Fc084`.
 
-## Contributing
+## Documentation
 
-This project is early and moving fast. If you want to contribute:
+| Read | For |
+|---|---|
+| [`CLAUDE.md`](CLAUDE.md) | The economic model and conventions (start here) |
+| [`docs/MARKETING_BRIEF.md`](docs/MARKETING_BRIEF.md) | Positioning, audiences, claims we don't make |
+| [`docs/DECISIONS.md`](docs/DECISIONS.md) | Owner decisions, open questions, what the code assumes |
+| [`docs/UX_REDESIGN.md`](docs/UX_REDESIGN.md) | The new UI: research, principles, screens, phases and progress |
+| [`docs/UX_TECH_DESIGN.md`](docs/UX_TECH_DESIGN.md) | How the new UI is built |
+| [`docs/TEAM_BACKEND.md`](docs/TEAM_BACKEND.md) | The live backend and the chain bridge |
+| [`docs/TEAM_CONTRACTS.md`](docs/TEAM_CONTRACTS.md) | The per-team contracts |
+| [`contracts/audit/README.md`](contracts/audit/README.md) | The governance contracts' audit package |
 
-1. Check open issues for `good first issue` tags
-2. The biggest gaps right now are the UI redesign ([`docs/UX_REDESIGN.md`](docs/UX_REDESIGN.md)), passkey wallets with sponsored gas, and redeploying the contracts
-3. Read `SPEC_2_DAO_REQUIREMENTS.md` for the full governance spec before touching contract code
+Older documents (`GO_TO_MARKET`, `INVESTOR_PITCH`, `PUBLIC_INTRODUCTION`, `TOMCHEI_TMIMIM_OVERVIEW`, `SPEC_1`, `SPEC_2`, `BACKEND_PLAN`) predate the current model; each says at the top what it no longer governs.
 
----
+## Heritage
 
-## Why This Matters
-
-The Rebbe Rashab's thesis was simple: teach a young man both the revealed and hidden Torah with rigor and discipline, and he becomes unbreakable. Those 18 students became thousands. They kept Judaism alive when it was a death sentence.
-
-This platform builds the infrastructure for the next generation of that mission — soldiers who produce Torah, hold each other accountable, earn real value for real work, and govern their own community. Local roots, global reach. Ancient texts, modern infrastructure.
-
-**Tomchei Tmimim. Sustainers of the wholesome ones. Same mission, new tools.**
-
----
-
-*Built on [Base](https://base.org). Contracts verified on [Basescan](https://sepolia.basescan.org).*
+In 1897 the Rebbe Rashab founded Tomchei Tmimim with eighteen students, to raise scholars with rigor and discipline who would carry Torah through whatever came. The name *Chayolei Beis Dovid*, soldiers of the House of David, and the ranks of the original app come from that history. Whether they stay in the product's name is an open question ([`docs/DECISIONS.md`](docs/DECISIONS.md) #2); the commitment to teams that produce serious work together, and pay one another for it on the record, stays.

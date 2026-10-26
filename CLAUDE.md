@@ -1,6 +1,6 @@
 # chayolei — conventions for Claude sessions
 
-Chayolei Beis Dovid: a SvelteKit web app (Firebase backend) plus Solidity contracts on Base, for Torah scholarship organised as campaigns (mivtzaot) → assignments (masimot) → sub-tasks (tafkidim), rewarded in the TMIM token and governed on-chain. `README.md` is the overview; `docs/` holds older specs and plans.
+Chayolei Beis Dovid: a SvelteKit web app (Firebase backend) plus Solidity contracts on Base. It began as Torah scholarship organised as campaigns (mivtzaot) → assignments (masimot) → sub-tasks (tafkidim), rewarded in the TMIM token and governed on-chain; those pages live on in `src/routes/(classic)`. The new UI organises any small team (see Positioning below). `README.md` is the overview; `docs/` holds the current designs and older specs.
 
 ## Economic model — decided by the owner, 2026-10-25
 
@@ -27,7 +27,7 @@ Chayolei is building **three parallel systems on a decentralized ledger**, for a
 
 All three share one ledger, and every change to work, rules or money follows one pattern: propose → decide → record.
 
-- `docs/MARKETING_BRIEF.md`: positioning, the three systems, audiences, message pillars, claims we don't make, open questions. It supersedes the framing in `README.md`'s older sections, `PUBLIC_INTRODUCTION.md`, `TOMCHEI_TMIMIM_OVERVIEW.md`, `INVESTOR_PITCH.md` and `GO_TO_MARKET.md` where they disagree.
+- `docs/MARKETING_BRIEF.md`: positioning, the three systems, audiences, message pillars, claims we don't make, open questions. It supersedes the framing in `PUBLIC_INTRODUCTION.md`, `TOMCHEI_TMIMIM_OVERVIEW.md`, `INVESTOR_PITCH.md` and `GO_TO_MARKET.md` where they disagree.
 - `docs/UX_REDESIGN.md`: the plan for a complete UI redo: research, principles, object model, screens, and an execution plan in phases (§11). UI work follows it; check which phases are done before starting one, and record progress there.
 - `docs/PITCH_ARTIFACT_PROMPT.md`: a self-contained prompt for a separate session to build a pitch artifact.
 - `docs/DECISIONS.md`: what the owner has decided, what is open, and what the code assumes until then. Record new decisions there.

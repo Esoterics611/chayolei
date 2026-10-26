@@ -1,6 +1,6 @@
 # Chayolei — Marketing Brief
 
-> Revised 2026-10-25 (third revision the same day). **This is the positioning.** It supersedes the framing in `README.md`'s older sections, `PUBLIC_INTRODUCTION.md`, `TOMCHEI_TMIMIM_OVERVIEW.md`, `INVESTOR_PITCH.md` and `GO_TO_MARKET.md` wherever they disagree. The economic model is in `CLAUDE.md`. The UI built on this brief is `UX_REDESIGN.md`; the prompt for a pitch artifact is `PITCH_ARTIFACT_PROMPT.md`.
+> Revised 2026-10-25 (third revision the same day). **This is the positioning.** It supersedes the framing in `PUBLIC_INTRODUCTION.md`, `TOMCHEI_TMIMIM_OVERVIEW.md`, `INVESTOR_PITCH.md` and `GO_TO_MARKET.md` wherever they disagree. The economic model is in `CLAUDE.md`. The UI built on this brief is `UX_REDESIGN.md`; the prompt for a pitch artifact is `PITCH_ARTIFACT_PROMPT.md`.
 
 ---
 
