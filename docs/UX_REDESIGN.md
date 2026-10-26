@@ -331,6 +331,8 @@ Each phase ships on its own and leaves the app working. Prove acceptance with sc
 
 ## 13. Open questions
 
+> Tracked with what the code assumes meanwhile in `DECISIONS.md`; record answers there.
+
 1. Per-team treasuries: Safe with modules, or a factory of this repo's treasury and governance contracts?
 2. On-chain TMIM→USDC redemption: to be decided by the owner in the future; the UI shows TMIM only until then. (Brief §13.)
 3. Default privacy of a team's ledger: which entry kinds are public?
