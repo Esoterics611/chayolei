@@ -286,6 +286,8 @@ export type TemplateId = 'editorial' | 'studio' | 'collective' | 'blank';
 
 export interface Team {
   id: string;
+  /** A team in the live app: ledger proofs are real or pending, never the demo's stand-ins. */
+  live?: boolean;
   name: Text;
   purpose: Text;
   createdAt: string;

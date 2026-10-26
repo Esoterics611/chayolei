@@ -39,18 +39,22 @@ export function tierOf(kind: EntryKind): Tier {
   return SETTLED.includes(kind) ? 'settled' : 'signed';
 }
 
-/** Append an entry (and, every ANCHOR_BATCH signed entries, an anchor entry). */
+/** Append an entry (and, every ANCHOR_BATCH signed entries, an anchor entry).
+ *  In the demo, proofs are stand-ins; in a live team a settled entry has no
+ *  proof until its transaction confirms (the chain bridge fills it in). */
 export function appendEntry(team: Team, e: NewEntry): LedgerEntry {
   const seq = team.ledger.length + 1;
   const tier = e.tier ?? tierOf(e.kind);
   const key = `${team.id}|${seq}|${e.kind}|${e.at}|${e.actorId}`;
   const proof: LedgerEntry['proof'] = {};
   if (tier === 'settled') {
-    proof.tx = fakeHash(key);
-    proof.block = BLOCK_BASE + seq * 3;
+    if (!team.live) {
+      proof.tx = fakeHash(key);
+      proof.block = BLOCK_BASE + seq * 3;
+    }
   } else {
     const signedBefore = team.ledger.filter(x => x.tier === 'signed').length;
-    proof.sig = fakeHash(key, 8);
+    if (!team.live) proof.sig = fakeHash(key, 8);
     proof.batch = Math.floor(signedBefore / ANCHOR_BATCH) + 1;
   }
   const entry: LedgerEntry = { ...e, id: `e${seq}`, seq, tier, proof };

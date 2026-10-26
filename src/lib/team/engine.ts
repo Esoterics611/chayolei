@@ -593,7 +593,10 @@ export const messagesFor = (team: Team, ref: { type: 'deliverable' | 'change'; i
 // ── Team ─────────────────────────────────────────────────────────
 
 export function createTeam(
-  input: { name: Text; purpose: Text; templateId: TemplateId; founder: { id?: string; name: Text; initials: string; wallet: string } },
+  input: {
+    name: Text; purpose: Text; templateId: TemplateId; founder: { id?: string; name: Text; initials: string; wallet: string };
+    id?: string; live?: boolean;
+  },
   now: string,
 ): Team {
   if (!String(typeof input.name === 'string' ? input.name : input.name.en).trim()) throw new DomainError('err.empty');
@@ -603,7 +606,8 @@ export function createTeam(
     roleIds: [...tpl.founderRoleIds], wallet: input.founder.wallet, joinedAt: now,
   };
   const team: Team = {
-    id: newId('team'), name: input.name, purpose: input.purpose, createdAt: now, templateId: input.templateId,
+    id: input.id ?? newId('team'), ...(input.live ? { live: true } : {}),
+    name: input.name, purpose: input.purpose, createdAt: now, templateId: input.templateId,
     members: [founder], charter: charterFromTemplate(input.templateId, now),
     objectives: [], deliverables: [], tasks: [], changes: [], messages: [], ledger: [],
     treasury: { teamAccount: 0, schedules: [] },
