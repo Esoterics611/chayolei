@@ -10,7 +10,8 @@
   const initial = $derived(name.trim().charAt(0).toUpperCase());
 </script>
 
-<span class="tm" style:--h={hue} style:width="{size}px" style:height="{size}px" style:font-size="{Math.round(size * 0.46)}px" aria-hidden="true">{initial}</span>
+<!-- The initial is drawn by CSS: decoration; the team's name is said around it. -->
+<span class="tm" style:--h={hue} style:width="{size}px" style:height="{size}px" style:font-size="{Math.round(size * 0.46)}px" aria-hidden="true" data-initial={initial}></span>
 
 <style>
   .tm {
@@ -23,4 +24,5 @@
     font-weight: 600;
     box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.18);
   }
+  .tm::before { content: attr(data-initial); }
 </style>

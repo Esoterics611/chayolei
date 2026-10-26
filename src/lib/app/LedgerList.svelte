@@ -139,13 +139,15 @@
   .compact .main { padding-block-start: 2px; }
   .line { display: flex; gap: 12px; align-items: baseline; justify-content: space-between; }
   .text { line-height: 1.45; text-wrap: pretty; }
+  /* A linked sentence is a 24px target (WCAG 2.5.8). */
+  a.text { display: inline-block; padding-block: 2px; }
   .compact .text { font-size: var(--fs-sm); }
   a.text:hover { text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--rule-strong); }
   .anchor .text { color: var(--ink-2); font-size: var(--fs-sm); }
   .amt { flex: none; }
   .sub { display: flex; align-items: center; gap: 10px; margin-block-start: 2px; font-size: var(--fs-xs); color: var(--ink-3); }
   .time { font-variant-numeric: tabular-nums; }
-  .proof-btn { display: inline-flex; align-items: center; gap: 3px; color: var(--ink-3); font-size: var(--fs-xs); border-radius: 4px; padding: 1px 4px; }
+  .proof-btn { display: inline-flex; align-items: center; gap: 3px; min-height: 24px; color: var(--ink-3); font-size: var(--fs-xs); border-radius: 4px; padding: 1px 4px; }
   .proof-btn:hover { color: var(--ink); background: var(--surface-2); }
   .proof-btn[aria-expanded='true'] :global(svg) { transform: rotate(180deg); }
   .proof {

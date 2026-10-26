@@ -120,7 +120,8 @@
   <div class="column">
     <header class="topbar">
       <div class="top-team"><TeamSwitcher compact /></div>
-      <button type="button" class="search" onclick={() => (ui.paletteOpen = true)} aria-label={t('search.button')}>
+      <!-- Named by its visible text, shortcut included, so a spoken "Search…" finds it. -->
+      <button type="button" class="search" onclick={() => (ui.paletteOpen = true)} aria-keyshortcuts={mod === '⌘' ? 'Meta+K' : 'Control+K'}>
         <Search size={16} />
         <span class="ph">{t('search.button')}</span>
         <span class="kbd">{mod} K</span>
@@ -298,7 +299,8 @@
     .topbar { padding-inline: var(--s4); gap: var(--s2); height: 52px; }
     .top-team { display: block; }
     .search { width: 36px; padding: 0; justify-content: center; }
-    .search .ph, .search .kbd { display: none; }
+    .search .kbd { display: none; }
+    .search .ph { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
     .acct-full { display: none; }
     .acct-compact { display: block; }
     main { padding: var(--s5) var(--s4) calc(88px + env(safe-area-inset-bottom)); }

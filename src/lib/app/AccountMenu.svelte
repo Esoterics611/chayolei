@@ -49,7 +49,7 @@
 {#if me}
   <Popover bind:open align="end" width="300px">
     {#snippet trigger({ open: isOpen, toggle, id })}
-      <button type="button" class="trigger" aria-expanded={isOpen} aria-controls={id} onclick={toggle} aria-label="{t(store.live ? 'account.signedIn' : 'account.acting')}: {lt(me.name)}, {rolesOf(store.team, me.id)}">
+      <button type="button" class="trigger" aria-expanded={isOpen} aria-controls={id} onclick={toggle} aria-label={compact ? `${t(store.live ? 'account.signedIn' : 'account.acting')}: ${lt(me.name)}, ${rolesOf(store.team, me.id)}` : undefined}>
         <Avatar id={me.id} initials={me.initials} name={lt(me.name)} ai={me.ai} size="sm" />
         {#if !compact}
           <span class="txt">

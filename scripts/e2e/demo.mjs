@@ -2,6 +2,7 @@
 // acceptance, the rule-range check and Hebrew. Run with scripts/e2e/run-demo.sh.
 import { createRequire } from 'node:module';
 import { mkdirSync } from 'node:fs';
+import { gzipSync } from 'node:zlib';
 const { chromium } = createRequire(import.meta.url)('playwright');
 const FILE = process.env.DEMO_URL ?? 'http://127.0.0.1:4173/chayolei-new-ui.html';
 const SHOTS = process.env.SHOTS;
@@ -11,6 +12,13 @@ const browser = await chromium.launch();
 const errors = [];
 try {
   const page = await (await browser.newContext({ viewport: { width: 1280, height: 860 } })).newPage();
+  // Performance budget (UX_REDESIGN.md phase 10): what the first screen loads, gzipped.
+  const BUDGET = { js: 160_000, total: 200_000 };
+  const loaded = [];
+  page.on('response', async r => {
+    if (!r.url().startsWith(new URL(FILE).origin)) return;
+    try { const body = await r.body(); loaded.push({ url: r.url(), gz: gzipSync(body).length }); } catch { /* redirects, aborted */ }
+  });
   page.on('pageerror', e => errors.push(e.message));
   page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
   const confirm = async () => {
@@ -20,6 +28,11 @@ try {
   };
   await page.goto(FILE + '#/');
   await page.getByText('Needs you').first().waitFor({ timeout: 20000 });
+  await page.waitForLoadState('networkidle');
+  const js = loaded.filter(f => f.url.endsWith('.js')).reduce((n, f) => n + f.gz, 0);
+  const total = loaded.reduce((n, f) => n + f.gz, 0);
+  console.log(`first screen: ${(js / 1000).toFixed(0)} kB JS, ${(total / 1000).toFixed(0)} kB in all (gzip)`);
+  if (js > BUDGET.js || total > BUDGET.total) throw new Error(`over the performance budget (${BUDGET.js / 1000} kB JS, ${BUDGET.total / 1000} kB in all)`);
   await shot(page, 'demo-01-home');
 
   // Mendel votes on the open rule change.
