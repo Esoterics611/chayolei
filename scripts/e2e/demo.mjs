@@ -35,6 +35,13 @@ try {
   if (js > BUDGET.js || total > BUDGET.total) throw new Error(`over the performance budget (${BUDGET.js / 1000} kB JS, ${BUDGET.total / 1000} kB in all)`);
   await shot(page, 'demo-01-home');
 
+  // Notifications: what's waiting, and news since last time.
+  await page.getByRole('button', { name: /^Notifications/ }).click();
+  await page.getByText('waiting on you').first().waitFor({ timeout: 5000 });
+  await page.waitForTimeout(300); // past the panel's fade-in
+  await shot(page, 'demo-01b-notifications');
+  await page.keyboard.press('Escape');
+
   // Mendel votes on the open rule change.
   await page.goto(FILE + '#/decide');
   await page.locator('a[href*="/decide/p/"]').first().click();

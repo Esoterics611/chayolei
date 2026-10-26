@@ -20,6 +20,7 @@
   import ConfirmSign from '$lib/ui/ConfirmSign.svelte';
   import Toasts from '$lib/ui/Toasts.svelte';
   import LiveGate from '$lib/app/LiveGate.svelte';
+  import NotificationBell from '$lib/app/NotificationBell.svelte';
   import House from '@lucide/svelte/icons/house';
   import ListTree from '@lucide/svelte/icons/list-tree';
   import PenLine from '@lucide/svelte/icons/pen-line';
@@ -128,6 +129,7 @@
       </button>
       <span class="spacer"></span>
       {#if !store.live}<span class="demo" title={t('demo.badge')}><span class="dot" aria-hidden="true"></span><span class="long">{t('demo.badge')}</span><span class="short">{t('demo.short')}</span></span>{/if}
+      <NotificationBell />
       <div class="acct-full"><AccountMenu /></div>
       <div class="acct-compact"><AccountMenu compact /></div>
     </header>

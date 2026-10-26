@@ -8,6 +8,15 @@ import { ui } from './ui.svelte';
 type Dict = Record<string, string>;
 
 const en: Dict = {
+  'notify.title': 'Notifications',
+  'notify.new': '{n} new',
+  'notify.markRead': 'Mark all as read',
+  'notify.needs': '{n} waiting on you',
+  'notify.closing': 'Vote closes {when}: {title}',
+  'notify.empty': 'Nothing new for you in the last two weeks.',
+  'notify.remind': 'Remind me before a vote I haven’t cast closes',
+  'notify.reminding': 'You’ll be reminded a day before a vote you haven’t cast closes, while Chayolei is open.',
+  'notify.reminderTitle': 'A vote closes soon',
   'err.busy': 'Another action on this team is being recorded. Please try again in a moment.',
   'err.chain.unsigned': 'This action needs your signature.',
   'err.chain.stale': 'The team changed while you were signing. Please try again.',
@@ -729,6 +738,15 @@ const en: Dict = {
 };
 
 const he: Dict = {
+  'notify.title': 'התראות',
+  'notify.new': '{n} חדשות',
+  'notify.markRead': 'סימון הכול כנקרא',
+  'notify.needs': '{n} ממתינים לך',
+  'notify.closing': 'ההצבעה נסגרת {when}: {title}',
+  'notify.empty': 'אין לך חדש בשבועיים האחרונים.',
+  'notify.remind': 'תזכורת לפני שנסגרת הצבעה שלא הצבעתי בה',
+  'notify.reminding': 'תקבלו תזכורת יום לפני שנסגרת הצבעה שלא הצבעתם בה, כל עוד חיילי פתוח.',
+  'notify.reminderTitle': 'הצבעה נסגרת בקרוב',
   'err.busy': 'פעולה אחרת בחבורה נרשמת כעת. נסו שוב בעוד רגע.',
   'err.chain.unsigned': 'הפעולה הזו צריכה את החתימה שלך.',
   'err.chain.stale': 'החבורה השתנתה בזמן שחתמת. נסו שוב.',

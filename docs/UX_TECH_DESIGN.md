@@ -34,6 +34,7 @@ src/lib/team/            domain (no UI)
   seed.ts                sample teams (Brachos Translation Group; Harbor Community Radio)
   engine.ts              pure selectors + actions on a Team; throws DomainError(key)
   ledger.ts              entry factory, proof, day grouping, balances, statements
+  notify.ts              what concerns a member: news since last seen, votes closing soon
   diff.ts                paragraph + word diff
   i18n.ts                messages (en, he), t(), number/date formatting
   nav.ts                 href(), go(), currentPath(): path or hash routing
