@@ -8,6 +8,9 @@ const { chromium } = createRequire(import.meta.url)('playwright');
 const { Wallet, getBytes } = createRequire(new URL('../../package.json', import.meta.url))('ethers');
 
 const BASE = process.env.BASE ?? 'http://localhost:5173';
+// CHAIN=1: the app records on a local chain (scripts/e2e/run-chain.sh); the
+// simulated wallets sign typed data on chain 31337.
+const CHAIN = process.env.CHAIN === '1';
 const SHOTS = process.env.SHOTS;
 if (SHOTS) mkdirSync(SHOTS, { recursive: true });
 export const mendelKey = '0x' + '11'.repeat(32);
@@ -17,19 +20,26 @@ export async function userContext(browser, key) {
   const wallet = new Wallet(key);
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 860 } });
   await ctx.exposeFunction('__sign', async (hex) => wallet.signMessage(getBytes(hex)));
-  await ctx.addInitScript(({ address }) => {
+  await ctx.exposeFunction('__signTyped', async (json) => {
+    const { domain, types, message } = JSON.parse(json);
+    delete types.EIP712Domain;
+    return wallet.signTypedData(domain, types, message);
+  });
+  await ctx.addInitScript(({ address, chainId }) => {
     window.ethereum = {
       isMetaMask: true,
       async request({ method, params }) {
         if (method === 'eth_requestAccounts' || method === 'eth_accounts') return [address];
-        if (method === 'eth_chainId') return '0x14a34';
-        if (method === 'net_version') return '84532';
+        if (method === 'eth_chainId') return chainId;
+        if (method === 'net_version') return String(parseInt(chainId, 16));
         if (method === 'personal_sign') return window.__sign(params[0]);
+        if (method === 'eth_signTypedData_v4') return window.__signTyped(params[1]);
+        if (method === 'wallet_switchEthereumChain') return null;
         throw new Error('unsupported ' + method);
       },
       on() {}, removeListener() {},
     };
-  }, { address: wallet.address.toLowerCase() });
+  }, { address: wallet.address.toLowerCase(), chainId: CHAIN ? '0x7a69' : '0x14a34' });
   const page = await ctx.newPage();
   page.on('console', m => { if (m.type() === 'error') console.log(`[${wallet.address.slice(0, 6)} console]`, m.text()); });
   page.on('pageerror', e => console.log(`[${wallet.address.slice(0, 6)} pageerror]`, e.message));
@@ -149,9 +159,19 @@ try {
   await shot(l.page, '10-levi-wallet');
   await m.page.goto(BASE + '/ledger');
   await m.page.locator('button.proof-btn').first().click({ timeout: 20000 });
-  await m.page.getByText('Not on-chain yet', { exact: false }).first().waitFor({ timeout: 10000 });
+  if (CHAIN) {
+    // The payout is on-chain: its entry opens to a transaction hash.
+    await m.page.locator('dl.proof').getByText('Transaction').waitFor({ timeout: 10000 });
+    if (await m.page.getByText('Not on-chain yet', { exact: false }).count()) throw new Error('a settled entry is still pending');
+  } else {
+    await m.page.getByText('Not on-chain yet', { exact: false }).first().waitFor({ timeout: 10000 });
+  }
   await shot(m.page, '11-ledger');
-  console.log('OK: accepted and paid; Levi holds 1,200 TMIM');
+  console.log(`OK: accepted and paid; Levi holds 1,200 TMIM${CHAIN ? ', recorded on-chain' : ''}`);
+} catch (e) {
+  // Leave a picture of every open page for whoever reads the failure.
+  for (const [i, page] of browser.contexts().flatMap(c => c.pages()).entries()) await shot(page, `fail-${i}`).catch(() => {});
+  throw e;
 } finally {
   await browser.close();
 }

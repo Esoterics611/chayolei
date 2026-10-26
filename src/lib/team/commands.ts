@@ -25,17 +25,23 @@ export type Command =
   | { type: 'requestChanges'; changeId: string; note: string }
   | { type: 'acceptAndPay'; changeId: string }
   | { type: 'release'; deliverableId: string }
-  | { type: 'proposeRule'; ruleKey: RuleKey; to: number; title: string; why: string }
-  | { type: 'requestMoney'; action: MoneyAction; title: string; why: string }
+  | { type: 'proposeRule'; ruleKey: RuleKey; to: number; title: string; why: string; id?: string }
+  | { type: 'requestMoney'; action: MoneyAction; title: string; why: string; id?: string }
   | { type: 'vote'; changeId: string; choice: VoteChoice }
   | { type: 'closeVoting'; changeId: string }
   | { type: 'approveMoney'; changeId: string }
   | { type: 'declineMoney'; changeId: string }
-  | { type: 'contribute'; amount: number }
+  | { type: 'contribute'; amount: number; txHash?: string }
   | { type: 'paySchedule'; scheduleId: string }
   | { type: 'postMessage'; ref: { type: 'deliverable' | 'change'; id: string }; body: string };
 
 export type CommandType = Command['type'];
+
+/** Commands an on-chain team records as transactions on its contract (the settled tier). */
+export const SETTLED_COMMANDS = new Set<CommandType>([
+  'proposeRule', 'requestMoney', 'vote', 'closeVoting', 'approveMoney', 'declineMoney',
+  'acceptAndPay', 'release', 'paySchedule',
+]);
 
 /** What an action created, so the screen can open it. */
 export interface CommandResult {
@@ -87,9 +93,9 @@ export function applyCommand(team: Team, me: string, cmd: Command, now: string):
       E.release(team, me, cmd.deliverableId, now);
       return {};
     case 'proposeRule':
-      return { id: E.proposeRule(team, me, { ruleKey: cmd.ruleKey, to: Number(cmd.to), title: text(cmd.title), why: text(cmd.why) }, now).id };
+      return { id: E.proposeRule(team, me, { ruleKey: cmd.ruleKey, to: Number(cmd.to), title: text(cmd.title), why: text(cmd.why), id: cmd.id }, now).id };
     case 'requestMoney':
-      return { id: E.requestMoney(team, me, { action: cmd.action, title: text(cmd.title), why: text(cmd.why) }, now).id };
+      return { id: E.requestMoney(team, me, { action: cmd.action, title: text(cmd.title), why: text(cmd.why), id: cmd.id }, now).id };
     case 'vote':
       E.vote(team, me, cmd.changeId, cmd.choice, now);
       return {};
@@ -133,6 +139,8 @@ function checkInput(team: Team, cmd: Command): void {
     if (typeof v !== 'string' || v.length > max) bad();
   };
   const id = (v: unknown, optional = false) => str(v, 120, optional);
+  // An id chosen for a new change: letters, digits, '-' and '_'.
+  const newId = (v: unknown) => { if (v !== undefined && (typeof v !== 'string' || !/^[\w-]{1,64}$/.test(v))) bad(); };
   const memberId = (v: unknown) => {
     if (v === undefined || v === '') return;
     if (typeof v !== 'string' || !team.members.some(m => m.id === v)) bad();
@@ -165,18 +173,21 @@ function checkInput(team: Team, cmd: Command): void {
     case 'requestChanges': str(cmd.note, LIMITS.body); break;
     case 'proposeRule':
       if (!RULE_KEYS.has(cmd.ruleKey) || typeof cmd.to !== 'number') bad();
-      str(cmd.title, LIMITS.title); str(cmd.why, LIMITS.body);
+      str(cmd.title, LIMITS.title); str(cmd.why, LIMITS.body); newId(cmd.id);
       break;
     case 'requestMoney': {
       const a = cmd.action as Record<string, unknown> | undefined;
       if (!a || (a.type !== 'transfer' && a.type !== 'budget')) bad();
       if (a!.type === 'transfer') { memberId(a!.to); if (typeof a!.amount !== 'number') bad(); }
       else { id(a!.objectiveId); if (typeof a!.to !== 'number') bad(); }
-      str(cmd.title, LIMITS.title); str(cmd.why, LIMITS.body);
+      str(cmd.title, LIMITS.title); str(cmd.why, LIMITS.body); newId(cmd.id);
       break;
     }
     case 'vote': if (!CHOICES.has(cmd.choice)) bad(); break;
-    case 'contribute': if (typeof cmd.amount !== 'number') bad(); break;
+    case 'contribute':
+      if (typeof cmd.amount !== 'number') bad();
+      if (cmd.txHash !== undefined && (typeof cmd.txHash !== 'string' || !/^0x[0-9a-fA-F]{64}$/.test(cmd.txHash))) bad();
+      break;
     case 'postMessage':
       if (!cmd.ref || (cmd.ref.type !== 'deliverable' && cmd.ref.type !== 'change')) bad();
       id(cmd.ref.id); str(cmd.body, LIMITS.body);

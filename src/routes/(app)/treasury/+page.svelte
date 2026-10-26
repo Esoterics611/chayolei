@@ -71,6 +71,16 @@
     <p class="eyebrow-label">{t('treasury.account')}</p>
     <Amount value={team.treasury.teamAccount} size="xl" />
     <p class="hint">{t('treasury.accountHint')}</p>
+    {#if team.chain}
+      {@const short = `${team.chain.address.slice(0, 6)}…${team.chain.address.slice(-4)}`}
+      <p class="hint">
+        {#if store.chain.explorer}
+          <a href="{store.chain.explorer}/address/{team.chain.address}" target="_blank" rel="noopener" title={t('ledger.onExplorer')}>{t('treasury.contract', { address: short })}</a>
+        {:else}
+          {t('treasury.contract', { address: short })}
+        {/if}
+      </p>
+    {/if}
   </div>
   <div class="stat panel">
     <p class="eyebrow-label">{t('treasury.issued')} · {fmtMonth(now.slice(0, 7))}</p>

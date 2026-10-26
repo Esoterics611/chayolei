@@ -10,7 +10,11 @@ export async function teamRoute(fn: () => Promise<Response>): Promise<Response> 
     return await fn();
   } catch (e) {
     if (e instanceof DomainError) {
-      const status = e.key === 'err.not_found' || e.key === 'err.invite_invalid' ? 404 : e.key === 'err.not_your_team' ? 403 : 422;
+      const status = e.key === 'err.not_found' || e.key === 'err.invite_invalid' ? 404
+        : e.key === 'err.not_your_team' ? 403
+        : e.key === 'err.busy' || e.key === 'err.chain.stale' ? 409
+        : e.key === 'err.chain.unavailable' ? 503
+        : 422;
       return json({ error: { key: e.key, vars: e.vars } }, { status });
     }
     throw e;

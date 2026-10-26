@@ -1,6 +1,6 @@
 # Teams Backend
 
-> Written 2026-10-26. How the new UI runs for real: teams in Firestore, written only by the server, which runs the same engine as the demo. Read `UX_TECH_DESIGN.md` first (the domain and the screens) and `TEAM_CONTRACTS.md` (the on-chain side). Code: `src/lib/team/{commands,persist,live}.ts`, `src/lib/team/store.svelte.ts`, `src/lib/server/teams.ts`, `src/routes/api/{teams,invites}`.
+> Written 2026-10-26. How the new UI runs for real: teams in Firestore, written only by the server, which runs the same engine as the demo, and, with a chain configured, recorded on each team's own contract. Read `UX_TECH_DESIGN.md` first (the domain and the screens) and `TEAM_CONTRACTS.md` (the on-chain side). Code: `src/lib/team/{commands,persist,live}.ts`, `src/lib/team/store.svelte.ts`, `src/lib/server/teams.ts`, `src/routes/api/{teams,invites}`.
 
 ## 1. Two backends, one engine
 
@@ -56,9 +56,21 @@ All but the invite preview need `Authorization: Bearer <Firebase ID token>`.
 
 Members read their team, its ledger and messages; saved versions are readable by members, drafts only by their author; no browser writes anything; invite tokens are server-only. Tested with `@firebase/rules-unit-testing` (`src/lib/server/firestore-rules.test.ts`).
 
-## 6. Ledger proofs in the live app
+## 6. On-chain teams: the chain bridge
 
-A live team never gets the demo's stand-in proofs (`Team.live`, `ledger.ts`). A **settled** entry shows *To settle on-chain* until its transaction is recorded in `proof.tx`/`proof.block`; a **signed** entry shows *Recorded, to anchor* until the anchor entry of its batch is confirmed. The chain bridge that submits these transactions to the team's contract (`TEAM_CONTRACTS.md`) is the next step; until it runs, the ledger says plainly that entries wait for the chain.
+With `TEAM_FACTORY_ADDRESS`, `TEAM_FORWARDER_ADDRESS`, `VITE_TMIM_TOKEN_ADDRESS` and `TEAM_RELAYER_PRIVATE_KEY` set (`.env.example`), every new team is created on-chain and records its settled actions on its own `Team` contract (`TEAM_CONTRACTS.md`). Code: `src/lib/team/chain.ts` (which commands settle, the exact call each makes, the charter as the contract's config) and `src/lib/server/team-chain.ts` (relaying, checks, anchors).
+
+**A settled action** (propose a rule or money change, vote, close a vote, approve or decline, accept and pay, release, scheduled pay):
+1. The browser asks `POST /api/teams/[id]/prepare`; the server checks the action with the engine and returns the exact ERC-2771 forward request (`from` = the member's wallet, `to` = the team's contract, the call, a nonce and a 15-minute deadline). A new proposal's id is chosen here, since the contract keys proposals by it.
+2. The member's wallet signs it (EIP-712); the browser sends the command and the signature to `/commands`.
+3. Under the team's lock (one recorded action at a time, so the chain and the ledger agree on order) the server rechecks the action, checks that the signed request is exactly the expected call signed by that member, simulates it to surface the contract's own reason for a refusal, and the relayer submits it, paying the fee.
+4. Only once it is mined does the server apply the action, with the transaction hash and block as the proof of every settled entry it adds.
+
+**Other on-chain moments:** starting a team (`/api/teams/prepare`, `TeamFactory.createTeam` signed by the founder); an invite (the inviter's wallet signs the EIP-712 invite, which `Team.join` checks); joining (`/api/invites/[token]/prepare`, `Team.join` signed by the person joining); a contribution (the member's wallet sends TMIM to the team's contract; the server checks the receipt and counts each transfer once); anchors (after an action fills a batch of 8 signed entries, the relayer, as the factory's anchoring service, records the batch's root, `chain.ts` `batchRoot`).
+
+**Ledger proofs.** A live team never gets the demo's stand-in proofs. A settled entry shows *To settle on-chain* until its transaction is recorded in `proof.tx`/`proof.block`, then *Settled on-chain*, linked to the block explorer; a signed entry shows *Recorded, to anchor* until its batch's anchor is confirmed. Teams started before a chain was configured stay off-chain, and their settled entries keep waiting.
+
+**Trust.** The relayer can't act for a member: the contract sees only what the member signed, and the server checks each request against the action. It can refuse to relay, and it anchors signed entries, which the server records under the signed-in member (not yet signed by them one by one). The platform can stop a team's minting (`TeamFactory` allowance), nothing else.
 
 ## 7. Running it
 
@@ -67,9 +79,12 @@ A live team never gets the demo's stand-in proofs (`Team.live`, `ledger.ts`). A 
 npm run test:unit
 # Everything, against the Firestore emulator (team service, access rules, votes)
 npm test
+# The chain bridge on a local Hardhat node (also in CI)
+bash scripts/e2e/run-chain.sh
 # Browser tests (Playwright with Chromium available to Node)
-bash scripts/e2e/run-live.sh    # emulators + dev server in live mode, two simulated wallets
-bash scripts/e2e/run-demo.sh    # the static demo
+bash scripts/e2e/run-live.sh          # emulators + dev server in live mode, two simulated wallets
+E2E=1 bash scripts/e2e/run-chain.sh   # the same, recording on a local chain
+bash scripts/e2e/run-demo.sh          # the static demo
 ```
 
 Local live app: start the emulators (`npx firebase emulators:start --only firestore,auth --project demo-chayolei`) and run `vite dev` with the variables `run-live.sh` sets (`VITE_TEAM_BACKEND=firestore`, `VITE_FIREBASE_EMULATORS=1`, the emulator hosts). Against a real project, set the Firebase variables in `.env` and `VITE_TEAM_BACKEND=firestore`.
@@ -77,4 +92,6 @@ Local live app: start the emulators (`npx firebase emulators:start --only firest
 ## 8. Limits and next steps
 
 - **Size:** each action reads the whole team. Comfortable for a small team's first years (thousands of entries); later, keep running balances on the core and read only recent entries. The core document (changes with their comments) stays far below Firestore's 1 MB for small teams; very long comment threads would move to a subcollection.
-- **Not yet:** the chain bridge (settled entries to the team's contract, anchors), passkey sign-in, notifications, rate limits on starting teams and on invites, and moving the classic app's campaigns and assignments into teams (new teams start fresh).
+- **One relayer per server instance:** the relayer counts its own nonces in memory, so run one instance per relayer key (or one relayer service).
+- **Reconciliation:** the app records what happens through it. A call made straight to a team's contract (not through the app) lands on-chain but not in the ledger; a listener that reconciles the two is still to come.
+- **Not yet:** passkey sign-in and sponsored fees for contributions (members' own transfers pay their fee), notifications, rate limits on starting teams and on invites, and moving the classic app's campaigns and assignments into teams (new teams start fresh).

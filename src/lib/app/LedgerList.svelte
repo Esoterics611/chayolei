@@ -67,7 +67,14 @@
               <dl class="proof">
                 {#if e.proof.tx}
                   <dt>{t('ledger.tx')}</dt>
-                  <dd><code>{short(e.proof.tx)}</code><button type="button" class="copy" onclick={() => copy(e.proof.tx!)} aria-label={t('ledger.tx')}><Copy size={12} /></button></dd>
+                  <dd>
+                    {#if store.chain.explorer && team.chain}
+                      <a href="{store.chain.explorer}/tx/{e.proof.tx}" target="_blank" rel="noopener" title={t('ledger.onExplorer')}><code>{short(e.proof.tx)}</code></a>
+                    {:else}
+                      <code>{short(e.proof.tx)}</code>
+                    {/if}
+                    <button type="button" class="copy" onclick={() => copy(e.proof.tx!)} aria-label={t('ledger.tx')}><Copy size={12} /></button>
+                  </dd>
                   <dt>{t('ledger.block')}</dt><dd><code>{fmtNum(e.proof.block ?? 0)}</code></dd>
                 {:else if e.tier === 'settled'}
                   <dd class="demo">{t('ledger.pending')}</dd>

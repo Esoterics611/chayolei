@@ -80,7 +80,7 @@ TEAM_DEFAULT_ALLOWANCE=0 TEAM_ANCHORER=0x… TEAM_FACTORY_ADMIN=0x<multisig> \
   npx hardhat run scripts/deploy-teams.ts --network baseSepolia
 ```
 
-Needs `deployments/<network>.json` with `TMIMToken`, and the deployer holding TMIM's admin role (to grant `MINTER_ROLE` to the factory). Writes `TeamForwarder`, `TeamImplementation`, `TeamFactory` and the start block back to that file and prints the `.env` lines. Tried end to end on a local node (2026-10-26); not yet on Base Sepolia.
+Needs `deployments/<network>.json` with `TMIMToken`, and the deployer holding TMIM's admin role (to grant `MINTER_ROLE` to the factory). Writes `TeamForwarder`, `TeamImplementation`, `TeamFactory` and the start block back to that file and prints the `.env` lines. Set `TEAM_ANCHORER` to the app's relayer address, and give the app the addresses and the relayer's key (`.env.example`, "Team contracts"). Tried end to end on a local node, with the app recording on it (`scripts/e2e/run-chain.sh`, 2026-10-26); not yet on Base Sepolia.
 
 ## 7. Tests
 

@@ -79,16 +79,26 @@ export function fromDocs(docs: TeamDocs): Team {
   };
 }
 
-/** What a save must write: new ledger entries and messages, changed and removed versions. */
+/** JSON with object keys sorted: Firestore may return a map's keys in another order. */
+export function stableJson(x: unknown): string {
+  return JSON.stringify(x, (_k, v) =>
+    v && typeof v === 'object' && !Array.isArray(v)
+      ? Object.fromEntries(Object.keys(v).sort().map(k => [k, (v as Record<string, unknown>)[k]]))
+      : v);
+}
+
+/** What a save must write: new ledger entries and messages, ledger entries
+ *  whose proof came in, changed and removed versions. */
 export function diffDocs(before: TeamDocs, after: TeamDocs) {
-  const known = new Set(before.ledger.map(e => e.seq));
+  const known = new Map(before.ledger.map(e => [e.seq, stableJson(e)]));
   const knownMessages = new Set(before.messages.map(m => m.id));
-  const beforeVersions = new Map(before.versions.map(v => [v.id, JSON.stringify(v)]));
+  const beforeVersions = new Map(before.versions.map(v => [v.id, stableJson(v)]));
   const afterIds = new Set(after.versions.map(v => v.id));
   return {
     ledger: after.ledger.filter(e => !known.has(e.seq)),
+    proved: after.ledger.filter(e => known.has(e.seq) && known.get(e.seq) !== stableJson(e)),
     messages: after.messages.filter(m => !knownMessages.has(m.id)),
-    versions: after.versions.filter(v => beforeVersions.get(v.id) !== JSON.stringify(v)),
+    versions: after.versions.filter(v => beforeVersions.get(v.id) !== stableJson(v)),
     removedVersions: before.versions.filter(v => !afterIds.has(v.id)).map(v => v.id),
   };
 }

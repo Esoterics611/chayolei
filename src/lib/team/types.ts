@@ -288,6 +288,8 @@ export interface Team {
   id: string;
   /** A team in the live app: ledger proofs are real or pending, never the demo's stand-ins. */
   live?: boolean;
+  /** The team's contract, when its settled entries are recorded on-chain. */
+  chain?: { address: string; chainId: number };
   name: Text;
   purpose: Text;
   createdAt: string;

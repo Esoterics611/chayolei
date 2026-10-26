@@ -5,6 +5,8 @@
 
 import type { Unsubscribe } from 'firebase/firestore';
 import type { Command, CommandResult } from './commands';
+import { TMIM } from './chain';
+import type { ForwardRequest } from './chain';
 import { fromDocs } from './persist';
 import type { StoredVersion, TeamCore } from './persist';
 import type { LedgerEntry, Message, Team, TemplateId } from './types';
@@ -91,19 +93,78 @@ export class LiveClient {
     await signOut(auth);
   }
 
-  // ── Actions ────────────────────────────────────────────────────
+  // ── The chain ──────────────────────────────────────────────────
 
-  send(teamId: string, command: Command): Promise<Reply<{ result: CommandResult; team: Team }>> {
-    return this.call(`/api/teams/${encodeURIComponent(teamId)}/commands`, { command });
+  private chainInfo: Promise<ChainInfo> | null = null;
+
+  /** Where live teams are recorded (or { enabled: false }). */
+  chain(): Promise<ChainInfo> {
+    if (!this.chainInfo) {
+      this.chainInfo = fetch('/api/chain').then(r => r.json()).catch(() => ({ enabled: false }));
+    }
+    return this.chainInfo;
   }
 
-  async createTeam(input: { name: string; purpose: string; templateId: TemplateId; you: { name: string } }): Promise<Reply<Team>> {
-    const r = await this.call<{ team: Team }>('/api/teams', input);
+  private async signer(chainId: number) {
+    const ethereum = (window as unknown as { ethereum?: import('ethers').Eip1193Provider }).ethereum;
+    if (!ethereum) throw Object.assign(new Error('no wallet'), { key: 'live.noWallet' });
+    await ensureChain(ethereum, chainId);
+    const { BrowserProvider } = await import('ethers');
+    return new BrowserProvider(ethereum).getSigner();
+  }
+
+  /** Have the member's wallet sign typed data (EIP-712). */
+  async signTyped(prepared: Prepared, value: Record<string, unknown>): Promise<Reply<string>> {
+    try {
+      const signer = await this.signer(Number(prepared.domain.chainId));
+      return { ok: true, value: await signer.signTypedData(prepared.domain, prepared.types, value) };
+    } catch (e) {
+      return { ok: false, error: walletError(e) };
+    }
+  }
+
+  /** Send TMIM from the member's wallet (a contribution to the team account). */
+  async sendTmim(chainId: number, tmim: string, to: string, amount: number): Promise<Reply<string>> {
+    try {
+      const signer = await this.signer(chainId);
+      const tx = await signer.sendTransaction({ to: tmim, data: TMIM.encodeFunctionData('transfer', [to, BigInt(amount)]) });
+      const receipt = await tx.wait(1);
+      return { ok: true, value: receipt?.hash ?? tx.hash };
+    } catch (e) {
+      return { ok: false, error: walletError(e) };
+    }
+  }
+
+  // ── Actions ────────────────────────────────────────────────────
+
+  /** For an on-chain team's settled action: the request to sign. */
+  prepare(teamId: string, command: Command): Promise<Reply<Prepare<{ command: Command; request: ForwardRequest }>>> {
+    return this.call(`/api/teams/${encodeURIComponent(teamId)}/prepare`, { command });
+  }
+
+  send(teamId: string, command: Command, signed?: Signed): Promise<Reply<{ result: CommandResult; team: Team }>> {
+    return this.call(`/api/teams/${encodeURIComponent(teamId)}/commands`, { command, signed });
+  }
+
+  prepareTeam(input: TeamInput): Promise<Reply<Prepare<{ request: ForwardRequest }>>> {
+    return this.call('/api/teams/prepare', input);
+  }
+
+  async createTeam(input: TeamInput, signed?: Signed): Promise<Reply<Team>> {
+    const r = await this.call<{ team: Team }>('/api/teams', { ...input, signed });
     return r.ok ? { ok: true, value: r.value.team } : r;
   }
 
-  invite(teamId: string): Promise<Reply<{ url: string; expiresAt: string }>> {
-    return this.call(`/api/teams/${encodeURIComponent(teamId)}/invites`, {});
+  prepareInvite(teamId: string): Promise<Reply<Prepare<{ token: string; invite: Record<string, unknown> }>>> {
+    return this.call(`/api/teams/${encodeURIComponent(teamId)}/invites/prepare`, {});
+  }
+
+  invite(teamId: string, body: Record<string, unknown> = {}): Promise<Reply<{ url: string; expiresAt: string }>> {
+    return this.call(`/api/teams/${encodeURIComponent(teamId)}/invites`, body);
+  }
+
+  prepareJoin(token: string): Promise<Reply<Prepare<{ request: ForwardRequest }>>> {
+    return this.call(`/api/invites/${encodeURIComponent(token)}/prepare`, {});
   }
 
   async inviteInfo(token: string): Promise<Reply<InviteInfo>> {
@@ -115,8 +176,8 @@ export class LiveClient {
     }
   }
 
-  async acceptInvite(token: string, you: { name: string }): Promise<Reply<Team>> {
-    const r = await this.call<{ team: Team }>(`/api/invites/${encodeURIComponent(token)}/accept`, you);
+  async acceptInvite(token: string, you: { name: string }, signed?: Signed): Promise<Reply<Team>> {
+    const r = await this.call<{ team: Team }>(`/api/invites/${encodeURIComponent(token)}/accept`, { ...you, signed });
     return r.ok ? { ok: true, value: r.value.team } : r;
   }
 
@@ -212,6 +273,64 @@ export class LiveClient {
   }
 }
 
+export interface ChainInfo {
+  enabled: boolean;
+  chainId?: number;
+  factory?: string;
+  forwarder?: string;
+  tmim?: string;
+  explorer?: string;
+}
+
+export interface Prepared {
+  domain: Record<string, unknown> & { chainId: number };
+  types: Record<string, { name: string; type: string }[]>;
+}
+
+/** A prepare reply: nothing to sign (an off-chain team), or what to sign. */
+export type Prepare<T> = { onChain: false } | ({ onChain: true } & Prepared & T);
+
+export interface Signed {
+  request: ForwardRequest;
+  signature: string;
+}
+
+export interface TeamInput {
+  name: string;
+  purpose: string;
+  templateId: TemplateId;
+  you: { name: string };
+}
+
+const BASE_SEPOLIA = {
+  chainId: '0x14a34', chainName: 'Base Sepolia', nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+  rpcUrls: ['https://sepolia.base.org'], blockExplorerUrls: ['https://sepolia.basescan.org'],
+};
+
+/** Ask the wallet to use the team's chain (adding Base Sepolia if it doesn't know it). */
+async function ensureChain(ethereum: import('ethers').Eip1193Provider, chainId: number): Promise<void> {
+  const hex = '0x' + chainId.toString(16);
+  try {
+    const current = await ethereum.request({ method: 'eth_chainId' });
+    if (typeof current === 'string' && parseInt(current, 16) === chainId) return;
+    await ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: hex }] });
+  } catch (e) {
+    if ((e as { code?: number }).code === 4902 && chainId === 84532) {
+      await ethereum.request({ method: 'wallet_addEthereumChain', params: [BASE_SEPOLIA] });
+      return;
+    }
+    throw Object.assign(new Error('wrong chain'), { key: 'live.wrongChain' });
+  }
+}
+
+function walletError(e: unknown): Refusal {
+  const err = e as { code?: string | number; key?: string };
+  if (err.key) return { key: err.key };
+  if (err.code === 'ACTION_REJECTED' || err.code === 4001) return { key: 'live.signCancelled' };
+  console.error('[wallet]', e);
+  return { key: 'live.walletFailed' };
+}
+
 export interface InviteInfo {
   teamId: string;
   name: string;
@@ -222,6 +341,7 @@ export interface InviteInfo {
   rules: Record<string, number>;
   memberCount: number;
   usable: boolean;
+  onChain: boolean;
 }
 
 function post(body: unknown, token?: string): RequestInit {

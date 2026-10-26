@@ -397,14 +397,21 @@ export function credits(team: Team, deliverableId: string) {
 
 // ── Decide: rules and money ──────────────────────────────────────
 
-export function proposeRule(team: Team, me: string, input: { ruleKey: RuleKey; to: number; title: Text; why: Text }, now: string): RuleChange {
+/** A new change's id: the one given (the live app chooses it, since the team's contract keys proposals by it), else a fresh one. */
+function changeId(team: Team, id: string | undefined): string {
+  if (id === undefined) return newId('c');
+  if (team.changes.some(c => c.id === id)) throw new DomainError('err.invalid_input');
+  return id;
+}
+
+export function proposeRule(team: Team, me: string, input: { ruleKey: RuleKey; to: number; title: Text; why: Text; id?: string }, now: string): RuleChange {
   requirePermission(team, me, 'propose');
   const from = ruleValue(team, input.ruleKey);
   requireValidRuleValue(input.ruleKey, input.to);
   if (input.to === from) throw new DomainError('err.rule_unchanged');
   if (team.changes.some(c => c.kind === 'rule' && c.ruleKey === input.ruleKey && c.status === 'open')) throw new DomainError('err.rule_open');
   const c: RuleChange = {
-    kind: 'rule', id: newId('c'), title: input.title, why: input.why, ruleKey: input.ruleKey,
+    kind: 'rule', id: changeId(team, input.id), title: input.title, why: input.why, ruleKey: input.ruleKey,
     from, to: input.to, proposerId: me, status: 'open', votes: [], at: now,
     closesAt: addHours(now, ruleValue(team, 'vote_hours')),
   };
@@ -413,7 +420,7 @@ export function proposeRule(team: Team, me: string, input: { ruleKey: RuleKey; t
   return c;
 }
 
-export function requestMoney(team: Team, me: string, input: { action: MoneyAction; title: Text; why: Text }, now: string): MoneyChange {
+export function requestMoney(team: Team, me: string, input: { action: MoneyAction; title: Text; why: Text; id?: string }, now: string): MoneyChange {
   requirePermission(team, me, 'propose');
   const a = input.action;
   let amount: number;
@@ -430,7 +437,7 @@ export function requestMoney(team: Team, me: string, input: { action: MoneyActio
   }
   const decidedBy = amount <= ruleValue(team, 'spend_limit') ? 'role' : 'vote';
   const c: MoneyChange = {
-    kind: 'money', id: newId('c'), title: input.title, why: input.why, action: a, amount,
+    kind: 'money', id: changeId(team, input.id), title: input.title, why: input.why, action: a, amount,
     proposerId: me, decidedBy, status: 'open', votes: [], at: now,
     closesAt: decidedBy === 'vote' ? addHours(now, ruleValue(team, 'vote_hours')) : undefined,
   };
@@ -595,7 +602,7 @@ export const messagesFor = (team: Team, ref: { type: 'deliverable' | 'change'; i
 export function createTeam(
   input: {
     name: Text; purpose: Text; templateId: TemplateId; founder: { id?: string; name: Text; initials: string; wallet: string };
-    id?: string; live?: boolean;
+    id?: string; live?: boolean; chain?: Team['chain'];
   },
   now: string,
 ): Team {
@@ -606,7 +613,7 @@ export function createTeam(
     roleIds: [...tpl.founderRoleIds], wallet: input.founder.wallet, joinedAt: now,
   };
   const team: Team = {
-    id: input.id ?? newId('team'), ...(input.live ? { live: true } : {}),
+    id: input.id ?? newId('team'), ...(input.live ? { live: true } : {}), ...(input.chain ? { chain: input.chain } : {}),
     name: input.name, purpose: input.purpose, createdAt: now, templateId: input.templateId,
     members: [founder], charter: charterFromTemplate(input.templateId, now),
     objectives: [], deliverables: [], tasks: [], changes: [], messages: [], ledger: [],

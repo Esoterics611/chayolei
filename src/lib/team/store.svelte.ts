@@ -10,12 +10,12 @@ import type { Team } from './types';
 import { DomainError } from './types';
 import { seedTeams } from './seed';
 import * as E from './engine';
-import { applyCommand } from './commands';
+import { applyCommand, SETTLED_COMMANDS } from './commands';
 import type { Command, CommandResult } from './commands';
 import { member } from './rules';
 import { t } from './i18n';
 import { ui } from './ui.svelte';
-import type { InviteInfo, LiveClient, Refusal } from './live';
+import type { ChainInfo, InviteInfo, LiveClient, Refusal, Signed } from './live';
 
 /** The live app, on Firestore; otherwise the demo. */
 export const LIVE = import.meta.env.VITE_TEAM_BACKEND === 'firestore';
@@ -40,6 +40,8 @@ class TeamStore {
   uid = $state('');
   /** Live app: 'loading' until the session and the active team are known. */
   status = $state<'loading' | 'signed_out' | 'ready'>(LIVE ? 'loading' : 'ready');
+  /** Live app: where teams are recorded on-chain, if anywhere. */
+  chain = $state<ChainInfo>({ enabled: false });
   private started = false;
   private client: LiveClient | null = null;
   private clientReady: Promise<LiveClient> | null = null;
@@ -102,6 +104,7 @@ class TeamStore {
       },
     });
     this.client = client;
+    void client.chain().then(info => { this.chain = info; });
     await client.start();
     return client;
   }
@@ -187,7 +190,29 @@ class TeamStore {
         throw e;
       }
     }
-    const r = await (await this.liveClient()).send(team.id, cmd);
+    const client = await this.liveClient();
+    let command = cmd;
+    let signed: Signed | undefined;
+    if (team.chain && SETTLED_COMMANDS.has(cmd.type)) {
+      // A settled action on an on-chain team: the member signs the exact call.
+      const prep = await client.prepare(team.id, cmd);
+      if (!prep.ok) { this.explain(prep.error); return undefined; }
+      if (prep.value.onChain) {
+        const sig = await client.signTyped(prep.value, { ...prep.value.request });
+        if (!sig.ok) { this.explain(sig.error); return undefined; }
+        command = prep.value.command;
+        signed = { request: prep.value.request, signature: sig.value };
+      }
+    } else if (team.chain && cmd.type === 'contribute') {
+      // TMIM moves from the member's wallet to the team's contract; the
+      // server checks the transfer before recording it.
+      const info = await client.chain();
+      if (!info.tmim) { this.explain({ key: 'err.chain.unavailable' }); return undefined; }
+      const tx = await client.sendTmim(team.chain.chainId, info.tmim, team.chain.address, cmd.amount);
+      if (!tx.ok) { this.explain(tx.error); return undefined; }
+      command = { ...cmd, txHash: tx.value };
+    }
+    const r = await client.send(team.id, command, signed);
     if (!r.ok) { this.explain(r.error); return undefined; }
     this.replace(r.value.team);
     this.now = new Date().toISOString();
@@ -197,10 +222,14 @@ class TeamStore {
 
   async createTeam(input: Parameters<typeof E.createTeam>[0]): Promise<Team | undefined> {
     if (LIVE) {
-      const r = await (await this.liveClient()).createTeam({
+      const client = await this.liveClient();
+      const data = {
         name: String(input.name), purpose: String(input.purpose), templateId: input.templateId,
         you: { name: String(input.founder.name) },
-      });
+      };
+      const signed = await this.signPrepared(await client.prepareTeam(data));
+      if (signed === null) return undefined;
+      const r = await client.createTeam(data, signed);
       if (!r.ok) { this.explain(r.error); return undefined; }
       this.replace(r.value);
       this.switchTeam(r.value.id);
@@ -225,7 +254,19 @@ class TeamStore {
     const team = this.team;
     if (!team) return undefined;
     if (!LIVE) return `https://chayolei.app/join/${team.id}-demo`;
-    const r = await (await this.liveClient()).invite(team.id);
+    const client = await this.liveClient();
+    let body: Record<string, unknown> = {};
+    if (team.chain) {
+      // The inviter signs the invite; the team's contract checks it when people join.
+      const prep = await client.prepareInvite(team.id);
+      if (!prep.ok) { this.explain(prep.error); return undefined; }
+      if (prep.value.onChain) {
+        const sig = await client.signTyped(prep.value, prep.value.invite);
+        if (!sig.ok) { this.explain(sig.error); return undefined; }
+        body = { token: prep.value.token, invite: prep.value.invite, signature: sig.value };
+      }
+    }
+    const r = await client.invite(team.id, body);
     if (!r.ok) { this.explain(r.error); return undefined; }
     return r.value.url;
   }
@@ -237,12 +278,26 @@ class TeamStore {
   }
 
   async acceptInvite(token: string, name: string): Promise<Team | undefined> {
-    const r = await (await this.liveClient()).acceptInvite(token, { name });
+    const client = await this.liveClient();
+    const signed = await this.signPrepared(await client.prepareJoin(token));
+    if (signed === null) return undefined;
+    const r = await client.acceptInvite(token, { name }, signed);
     if (!r.ok) { this.explain(r.error); return undefined; }
     this.replace(r.value);
     this.switchTeam(r.value.id);
     this.status = 'ready';
     return r.value;
+  }
+
+  /** Sign a prepared forward request, if there is one. Null: refused or cancelled (already explained). */
+  private async signPrepared(
+    prep: Awaited<ReturnType<LiveClient['prepareTeam']>>,
+  ): Promise<Signed | undefined | null> {
+    if (!prep.ok) { this.explain(prep.error); return null; }
+    if (!prep.value.onChain) return undefined;
+    const sig = await (await this.liveClient()).signTyped(prep.value, { ...prep.value.request });
+    if (!sig.ok) { this.explain(sig.error); return null; }
+    return { request: prep.value.request, signature: sig.value };
   }
 
   private load(): Saved | undefined {
