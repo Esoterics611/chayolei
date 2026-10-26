@@ -20,8 +20,8 @@
   });
 </script>
 
-<span class="avatar {size}" style:--h={hue} title={title ?? name} role="img" aria-label={name}>
-  <span aria-hidden="true">{initials}</span>
+<!-- The initials are drawn by CSS: a picture of the name, which the label carries. -->
+<span class="avatar {size}" style:--h={hue} title={title ?? name} role="img" aria-label={name} data-initials={initials}>
   {#if ai}<span class="ai" aria-hidden="true"><Bot size={9} strokeWidth={2.5} /></span>{/if}
 </span>
 
@@ -40,6 +40,7 @@
     letter-spacing: 0.02em;
     font-family: var(--font-ui);
   }
+  .avatar::before { content: attr(data-initials); }
   :global(:root[data-theme='dark']) .avatar {
     --bg: hsl(var(--h) 22% 25%);
     --fg: hsl(var(--h) 45% 82%);

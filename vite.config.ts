@@ -7,5 +7,8 @@ export default defineConfig({
   test: {
     include: ['src/**/*.test.ts'],
     environment: 'node',
+    // Emulator tests clear the shared Firestore emulator between tests, so
+    // test files run one at a time.
+    fileParallelism: false,
   },
 });

@@ -1,12 +1,12 @@
 # New UI — Technical Design
 
-> Written 2026-10-25 on branch `claude/ux-redesign`. Implements the design in `UX_REDESIGN.md` (read it first). This document is what the code is built against; keep it in sync when the code moves.
+> Written 2026-10-25 on branch `claude/ux-redesign`; updated 2026-10-26 for the live backend. Implements the design in `UX_REDESIGN.md` (read it first). This document is what the code is built against; keep it in sync when the code moves.
 
 ## 1. Scope of this branch
 
-**Builds the whole new user experience as working front-end code on a client-side domain model with sample data.** Every screen, workflow and rule in the design works in the browser: taking work, saving versions, review, accept-and-pay, proposals and votes that change the charter, money requests, the ledger, statements, starting a team. Nothing touches Firestore or the chain yet; the sample data and actions live in one store behind a small interface, so a Firestore/contract implementation can replace it later without touching screens (§11).
+**Builds the whole new user experience as working front-end code on a client-side domain model with sample data.** Every screen, workflow and rule in the design works in the browser: taking work, saving versions, review, accept-and-pay, proposals and votes that change the charter, money requests, the ledger, statements, starting a team. The sample data and actions live in one store behind a small interface. Since 2026-10-26 the same screens also run on a live backend (teams in Firestore, written by the server through the same engine, and recorded on each team's contract when a chain is configured; `TEAM_BACKEND.md`), chosen by `VITE_TEAM_BACKEND` (§11).
 
-**The old UI stays reachable** at its current URLs (campaigns, assignments, governance…) in a `(classic)` route group, so nothing is lost while the new UI matures. The new UI owns `/`, `/plan`, `/work`, `/d/…`, `/decide`, `/treasury`, `/ledger` and `/start`. The classic dashboard and classic treasury page are retired (the new Treasury is TMIM-only, as the economic model requires).
+**The old UI stays reachable** at its current URLs (campaigns, assignments, governance…) in a `(classic)` route group, so nothing is lost while the new UI matures. The new UI owns `/`, `/plan`, `/work`, `/d/…`, `/decide`, `/treasury`, `/ledger`, `/wallet`, `/start` and `/join/…`. The classic dashboard and classic treasury page are retired (the new Treasury is TMIM-only, as the economic model requires).
 
 **The clickable demo** is a static build of this same code (`scripts/build-demo.sh`), published as an artifact.
 
@@ -23,6 +23,7 @@
 | Treasury in TMIM: team account, budgets, issuance cap, scheduled pay, statements | `Treasury`, `Schedule`; budgets on `Objective`; derived figures in `ledger.ts` |
 | Threads | `Message` attached to a ref (deliverable, change) |
 | First run, templates | `templates.ts` + `/start` |
+| AI in the team (§8): the planner | `planner.ts` (prompt, answer shape, checks, the demo's sample), `server/planner.ts` (the Claude call), the `addPlan` command; `assist` on `Deliverable`, `Task` and their ledger entries |
 | Home, Plan, Work, Decide, Treasury, Ledger | routes in `src/routes/(app)` |
 
 ## 3. Architecture
@@ -34,10 +35,14 @@ src/lib/team/            domain (no UI)
   seed.ts                sample teams (Brachos Translation Group; Harbor Community Radio)
   engine.ts              pure selectors + actions on a Team; throws DomainError(key)
   ledger.ts              entry factory, proof, day grouping, balances, statements
+  notify.ts              what concerns a member: news since last seen, votes closing soon
   diff.ts                paragraph + word diff
   i18n.ts                messages (en, he), t(), number/date formatting
   nav.ts                 href(), go(), currentPath(): path or hash routing
-  store.svelte.ts        TeamStore: $state teams, active team, acting member; calls engine; persistence
+  commands.ts            every member action as data (Command), applied by applyCommand
+  persist.ts             a Team as Firestore documents (core + ledger, messages, versions)
+  live.ts                the live app's client: wallet sign-in, listeners, API calls
+  store.svelte.ts        TeamStore: teams, active team, acting member; store.do(command) on the demo or live backend
   ui.svelte.ts           locale, theme, toasts, confirm-and-sign dialog state
   *.test.ts              engine and diff tests (vitest)
 src/lib/ui/              presentational components and tokens.css (no domain logic)
@@ -98,7 +103,7 @@ Each action checks the acting member's permissions and the charter; failures thr
 5. **Accept & pay** (approver, needs `accept_work`; charter requires *Reviewed* first): the confirm dialog lists the consequences: owner gets `reward`, reviewer gets `review_reward`, from the objective's budget, within `monthly_issuance_cap`. Blocked if the budget's *left* or this month's cap would be exceeded. → stage `accepted`, `acceptedVersionId` set [settled, with amounts].
 6. **Release** an accepted deliverable (needs `release`) → stage `released`, content fingerprint and credits (owner, reviewer, approver) [settled].
 7. **Tasks**: add (owner or `manage_plan`), check off [signed].
-8. **Plan**: new objective (needs `manage_plan`, budget 0) [signed]; new deliverable with reward defaulting to the `deliverable_reward` rule [signed]. Budgets change only through money changes.
+8. **Plan**: new objective (needs `manage_plan`, budget 0) [signed]; new deliverable with reward defaulting to the `deliverable_reward` rule [signed]. Budgets change only through money changes. **Suggest deliverables** (the AI planner; needs `manage_plan`): it proposes a breakdown of an objective; nothing is written. The member edits it and adds what they keep with one `addPlan` (at most 8 deliverables of 6 tasks), each deliverable and task marked `assist: 'planner'` [signed]. Shown as *AI-assisted* in the plan, the deliverable's header and credits, and the ledger sentence. In the demo the planner is a fixed sample, labelled as one (`TEAM_BACKEND.md` §6a).
 9. **Stalled**: stage `assigned`/`in_progress`/`changes_requested` with no activity for 7 days.
 
 **Rules (corporate)**
@@ -145,15 +150,15 @@ Each action checks the acting member's permissions and the charter; failures thr
 
 ## 8. Components (`src/lib/ui/`)
 
-**`src/lib/ui`** (presentational): `Dialog` (native `<dialog>`: focus trap, Esc, inert page; its close button comes last so first focus lands on the content), `ConfirmSign` (consequences + simulated passkey, "Signing…" then recorded), `Toasts` (`aria-live`), `Popover`, `PageHeader`, `Tabs` (links with `aria-current`), `ChangeCard` (frame: kind, title, proposer, status, body, why, tally, decider line, consequences, warnings, actions), `TextDiff` (paragraph + word diff, paragraph numbers, an `annotate` snippet per paragraph for anchored comments), `StageChip`, `StatusChip`, `TierMark`, `Avatar` (initials on a tint from the id; AI badge), `Amount` (tabular TMIM, unit set small), `Meter` (paid / committed / left; cap), `VoteTally` (for / against / abstain / not voted, quorum tick), `EmptyState`.
+**`src/lib/ui`** (presentational): `Dialog` (native `<dialog>`: focus trap, Esc, inert page; its close button comes last so first focus lands on the content), `ConfirmSign` (consequences + simulated passkey, "Signing…" then recorded), `Toasts` (`aria-live`), `Popover`, `PageHeader`, `Tabs` (links with `aria-current`), `ChangeCard` (frame: kind, title, proposer, status, body, why, tally, decider line, consequences, warnings, actions), `TextDiff` (paragraph + word diff, paragraph numbers, an `annotate` snippet per paragraph for anchored comments), `StageChip`, `StatusChip`, `TierMark`, `Avatar` (initials on a tint from the id; AI badge), `Amount` (tabular TMIM, unit set small), `Meter` (paid / committed / left; cap), `VoteTally` (for / against / abstain / not voted, quorum tick), `EmptyState`, `AiMark` (*AI-assisted*: icon and words; compact shows the icon with the words for screen readers).
 
-**`src/lib/app`** (reads the store): `TeamSwitcher`, `AccountMenu` (acting as, language, theme, wallet, reset), `CommandPalette`, `Dialogs` + `forms/` (new objective, new deliverable, propose a rule change, request money, add to team account, request changes), `LedgerList` (the record as a chain: settled entries are square blocks, signed ones round signatures, anchors solid; expandable proof), `NeedsList`, `DeliverableRow`, `DeliverableHeader` (stage, version, people, next step), `VersionList` (commit line with draft, accepted, in review), `Doc`, `People` (owner → reviewer ✓ approver), `Person`, `PlanView` (outline and board), `StageStrip`, `SystemsStrip` (Home: the three systems at a glance), `ChangeWhat` (a rule or money change as a diff or a flow), `DecideHeader`, `BrandMark` (three bars on one base), `TokenMark` (TMIM as a coin carrying that mark), `NotFound`; and `describe.ts` (ledger sentences, icons, filters), `next.ts` (whose move it is), `actions.ts` (take, request review, release), `format.ts`.
+**`src/lib/app`** (reads the store): `TeamSwitcher`, `AccountMenu` (acting as, language, theme, wallet, reset), `CommandPalette`, `Dialogs` + `forms/` (new objective, new deliverable, propose a rule change, request money, add to team account, request changes, suggest deliverables: the planner's dialog, loaded when first opened), `LedgerList` (the record as a chain: settled entries are square blocks, signed ones round signatures, anchors solid; expandable proof), `NeedsList`, `DeliverableRow`, `DeliverableHeader` (stage, version, people, next step), `VersionList` (commit line with draft, accepted, in review), `Doc`, `People` (owner → reviewer ✓ approver), `Person`, `PlanView` (outline and board), `StageStrip`, `SystemsStrip` (Home: the three systems at a glance), `ChangeWhat` (a rule or money change as a diff or a flow), `DecideHeader`, `BrandMark` (three bars on one base), `TokenMark` (TMIM as a coin carrying that mark), `NotFound`; and `describe.ts` (ledger sentences, icons, filters), `next.ts` (whose move it is), `actions.ts` (take, request review, release), `format.ts`.
 
 Icons: `@lucide/svelte` (`@lucide/svelte/icons/<name>`), with directional icons mirrored in RTL (`.flip-rtl`). Money uses `hand-coins`, not `coins`, which at small sizes reads as the chain link that marks settled entries.
 
 ## 9. Visual system
 
-- **Tokens** (`src/lib/ui/tokens.css`), light and dark, on `:root` with `data-theme` overrides: surfaces `--surface`, `--surface-2`, `--surface-3`; ink `--ink`, `--ink-2`, `--ink-3`; `--rule`, `--rule-strong`; accent `--accent` (deep ledger green) and `--accent-weak`; stage colours (open, assigned, in progress, in review, changes requested, accepted, released, stalled), always paired with a label or icon.
+- **Tokens** (`src/lib/ui/tokens.css`), light and dark, on `:root` with `data-theme` overrides: surfaces `--surface`, `--surface-2`, `--surface-3`; ink `--ink`, `--ink-2`, `--ink-3` (`--ink-3`, the faintest text, keeps 4.5:1 on every surface); `--rule`, `--rule-strong`; accent `--accent` (deep ledger green) and `--accent-weak`; stage colours (open, assigned, in progress, in review, changes requested, accepted, released, stalled), always paired with a label or icon.
 - **Type:** IBM Plex Sans + IBM Plex Sans Hebrew for UI; Source Serif 4 / Frank Ruhl Libre for documents; IBM Plex Mono with tabular figures for amounts and hashes. Scale 12 / 13 / 14 / 16 / 20 / 24 / 30. Reading measure 66ch.
 - **Layout:** 4-px spacing grid; content max 1120 px; rail 232 px (64 px collapsed); bottom bar under 640 px. Logical properties only (`margin-inline`, `padding-inline`, `inset-inline`).
 - **Motion:** view transitions on navigation (`onNavigate` + `document.startViewTransition`), 160 ms; none under `prefers-reduced-motion`.
@@ -166,9 +171,9 @@ Icons: `@lucide/svelte` (`@lucide/svelte/icons/<name>`), with directional icons 
 - **Bidi:** in Hebrew, `t()` wraps every interpolated value in Unicode isolates (FSI…PDI), together with a `v` written before it or a `%` after it, so names, amounts, versions and arrows keep their order inside right-to-left sentences ("100 TMIM ← 150 TMIM"). Everything people write (documents, comments, messages, version notes) carries `dir="auto"`, so an English document reads left to right inside the Hebrew UI.
 - Landmarks (`nav`, `main`), a skip link, visible focus rings, 24 px minimum targets, keyboard paths for every action, `aria-live` for toasts and signing state, labels on every control, contrast AA in both themes.
 
-## 11. Swapping in the real backend later
+## 11. The live backend
 
-`TeamStore` is the seam. A later `FirestoreTeamRepository` maps: `Team` ← makom (generalized) + per-team charter doc; `Objective` ← mivtza; `Deliverable` ← masima (+ new `versions` subcollection); `Task` ← tafkid; `Change` ← new `changes` collection (rule changes also to `ChayoleiGovernance` proposals); `LedgerEntry` ← new `ledger` collection written by API routes and the chain listener; accept-and-pay → the rewards contract via the approve API. Screens don't change.
+Done 2026-10-26; `TEAM_BACKEND.md` has the details. `TeamStore` is the seam: screens send a `Command` with `store.do()`; in the demo the store applies it in the browser, in the live app (`VITE_TEAM_BACKEND=firestore`) it posts it to `/api/teams/[id]/commands`, where the server applies it with the same engine inside a Firestore transaction. A team is a core document plus `ledger`, `messages` and `versions` subcollections; a member's id is their sign-in uid. With a chain configured, each team is created on-chain and its settled actions are signed by the member's wallet, relayed by the server and applied only once mined, with the transaction as proof (`TEAM_BACKEND.md` §6); live teams never carry stand-in proofs. The classic collections (makomot, mivtzaot, masimot…) are not migrated; live teams start fresh.
 
 ## 12. Demo build
 
@@ -176,7 +181,11 @@ Icons: `@lucide/svelte` (`@lucide/svelte/icons/<name>`), with directional icons 
 
 ## 13. Tests and acceptance
 
-- **Unit (vitest, `npm run test:unit`; also part of `npm test`), 23 tests:** diff; take → assigned; version + review request → in review; accept requires review; accept pays owner and reviewer, updates budget and ledger; budget and cap limits block acceptance; permissions; rule proposal passes and creates a new rule version; fails without quorum; money ≤ limit by role and > limit needs a vote; transfer can't exceed the account; statements add up.
+- **Unit (vitest, `npm run test:unit`; also part of `npm test`), 38 tests:** diff; take → assigned; version + review request → in review; accept requires review; accept pays owner and reviewer, updates budget and ledger; budget and cap limits block acceptance; permissions; rule proposal passes and creates a new rule version; fails without quorum; rule values the contract would refuse; money ≤ limit by role and > limit needs a vote; transfer can't exceed the account; a budget never below what was paid; statements add up; live proofs stay pending; both dictionaries have the same keys and placeholders; notifications; the planner's prompt shows nothing about members, its answers are trimmed to the limits, and `addPlan` adds a marked breakdown only for members who may change the plan.
+- **Against the Firestore emulator (`npm test`):** the team service (start, the work flow through payment, charter and input refusals, private drafts, concurrent writers, invites), the access rules (`TEAM_BACKEND.md` §7), and the planner (who may ask, the daily allowance, nothing written until `addPlan`; the request the SDK sends and how refusals and API errors are explained, against a local stand-in for the Messages API).
+- **The chain bridge on a local chain (`scripts/e2e/run-chain.sh`, also in CI):** team created and member admitted on-chain through signed requests and a signed invite, a budget passed by vote, accept and pay minting TMIM, contributions checked against real transfers and counted once, mismatched or missing signatures refused, batches anchored.
+- **Browser, repeatable:** `scripts/e2e/run-live.sh` (the live app on the emulators with two simulated wallets: sign in, start a team, invite, join, a budget by vote, take, version, review, accept and pay, then the AI planner against a local stand-in for Claude: suggest, drop one, rename one, add, and the other member sees it *AI-assisted*; with `E2E=1 scripts/e2e/run-chain.sh` the same flow recorded on a local chain) and `scripts/e2e/run-demo.sh` (the static demo: a vote, an acceptance, the planner's sample, the rule-range check, Hebrew). Both passing 2026-10-26.
 - **Checks:** `npm run check` 0 errors; `npm run build` succeeds; classic pages still render.
 - **Visual:** Playwright screenshots of every route in English and Hebrew, light and dark, 1440 px and 390 px; no horizontal scroll; no console errors.
+- **Accessibility and size (CI):** `scripts/e2e/run-a11y.sh` runs axe-core (WCAG 2.2 A/AA) on 22 screens and the planner's dialog × 2 languages × 2 themes × 2 sizes, after each screen's styles load: no violations. Every audited browser gets the same sample data, so the screens behind ids (a deliverable and its tabs, a review, a proposal, an objective) are the real ones; the audit fails if one shows *not found*. (Before 2026-10-26's phase 9 work they were audited as *not found* pages, because demo ids are random per browser; the corrected audit found nothing new.) `scripts/e2e/run-demo.sh` holds the first screen to 160 kB of JS and 200 kB in all, gzipped (130 and 142 on 2026-10-26); Firebase, ethers and the planner's dialog load only when used.
 - **Workflows in the browser** (dev server and the static demo, 2026-10-25, all passing): reviewer comments on a paragraph and marks reviewed; approver accepts and pays through the passkey dialog; the ledger records the payout; members vote a rule change through and the charter shows the new version; a spend within the limit is approved by role; scheduled pay is paid when due; a request above the limit goes to a vote; the command palette finds and opens a deliverable; a contributor takes work, writes v1 and requests review; a new team is started and given its first objective; the language switches to Hebrew.

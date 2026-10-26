@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import * as E from './engine';
 import { seedTeams } from './seed';
-import { memberBalance, objectiveFigures, statements, issuedInMonth, ANCHOR_BATCH } from './ledger';
+import { memberBalance, objectiveFigures, statements, issuedInMonth, ANCHOR_BATCH, anchoredBatches, isConfirmed } from './ledger';
 import { ruleValue, ruleCurrent } from './rules';
 import type { Team, WorkChange } from './types';
 import { DomainError } from './types';
@@ -155,6 +155,21 @@ describe('rules', () => {
     expect(errKey(() => E.proposeRule(t, 'levi', { ruleKey: 'review_reward', to: 200, title: 'x', why: 'y' }, NOW))).toBe('err.rule_open');
     expect(errKey(() => E.proposeRule(t, 'levi', { ruleKey: 'quorum_pct', to: 40, title: 'x', why: 'y' }, NOW))).toBe('err.rule_unchanged');
   });
+
+  it('refuses values the team contract would refuse', () => {
+    const t = brachos();
+    const propose = (ruleKey: 'quorum_pct' | 'majority_pct' | 'vote_hours' | 'spend_limit', to: number) =>
+      errKey(() => E.proposeRule(t, 'levi', { ruleKey, to, title: 'x', why: 'y' }, NOW));
+    // A 100% majority could never be exceeded: no rule could change again.
+    expect(propose('majority_pct', 100)).toBe('err.rule_range');
+    expect(propose('majority_pct', 40)).toBe('err.rule_range');
+    expect(propose('quorum_pct', 101)).toBe('err.rule_range');
+    expect(propose('vote_hours', 0)).toBe('err.rule_range');
+    expect(propose('vote_hours', 721)).toBe('err.rule_range');
+    expect(propose('spend_limit', 2.5)).toBe('err.invalid_value');
+    expect(propose('spend_limit', -1)).toBe('err.invalid_value');
+    expect(propose('majority_pct', 66)).toBeUndefined();
+  });
 });
 
 describe('money', () => {
@@ -185,6 +200,24 @@ describe('money', () => {
     expect(errKey(() => E.approveMoney(t, 'mendel', req.id, NOW))).toBe('err.insufficient');
   });
 
+  it('never sets a budget below what has been paid from it', () => {
+    const t = brachos();
+    // The Rashi companion pays Rivka's weekly schedule (150 TMIM, due now).
+    const s = t.treasury.schedules.find(x => x.id === 'sched-rivka')!;
+    const o = E.objective(t, s.objectiveId);
+    const paid = objectiveFigures(t, o).paid;
+    expect(errKey(() => E.requestMoney(t, 'mendel', { action: { type: 'budget', objectiveId: o.id, to: paid - 1 }, title: 'x', why: 'y' }, NOW))).toBe('err.budget_below_paid');
+    // Requested while possible, then overtaken by a payout before the vote ends.
+    const shrink = E.requestMoney(t, 'mendel', { action: { type: 'budget', objectiveId: o.id, to: paid + 100 }, title: 'x', why: 'y' }, NOW);
+    expect(shrink.decidedBy).toBe('vote');
+    for (const m of ['mendel', 'yosef', 'levi', 'shmuel']) E.vote(t, m, shrink.id, 'for', NOW);
+    E.paySchedule(t, 'mendel', s.id, NOW);
+    E.vote(t, 'rivka', shrink.id, 'for', NOW);
+    expect(shrink.status).toBe('failed');
+    expect(o.budget).toBe(8000);
+    expect(t.ledger.at(-1)).toMatchObject({ kind: 'change_failed', data: { reason: 'below_paid' } });
+  });
+
   it('pays a due schedule once, then waits a week', () => {
     const t = brachos();
     const rivka = memberBalance(t, 'rivka');
@@ -208,6 +241,26 @@ describe('ledger', () => {
     const signed = t.ledger.filter(e => e.tier === 'signed').length;
     const anchors = t.ledger.filter(e => e.kind === 'anchor').length;
     expect(anchors).toBe(Math.floor(signed / ANCHOR_BATCH));
+  });
+});
+
+describe('proofs', () => {
+  it('are stand-ins in the demo, and pending in a live team until the chain confirms', () => {
+    const demo = brachos();
+    const anchoredDemo = anchoredBatches(demo);
+    // Every settled entry has its stand-in transaction; signed entries wait
+    // only in the batch still filling up, which has no anchor yet.
+    const waiting = demo.ledger.filter(e => !isConfirmed(e, anchoredDemo));
+    expect(waiting.every(e => e.tier === 'signed' && e.proof.batch === anchoredDemo.size + 1)).toBe(true);
+    expect(waiting.length).toBeLessThan(ANCHOR_BATCH);
+
+    const live = E.createTeam({ name: 'Live', purpose: '', templateId: 'editorial', live: true, founder: { id: 'u1', name: 'A', initials: 'A', wallet: '0x1' } }, NOW);
+    E.addObjective(live, 'u1', { title: 'Obj', description: '' }, NOW);
+    const [created, objective] = live.ledger;
+    expect(created.proof).toEqual({});
+    expect(objective.proof).toEqual({ batch: 1 });
+    const anchored = anchoredBatches(live);
+    expect(live.ledger.some(e => isConfirmed(e, anchored))).toBe(false);
   });
 });
 

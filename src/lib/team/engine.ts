@@ -4,12 +4,12 @@
 // refusals throw DomainError with an i18n key. `now` is an ISO timestamp.
 
 import type {
-  Change, Deliverable, MoneyAction, MoneyChange, Member, Objective, RuleChange, RuleKey,
+  Assist, Change, Deliverable, MoneyAction, MoneyChange, Member, Objective, RuleChange, RuleKey,
   Stage, Task, Team, TemplateId, Text, Version, VoteChoice, WorkChange,
 } from './types';
 import { DomainError } from './types';
-import { appendEntry, acceptanceCost, issuedInMonth, objectiveFigures, fakeHash } from './ledger';
-import { can, member, requirePermission, ruleCurrent, ruleValue, voters } from './rules';
+import { appendEntry, acceptanceCost, issuedInMonth, objectiveFigures, objectivePaid, fakeHash } from './ledger';
+import { can, member, requirePermission, requireValidRuleValue, ruleCurrent, ruleValue, voters } from './rules';
 import { charterFromTemplate, TEMPLATES } from './templates';
 
 export const STALL_DAYS = 7;
@@ -153,7 +153,7 @@ export function addObjective(team: Team, me: string, input: { title: Text; descr
 
 export function addDeliverable(
   team: Team, me: string, objectiveId: string,
-  input: { title: Text; scope: Text; reviewerId?: string; approverId?: string; reward?: number; due?: string },
+  input: { title: Text; scope: Text; reviewerId?: string; approverId?: string; reward?: number; due?: string; assist?: Assist },
   now: string,
 ): Deliverable {
   requirePermission(team, me, 'manage_plan');
@@ -163,22 +163,45 @@ export function addDeliverable(
     id: newId('d'), objectiveId: o.id, title: input.title, scope: input.scope,
     reviewerId: input.reviewerId, approverId: input.approverId ?? o.ownerId,
     reward: input.reward ?? ruleValue(team, 'deliverable_reward'), due: input.due,
-    stage: 'open', versions: [], lastActivityAt: now,
+    stage: 'open', versions: [], lastActivityAt: now, assist: input.assist,
   };
   team.deliverables.push(d);
-  appendEntry(team, { kind: 'deliverable_created', at: now, actorId: me, refs: { objectiveId: o.id, deliverableId: d.id }, data: { reward: d.reward } });
+  appendEntry(team, {
+    kind: 'deliverable_created', at: now, actorId: me, refs: { objectiveId: o.id, deliverableId: d.id },
+    data: input.assist ? { reward: d.reward, assist: input.assist } : { reward: d.reward },
+  });
   return d;
 }
 
-export function addTask(team: Team, me: string, deliverableId: string, input: { title: Text; ownerId?: string; due?: string }, now: string): Task {
+export function addTask(team: Team, me: string, deliverableId: string, input: { title: Text; ownerId?: string; due?: string; assist?: Assist }, now: string): Task {
   const d = deliverable(team, deliverableId);
   if (d.ownerId !== me && !can(team, me, 'manage_plan')) throw new DomainError('err.not_owner');
   if (!String(typeof input.title === 'string' ? input.title : input.title.en).trim()) throw new DomainError('err.empty');
-  const t: Task = { id: newId('t'), deliverableId: d.id, title: input.title, ownerId: input.ownerId, due: input.due, done: false };
+  const t: Task = { id: newId('t'), deliverableId: d.id, title: input.title, ownerId: input.ownerId, due: input.due, done: false, assist: input.assist };
   team.tasks.push(t);
   touch(d, now);
-  appendEntry(team, { kind: 'task_created', at: now, actorId: me, refs: { deliverableId: d.id, taskId: t.id, objectiveId: d.objectiveId } });
+  appendEntry(team, {
+    kind: 'task_created', at: now, actorId: me, refs: { deliverableId: d.id, taskId: t.id, objectiveId: d.objectiveId },
+    ...(input.assist ? { data: { assist: input.assist } } : {}),
+  });
   return t;
+}
+
+/** A breakdown of an objective, added at once: what a lead accepts from the
+ *  AI planner after editing it, marked with the helper that suggested it. */
+export function addPlan(
+  team: Team, me: string, objectiveId: string,
+  items: { title: Text; scope: Text; reward?: number; tasks?: Text[] }[],
+  assist: Assist | undefined, now: string,
+): Deliverable[] {
+  requirePermission(team, me, 'manage_plan');
+  objective(team, objectiveId);
+  if (!items.length) throw new DomainError('err.empty');
+  return items.map(item => {
+    const d = addDeliverable(team, me, objectiveId, { title: item.title, scope: item.scope, reward: item.reward, assist }, now);
+    for (const title of item.tasks ?? []) addTask(team, me, d.id, { title, assist }, now);
+    return d;
+  });
 }
 
 export function setTaskDone(team: Team, me: string, taskId: string, done: boolean, now: string): void {
@@ -397,14 +420,21 @@ export function credits(team: Team, deliverableId: string) {
 
 // ── Decide: rules and money ──────────────────────────────────────
 
-export function proposeRule(team: Team, me: string, input: { ruleKey: RuleKey; to: number; title: Text; why: Text }, now: string): RuleChange {
+/** A new change's id: the one given (the live app chooses it, since the team's contract keys proposals by it), else a fresh one. */
+function changeId(team: Team, id: string | undefined): string {
+  if (id === undefined) return newId('c');
+  if (team.changes.some(c => c.id === id)) throw new DomainError('err.invalid_input');
+  return id;
+}
+
+export function proposeRule(team: Team, me: string, input: { ruleKey: RuleKey; to: number; title: Text; why: Text; id?: string }, now: string): RuleChange {
   requirePermission(team, me, 'propose');
   const from = ruleValue(team, input.ruleKey);
-  if (!Number.isFinite(input.to) || input.to < 0) throw new DomainError('err.invalid_value');
+  requireValidRuleValue(input.ruleKey, input.to);
   if (input.to === from) throw new DomainError('err.rule_unchanged');
   if (team.changes.some(c => c.kind === 'rule' && c.ruleKey === input.ruleKey && c.status === 'open')) throw new DomainError('err.rule_open');
   const c: RuleChange = {
-    kind: 'rule', id: newId('c'), title: input.title, why: input.why, ruleKey: input.ruleKey,
+    kind: 'rule', id: changeId(team, input.id), title: input.title, why: input.why, ruleKey: input.ruleKey,
     from, to: input.to, proposerId: me, status: 'open', votes: [], at: now,
     closesAt: addHours(now, ruleValue(team, 'vote_hours')),
   };
@@ -413,7 +443,7 @@ export function proposeRule(team: Team, me: string, input: { ruleKey: RuleKey; t
   return c;
 }
 
-export function requestMoney(team: Team, me: string, input: { action: MoneyAction; title: Text; why: Text }, now: string): MoneyChange {
+export function requestMoney(team: Team, me: string, input: { action: MoneyAction; title: Text; why: Text; id?: string }, now: string): MoneyChange {
   requirePermission(team, me, 'propose');
   const a = input.action;
   let amount: number;
@@ -424,11 +454,13 @@ export function requestMoney(team: Team, me: string, input: { action: MoneyActio
   } else {
     const o = objective(team, a.objectiveId);
     if (!Number.isInteger(a.to) || a.to < 0 || a.to === o.budget) throw new DomainError('err.invalid_value');
+    const paid = objectivePaid(team, o.id);
+    if (a.to < paid) throw new DomainError('err.budget_below_paid', { paid });
     amount = Math.abs(a.to - o.budget);
   }
   const decidedBy = amount <= ruleValue(team, 'spend_limit') ? 'role' : 'vote';
   const c: MoneyChange = {
-    kind: 'money', id: newId('c'), title: input.title, why: input.why, action: a, amount,
+    kind: 'money', id: changeId(team, input.id), title: input.title, why: input.why, action: a, amount,
     proposerId: me, decidedBy, status: 'open', votes: [], at: now,
     closesAt: decidedBy === 'vote' ? addHours(now, ruleValue(team, 'vote_hours')) : undefined,
   };
@@ -471,10 +503,16 @@ function decide(team: Team, changeId: string, now: string): void {
     appendEntry(team, { kind: 'change_failed', at: now, actorId: c.proposerId, refs: { changeId: c.id }, data: { forPct: Math.round(t.forPct), turnout: Math.round(t.turnoutPct) } });
     return;
   }
-  if (c.kind === 'money' && c.action.type === 'transfer' && c.action.amount > team.treasury.teamAccount) {
+  // Passed, but no longer possible: more than the team account holds, or a
+  // budget below what has been paid from it since it was proposed.
+  const impossible = c.kind !== 'money' ? undefined
+    : c.action.type === 'transfer' && c.action.amount > team.treasury.teamAccount ? 'insufficient'
+    : c.action.type === 'budget' && c.action.to < objectivePaid(team, c.action.objectiveId) ? 'below_paid'
+    : undefined;
+  if (impossible) {
     c.status = 'failed';
     c.decidedAt = now;
-    appendEntry(team, { kind: 'change_failed', at: now, actorId: c.proposerId, refs: { changeId: c.id }, data: { reason: 'insufficient' } });
+    appendEntry(team, { kind: 'change_failed', at: now, actorId: c.proposerId, refs: { changeId: c.id }, data: { reason: impossible } });
     return;
   }
   c.status = 'passed';
@@ -514,6 +552,10 @@ export function approveMoney(team: Team, me: string, changeId: string, now: stri
   if (c.proposerId === me) throw new DomainError('err.self_approve');
   if (c.action.type === 'transfer' && c.action.amount > team.treasury.teamAccount) {
     throw new DomainError('err.insufficient', { account: team.treasury.teamAccount, amount: c.action.amount });
+  }
+  if (c.action.type === 'budget') {
+    const paid = objectivePaid(team, c.action.objectiveId);
+    if (c.action.to < paid) throw new DomainError('err.budget_below_paid', { paid });
   }
   c.status = 'accepted';
   c.decidedAt = now;
@@ -581,7 +623,10 @@ export const messagesFor = (team: Team, ref: { type: 'deliverable' | 'change'; i
 // ── Team ─────────────────────────────────────────────────────────
 
 export function createTeam(
-  input: { name: Text; purpose: Text; templateId: TemplateId; founder: { id?: string; name: Text; initials: string; wallet: string } },
+  input: {
+    name: Text; purpose: Text; templateId: TemplateId; founder: { id?: string; name: Text; initials: string; wallet: string };
+    id?: string; live?: boolean; chain?: Team['chain'];
+  },
   now: string,
 ): Team {
   if (!String(typeof input.name === 'string' ? input.name : input.name.en).trim()) throw new DomainError('err.empty');
@@ -591,7 +636,8 @@ export function createTeam(
     roleIds: [...tpl.founderRoleIds], wallet: input.founder.wallet, joinedAt: now,
   };
   const team: Team = {
-    id: newId('team'), name: input.name, purpose: input.purpose, createdAt: now, templateId: input.templateId,
+    id: input.id ?? newId('team'), ...(input.live ? { live: true } : {}), ...(input.chain ? { chain: input.chain } : {}),
+    name: input.name, purpose: input.purpose, createdAt: now, templateId: input.templateId,
     members: [founder], charter: charterFromTemplate(input.templateId, now),
     objectives: [], deliverables: [], tasks: [], changes: [], messages: [], ledger: [],
     treasury: { teamAccount: 0, schedules: [] },

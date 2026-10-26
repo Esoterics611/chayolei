@@ -43,3 +43,43 @@ jobs:
           cache-dependency-path: contracts/package-lock.json
       - run: npm ci
       - run: npx hardhat test
+
+  bridge:
+    name: Chain bridge — local chain and Firestore emulator
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            contracts/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: npm ci
+      - run: npm ci
+        working-directory: contracts
+      # Starts a Hardhat node, deploys TMIM and the team contracts, and runs
+      # src/lib/server/team-chain.test.ts against it.
+      - run: bash scripts/e2e/run-chain.sh
+
+  browser:
+    name: Browser — demo flows, accessibility, size budget
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm install -g playwright@1.63.0 && npx -y playwright@1.63.0 install --with-deps chromium
+      # The demo: a vote, an acceptance, the rule-range check, Hebrew, and
+      # the first screen's size against the budget.
+      - run: NODE_PATH=$(npm root -g) bash scripts/e2e/run-demo.sh
+      # axe-core on every screen, both languages, both themes, desktop and phone.
+      - run: NODE_PATH=$(npm root -g) bash scripts/e2e/run-a11y.sh

@@ -1,6 +1,5 @@
 <script lang="ts">
   import { store } from '$lib/team/store.svelte';
-  import * as E from '$lib/team/engine';
   import { t } from '$lib/team/i18n';
   import { go } from '$lib/team/nav';
   import { dateToIso } from './dates';
@@ -10,10 +9,10 @@
   let description = $state('');
   let due = $state('');
 
-  function submit(e: SubmitEvent) {
+  async function submit(e: SubmitEvent) {
     e.preventDefault();
-    const o = store.run((tm, me, now) => E.addObjective(tm, me, { title, description, due: dateToIso(due) }, now), t('plan.created'));
-    if (o) { done(); go(`/plan/${o.id}`); }
+    const o = await store.do({ type: 'addObjective', title, description, due: dateToIso(due) }, t('plan.created'));
+    if (o?.id) { done(); go(`/plan/${o.id}`); }
   }
 </script>
 

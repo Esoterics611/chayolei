@@ -2,7 +2,6 @@
   // A member moves TMIM from their own wallet into the team account.
   import { store } from '$lib/team/store.svelte';
   import { ui } from '$lib/team/ui.svelte';
-  import * as E from '$lib/team/engine';
   import { memberBalance } from '$lib/team/ledger';
   import { t, fmtTmim } from '$lib/team/i18n';
   import Amount from '$lib/ui/Amount.svelte';
@@ -23,8 +22,8 @@
         t('decide.accountAfter', { amount: fmtTmim(store.team.treasury.teamAccount + value) }),
         t('treasury.contributeRule'),
       ],
-      onConfirm: () => {
-        const ok = store.run((tm, me, now) => { E.contribute(tm, me, value, now); return true; }, t('treasury.contributed'));
+      onConfirm: async () => {
+        const ok = await store.do({ type: 'contribute', amount: value }, t('treasury.contributed'));
         if (!ok) return false;
         done();
       },

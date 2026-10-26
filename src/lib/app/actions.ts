@@ -10,12 +10,12 @@ import { go } from '$lib/team/nav';
 import type { NextStep } from './next';
 
 export function takeWork(d: Deliverable): void {
-  store.run((tm, me, now) => E.take(tm, me, d.id, now), t('plan.taken'));
+  void store.do({ type: 'take', deliverableId: d.id }, t('plan.taken'));
 }
 
-export function requestReview(d: Deliverable): void {
-  const c = store.run((tm, me, now) => E.requestReview(tm, me, d.id, now), t('d.reviewRequested'));
-  if (c) go(`/d/${d.id}/review/${c.id}`);
+export async function requestReview(d: Deliverable): Promise<void> {
+  const c = await store.do({ type: 'requestReview', deliverableId: d.id }, t('d.reviewRequested'));
+  if (c?.id) go(`/d/${d.id}/review/${c.id}`);
 }
 
 export function releaseWork(d: Deliverable): void {
@@ -24,13 +24,13 @@ export function releaseWork(d: Deliverable): void {
     title: t('d.signRelease', { title: lt(d.title) }),
     lines: [t('d.signReleaseLine1', { n: v?.n ?? 0 }), t('d.signReleaseLine2')],
     confirmLabel: t('d.release'),
-    onConfirm: () => !!store.run((tm, me, now) => { E.release(tm, me, d.id, now); return true; }, t('d.released', { date: '' }).trim()),
+    onConfirm: async () => !!(await store.do({ type: 'release', deliverableId: d.id }, t('d.released', { date: '' }).trim())),
   });
 }
 
 export function runStep(d: Deliverable, step: NonNullable<NextStep['action']>): void {
   if (step.href) { go(step.href.replace(/^#/, '')); return; }
   if (step.run === 'take') takeWork(d);
-  else if (step.run === 'request') requestReview(d);
+  else if (step.run === 'request') void requestReview(d);
   else if (step.run === 'release') releaseWork(d);
 }

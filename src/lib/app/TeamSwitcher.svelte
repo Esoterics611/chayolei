@@ -22,7 +22,7 @@
 {#if store.team}
   <Popover bind:open width="272px">
     {#snippet trigger({ open: isOpen, toggle, id })}
-      <button type="button" class="trigger" class:compact aria-expanded={isOpen} aria-controls={id} onclick={toggle} title={t('team.switch')} aria-label="{t('team.switch')}: {lt(store.team.name)}">
+      <button type="button" class="trigger" class:compact aria-expanded={isOpen} aria-controls={id} onclick={toggle} title={t('team.switch')} aria-label={compact ? `${t('team.switch')}: ${lt(store.team.name)}` : undefined}>
         <TeamMark id={store.team.id} name={lt(store.team.name)} size={compact ? 32 : 30} />
         {#if !compact}
           <span class="txt">

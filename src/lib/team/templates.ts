@@ -3,9 +3,11 @@
 
 import type { Charter, Permission, Role, RuleKey, RuleUnit, TemplateId } from './types';
 
-const ALL: Permission[] = [
-  'take_work', 'review_work', 'accept_work', 'release', 'manage_plan', 'propose', 'vote', 'spend',
+/** Every permission, in charter display order (and the bit order of Team.sol). */
+export const PERMISSIONS: Permission[] = [
+  'take_work', 'review_work', 'accept_work', 'release', 'manage_plan', 'propose', 'vote', 'spend', 'admit',
 ];
+const ALL = PERMISSIONS;
 
 export const RULE_UNITS: Record<RuleKey, RuleUnit> = {
   deliverable_reward: 'tmim',
@@ -66,7 +68,7 @@ export const TEMPLATES: Record<TemplateId, Template> = {
     roles: [
       {
         id: 'member', name: { en: 'Member', he: 'חבר' },
-        permissions: ['take_work', 'review_work', 'accept_work', 'release', 'manage_plan', 'propose', 'vote'],
+        permissions: ['take_work', 'review_work', 'accept_work', 'release', 'manage_plan', 'propose', 'vote', 'admit'],
       },
     ],
     founderRoleIds: ['member'],

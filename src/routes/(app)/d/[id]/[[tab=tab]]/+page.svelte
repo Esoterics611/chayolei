@@ -35,6 +35,7 @@
   import Lock from '@lucide/svelte/icons/lock';
   import FingerprintPattern from '@lucide/svelte/icons/fingerprint-pattern';
   import ArrowRight from '@lucide/svelte/icons/arrow-right';
+  import Sparkles from '@lucide/svelte/icons/sparkles';
 
   const team = $derived(store.team);
   const me = $derived(store.me);
@@ -65,19 +66,19 @@
   let taskOwner = $state('');
   let message = $state('');
 
-  function addTask(e: SubmitEvent) {
+  async function addTask(e: SubmitEvent) {
     e.preventDefault();
     if (!d) return;
-    const ok = store.run((tm, m, n) => E.addTask(tm, m, d.id, { title: taskTitle, ownerId: taskOwner || undefined }, n));
+    const ok = await store.do({ type: 'addTask', deliverableId: d.id, title: taskTitle, ownerId: taskOwner || undefined });
     if (ok) { taskTitle = ''; }
   }
   function toggle(id: string, done: boolean) {
-    store.run((tm, m, n) => E.setTaskDone(tm, m, id, done, n));
+    void store.do({ type: 'setTaskDone', taskId: id, done });
   }
-  function send(e: SubmitEvent) {
+  async function send(e: SubmitEvent) {
     e.preventDefault();
     if (!d) return;
-    const ok = store.run((tm, m, n) => { E.postMessage(tm, m, { type: 'deliverable', id: d.id }, message, n); return true; });
+    const ok = await store.do({ type: 'postMessage', ref: { type: 'deliverable', id: d.id }, body: message });
     if (ok) message = '';
   }
 </script>
@@ -130,6 +131,7 @@
               {#each credits as c (c.memberId + c.role)}
                 <li><span class="role">{t(`d.credit.${c.role}`)}</span><Person {team} id={c.memberId} size="sm" /></li>
               {/each}
+              {#if d.assist}<li><span class="role">{t('d.credit.planner')}</span><span class="ai-credit"><Sparkles size={14} aria-hidden="true" />{t('ai.planner')}</span></li>{/if}
             </ul>
             {#if fingerprint}
               <p class="fp"><FingerprintPattern size={15} /><span>{t('d.fingerprint')}</span><code>{fingerprint}</code></p>
@@ -298,6 +300,7 @@
   .credits ul { display: flex; flex-direction: column; gap: 8px; margin-block: 10px; }
   .credits li { display: flex; align-items: center; gap: 12px; }
   .role { width: 110px; font-size: var(--fs-sm); color: var(--ink-3); }
+  .ai-credit { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-sm); font-weight: 500; }
   .fp { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: var(--fs-sm); color: var(--ink-2); }
   .fp code { font-family: var(--font-mono); font-size: var(--fs-xs); padding: 2px 6px; border-radius: 4px; background: var(--surface-2); }
   .facts { padding: var(--s4) var(--s5); }

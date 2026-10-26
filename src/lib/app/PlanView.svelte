@@ -30,6 +30,8 @@
   import SquareCheck from '@lucide/svelte/icons/square-check';
   import CalendarClock from '@lucide/svelte/icons/calendar-clock';
   import ListTree from '@lucide/svelte/icons/list-tree';
+  import Sparkles from '@lucide/svelte/icons/sparkles';
+  import AiMark from '$lib/ui/AiMark.svelte';
 
   let { objectiveId }: { objectiveId?: string } = $props();
 
@@ -56,7 +58,7 @@
   const byStage = (s: Stage) => shown.filter(d => d.stage === s);
 
   function toggleTask(id: string, done: boolean) {
-    store.run((tm, m, n) => E.setTaskDone(tm, m, id, done, n));
+    void store.do({ type: 'setTaskDone', taskId: id, done });
   }
 </script>
 
@@ -121,7 +123,10 @@
             {/if}
             <div class="o-actions">
               {#if canPropose}<button type="button" class="btn btn-sm btn-ghost" onclick={() => ui.openDialog({ kind: 'requestMoney', type: 'budget', objectiveId: o.id })}><Coins size={14} />{t('plan.requestBudget')}</button>{/if}
-              {#if canPlan}<button type="button" class="btn btn-sm" onclick={() => ui.openDialog({ kind: 'newDeliverable', objectiveId: o.id })}><Plus size={14} />{t('plan.newDeliverable')}</button>{/if}
+              {#if canPlan}
+                <button type="button" class="btn btn-sm btn-ghost" onclick={() => ui.openDialog({ kind: 'suggestPlan', objectiveId: o.id })}><Sparkles size={14} />{t('plan.suggest')}</button>
+                <button type="button" class="btn btn-sm" onclick={() => ui.openDialog({ kind: 'newDeliverable', objectiveId: o.id })}><Plus size={14} />{t('plan.newDeliverable')}</button>
+              {/if}
             </div>
           </div>
         </header>
@@ -156,7 +161,10 @@
           </div>
         {:else}
           <EmptyState icon={ListTree} title={t('plan.noDeliverables')} hint={t('plan.noDeliverablesHint')} compact>
-            {#if canPlan}<button type="button" class="btn btn-sm btn-primary" onclick={() => ui.openDialog({ kind: 'newDeliverable', objectiveId: o.id })}><Plus size={14} />{t('plan.newDeliverable')}</button>{/if}
+            {#if canPlan}
+              <button type="button" class="btn btn-sm btn-primary" onclick={() => ui.openDialog({ kind: 'newDeliverable', objectiveId: o.id })}><Plus size={14} />{t('plan.newDeliverable')}</button>
+              <button type="button" class="btn btn-sm" onclick={() => ui.openDialog({ kind: 'suggestPlan', objectiveId: o.id })}><Sparkles size={14} />{t('plan.suggest')}</button>
+            {/if}
           </EmptyState>
         {/if}
       </section>
@@ -173,6 +181,7 @@
             {@const sd = stalledDays(d)}
             <article class="card" class:stalled={sd}>
               <a class="c-title" href={href(`/d/${d.id}`)}>{lt(d.title)}</a>
+              {#if d.assist}<AiMark />{/if}
               {#if !objectiveId}<p class="c-obj">{objectiveTitle(team, d.objectiveId)}</p>{/if}
               {#if sd}<StageChip stage={d.stage} stalledDays={sd} />{/if}
               <div class="c-foot">

@@ -990,7 +990,6 @@ export const MOCK_DISCUSSIONS: Discussion[] = [
 export const MOCK_TREASURY: Treasury = {
   totalTmimMinted: 91100,
   totalTmimDistributed: 91100,
-  totalTmimRedeemed: 18200,
   currentBalance: 38200,
   tmimCirculating: 72900,
 };

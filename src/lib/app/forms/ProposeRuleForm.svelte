@@ -4,8 +4,7 @@
   import type { RuleKey } from '$lib/team/types';
   import { store } from '$lib/team/store.svelte';
   import { ui } from '$lib/team/ui.svelte';
-  import * as E from '$lib/team/engine';
-  import { ruleCurrent, ruleValue } from '$lib/team/rules';
+  import { RULE_RANGE, ruleCurrent, ruleValue } from '$lib/team/rules';
   import { RULE_ORDER, RULE_UNITS } from '$lib/team/templates';
   import { t, fmtNum } from '$lib/team/i18n';
   import { go } from '$lib/team/nav';
@@ -21,7 +20,11 @@
 
   const current = $derived(ruleCurrent(team, key));
   const hours = $derived(ruleValue(team, 'vote_hours'));
-  const valid = $derived(to !== '' && Number(to) >= 0 && Number(to) !== current.value);
+  const range = $derived(RULE_RANGE[key]);
+  const valid = $derived(
+    to !== '' && Number.isInteger(Number(to)) && Number(to) >= (range?.[0] ?? 0) && Number(to) <= (range?.[1] ?? Infinity)
+      && Number(to) !== current.value,
+  );
   const autoTitle = $derived(valid ? t('decide.ruleChange', { rule: t(`rule.${key}`), from: fmtRule(key, current.value), to: fmtRule(key, Number(to)) }) : '');
   const unitLabel = $derived(RULE_UNITS[key] === 'tmim' ? 'TMIM' : RULE_UNITS[key] === 'pct' ? '%' : t('decide.hoursUnit'));
 
@@ -37,9 +40,9 @@
         t('decide.opensVote', { hours: t('unit.hours', { n: fmtNum(hours) }) }),
         t('decide.ifPasses.rule'),
       ],
-      onConfirm: () => {
-        const c = store.run((tm, me, now) => E.proposeRule(tm, me, { ruleKey: key, to: value, title: finalTitle, why }, now), t('decide.proposed'));
-        if (!c) return false;
+      onConfirm: async () => {
+        const c = await store.do({ type: 'proposeRule', ruleKey: key, to: value, title: finalTitle, why }, t('decide.proposed'));
+        if (!c?.id) return false;
         done();
         go(`/decide/p/${c.id}`);
       },
@@ -57,7 +60,8 @@
   </label>
   <label class="field">
     <span class="label">{t('decide.newValue')} ({unitLabel})</span>
-    <input class="input num" type="number" min="0" step="1" bind:value={to} required />
+    <input class="input num" type="number" min={range?.[0] ?? 0} max={range?.[1]} step="1" bind:value={to} required />
+    {#if range}<span class="hint">{t('decide.ruleRange', { min: fmtNum(range[0]), max: fmtNum(range[1]) })}</span>{/if}
   </label>
   <div class="rule-diff" aria-live="polite">
     <span class="minus">− {fmtRule(key, current.value)}</span>

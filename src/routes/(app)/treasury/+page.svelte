@@ -5,7 +5,6 @@
   import type { MoneyChange } from '$lib/team/types';
   import { store } from '$lib/team/store.svelte';
   import { ui } from '$lib/team/ui.svelte';
-  import * as E from '$lib/team/engine';
   import { can, ruleCurrent, ruleValue } from '$lib/team/rules';
   import { issuedInMonth, objectiveFigures, statements } from '$lib/team/ledger';
   import { lt, t, fmtDate, fmtMonth, fmtNum, fmtRelative, fmtTmim } from '$lib/team/i18n';
@@ -53,7 +52,7 @@
         t('treasury.signPayNext', { date: fmtDate(next) }),
       ],
       confirmLabel: t('treasury.payNow'),
-      onConfirm: () => !!store.run((tm, m, n) => { E.paySchedule(tm, m, id, n); return true; }, t('treasury.paid')),
+      onConfirm: async () => !!(await store.do({ type: 'paySchedule', scheduleId: id }, t('treasury.paid'))),
     });
   }
 </script>
@@ -72,6 +71,16 @@
     <p class="eyebrow-label">{t('treasury.account')}</p>
     <Amount value={team.treasury.teamAccount} size="xl" />
     <p class="hint">{t('treasury.accountHint')}</p>
+    {#if team.chain}
+      {@const short = `${team.chain.address.slice(0, 6)}…${team.chain.address.slice(-4)}`}
+      <p class="hint">
+        {#if store.chain.explorer}
+          <a href="{store.chain.explorer}/address/{team.chain.address}" target="_blank" rel="noopener" title={t('ledger.onExplorer')}>{t('treasury.contract', { address: short })}</a>
+        {:else}
+          {t('treasury.contract', { address: short })}
+        {/if}
+      </p>
+    {/if}
   </div>
   <div class="stat panel">
     <p class="eyebrow-label">{t('treasury.issued')} · {fmtMonth(now.slice(0, 7))}</p>

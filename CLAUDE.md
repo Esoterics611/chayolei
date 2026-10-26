@@ -1,6 +1,6 @@
 # chayolei — conventions for Claude sessions
 
-Chayolei Beis Dovid: a SvelteKit web app (Firebase backend) plus Solidity contracts on Base, for Torah scholarship organised as campaigns (mivtzaot) → assignments (masimot) → sub-tasks (tafkidim), rewarded in the TMIM token and governed on-chain. `README.md` is the overview; `docs/` holds older specs and plans.
+Chayolei Beis Dovid: a SvelteKit web app (Firebase backend) plus Solidity contracts on Base. It began as Torah scholarship organised as campaigns (mivtzaot) → assignments (masimot) → sub-tasks (tafkidim), rewarded in the TMIM token and governed on-chain; those pages live on in `src/routes/(classic)`. The new UI organises any small team (see Positioning below). `README.md` is the overview; `docs/` holds the current designs and older specs.
 
 ## Economic model — decided by the owner, 2026-10-25
 
@@ -13,7 +13,7 @@ This overrides anything in `docs/` or older code that says otherwise.
 - **Donations are handled separately**, outside the platform. The app does not take, log or acknowledge them, and the contracts never mint TMIM for money sent in.
 - **TMIM is minted only for participation**: accepted deliverables and tasks, reviews and other participation rewards (`docs/SPEC_2_DAO_REQUIREMENTS.md` §2.1, §2.2, §2.4, §2.5).
 
-Still in the code from before this decision: the contracts can redeem TMIM for USDC at a set rate (`ChayoleiTreasury.redeemTmim`, `GovernanceTreasury.redeem`), and today's treasury page shows USDC and a redemption calculator. Redemption will be decided by the owner in the future (`docs/MARKETING_BRIEF.md` §13); until then, don't build UI around USDC or redemption.
+Still in the code from before this decision: the contracts can redeem TMIM for USDC at a set rate (`ChayoleiTreasury.redeemTmim`, `GovernanceTreasury.redeem`). The app no longer shows USDC or redemption anywhere, and its redeem API is gone (2026-10-26). Redemption will be decided by the owner in the future (`docs/MARKETING_BRIEF.md` §13); until then, don't build UI around USDC or redemption.
 
 Docs written before this decision still describe fiat donations, fiscal sponsors, institutional partnerships, USDC payouts and donation-minted TMIM: `docs/GO_TO_MARKET.md`, `docs/INVESTOR_PITCH.md`, `docs/PUBLIC_INTRODUCTION.md`, `docs/TOMCHEI_TMIMIM_OVERVIEW.md`, `docs/SPEC_1_ACADEMIC_UI.md`, `docs/SPEC_2_DAO_REQUIREMENTS.md`, `docs/BACKEND_PLAN.md`. Each carries a note at the top naming what is superseded. Don't build from those parts, and don't reintroduce them in code or copy.
 
@@ -27,9 +27,13 @@ Chayolei is building **three parallel systems on a decentralized ledger**, for a
 
 All three share one ledger, and every change to work, rules or money follows one pattern: propose → decide → record.
 
-- `docs/MARKETING_BRIEF.md`: positioning, the three systems, audiences, message pillars, claims we don't make, open questions. It supersedes the framing in `README.md`'s older sections, `PUBLIC_INTRODUCTION.md`, `TOMCHEI_TMIMIM_OVERVIEW.md`, `INVESTOR_PITCH.md` and `GO_TO_MARKET.md` where they disagree.
+- `docs/MARKETING_BRIEF.md`: positioning, the three systems, audiences, message pillars, claims we don't make, open questions. It supersedes the framing in `PUBLIC_INTRODUCTION.md`, `TOMCHEI_TMIMIM_OVERVIEW.md`, `INVESTOR_PITCH.md` and `GO_TO_MARKET.md` where they disagree.
 - `docs/UX_REDESIGN.md`: the plan for a complete UI redo: research, principles, object model, screens, and an execution plan in phases (§11). UI work follows it; check which phases are done before starting one, and record progress there.
 - `docs/PITCH_ARTIFACT_PROMPT.md`: a self-contained prompt for a separate session to build a pitch artifact.
+- `docs/DECISIONS.md`: what the owner has decided, what is open, and what the code assumes until then. Record new decisions there.
+- `docs/TEAM_CONTRACTS.md`: the per-team contracts (`contracts/contracts/team/`): what is on-chain, what the chain and the app each enforce, platform powers.
+- `docs/WALLETS.md`: passkeys and sponsored fees: what holds today, the options and what each needs from the owner.
+- `docs/TEAM_BACKEND.md`: the live backend: teams in Firestore, written only by the server through the same engine (`VITE_TEAM_BACKEND=firestore`; the demo is the default).
 - `docs/UX_TECH_DESIGN.md`: how the new UI is built. Domain in `src/lib/team` (engine, ledger, seed, i18n, store; `npm run test:unit`), components in `src/lib/ui` (presentational) and `src/lib/app` (read the store), screens in `src/routes/(app)`; the old pages live on in `src/routes/(classic)`. Every string goes in both dictionaries of `src/lib/team/i18n.ts`. `bash scripts/build-demo.sh` builds the clickable demo.
 
 "Independent of the banking and legal system" means a team can organize, decide and pay without needing a bank account, a registered company or an institution. It does not mean the product is a bank, a legal entity or a way around the law; see the brief's "claims we don't make".

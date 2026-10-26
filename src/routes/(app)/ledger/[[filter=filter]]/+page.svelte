@@ -5,6 +5,7 @@
   import { store } from '$lib/team/store.svelte';
   import { lt, t, fmtNum } from '$lib/team/i18n';
   import { href } from '$lib/team/nav';
+  import { anchoredBatches, isConfirmed } from '$lib/team/ledger';
   import PageHeader from '$lib/ui/PageHeader.svelte';
   import Tabs from '$lib/ui/Tabs.svelte';
   import TierMark from '$lib/ui/TierMark.svelte';
@@ -22,7 +23,11 @@
   const visible = $derived([...entries].sort((a, b) => b.seq - a.seq).slice(0, shown));
   const settled = $derived(team.ledger.filter(e => e.tier === 'settled').length);
   const signed = $derived(team.ledger.filter(e => e.tier === 'signed').length);
-  const batches = $derived(team.ledger.filter(e => e.kind === 'anchor').length);
+  const batches = $derived(team.ledger.filter(e => e.kind === 'anchor' && e.proof.tx).length);
+  const pending = $derived.by(() => {
+    const anchored = anchoredBatches(team);
+    return team.ledger.filter(e => !isConfirmed(e, anchored)).length;
+  });
 </script>
 
 <svelte:head><title>{t('ledger.title')} · {lt(team.name)}</title></svelte:head>
@@ -36,6 +41,7 @@
     <TierMark tier="signed" label /><span>{fmtNum(signed)}</span>
     <span class="dotsep">·</span>
     <span class="anch"><Anchor size={13} />{t('ledger.batches', { n: fmtNum(batches) })}</span>
+    {#if pending}<span class="dotsep">·</span><span>{t('ledger.pendingCount', { n: fmtNum(pending) })}</span>{/if}
   {/snippet}
 </PageHeader>
 
@@ -62,7 +68,7 @@
       <li><span class="node signed"></span><span>{t('ledger.signed')}</span></li>
       <li><span class="node anchor"><Anchor size={11} /></span><span>{t('entry.anchor', { batch: 'n' })}</span></li>
     </ul>
-    <p class="demo">{t('ledger.demoProof')}</p>
+    {#if !store.live}<p class="demo">{t('ledger.demoProof')}</p>{:else if pending}<p class="demo">{t('ledger.pendingNote')}</p>{/if}
   </aside>
 </div>
 

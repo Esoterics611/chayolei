@@ -878,37 +878,6 @@ class AppStore {
   }
 
   // ══════════════════════════════════════════════════════════════
-  // Treasury
-  // ══════════════════════════════════════════════════════════════
-
-  async redeemTmim(talmidId: string, amount: number): Promise<void> {
-    if (USE_FIREBASE) {
-      const res = await this.authFetch('/api/treasury/redeem', { method: 'POST', body: JSON.stringify({ talmidId, amount }) });
-      if (!res.ok) { toast.error(await res.text()); return; }
-      const data = await res.json();
-      const usd = (amount * 0.10).toFixed(2);
-      toast.success(
-        `נפדו ${amount} TMIM ($${usd}) ✓`,
-        data.txUrl ? { label: 'צפה בעסקה על Base Sepolia ↗', href: data.txUrl } : undefined,
-        5000,
-      );
-      return;
-    }
-    const tIdx = this.talmidim.findIndex(t => t.id === talmidId);
-    if (tIdx < 0) { toast.error('חייל לא נמצא'); return; }
-    const t = this.talmidim[tIdx];
-    if (t.tokenBalance < amount) { toast.error('אין מספיק TMIM'); return; }
-    this.talmidim[tIdx] = { ...t, tokenBalance: t.tokenBalance - amount };
-    this.treasury = {
-      ...this.treasury,
-      totalTmimRedeemed: this.treasury.totalTmimRedeemed + amount,
-      tmimCirculating:   this.treasury.tmimCirculating - amount,
-    };
-    const usd = (amount * 0.10).toFixed(2);
-    toast.success(`נפדו ${amount} TMIM ($${usd})`);
-  }
-
-  // ══════════════════════════════════════════════════════════════
   // UI actions
   // ══════════════════════════════════════════════════════════════
 

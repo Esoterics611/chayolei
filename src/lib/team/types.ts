@@ -16,7 +16,8 @@ export type Permission =
   | 'manage_plan'
   | 'propose'
   | 'vote'
-  | 'spend';
+  | 'spend'
+  | 'admit';
 
 export interface Role {
   id: string;
@@ -63,6 +64,9 @@ export interface Charter {
   roles: Role[];
   rules: Rule[];
 }
+
+/** An AI helper whose suggestion a member accepted (UX_REDESIGN.md §8). */
+export type Assist = 'planner';
 
 export interface Objective {
   id: string;
@@ -113,6 +117,8 @@ export interface Deliverable {
   acceptedVersionId?: string;
   lastActivityAt: string;
   releasedAt?: string;
+  /** Added from an AI helper's suggestion. */
+  assist?: Assist;
 }
 
 export interface Task {
@@ -122,6 +128,8 @@ export interface Task {
   ownerId?: string;
   due?: string;
   done: boolean;
+  /** Added from an AI helper's suggestion. */
+  assist?: Assist;
 }
 
 export type VoteChoice = 'for' | 'against' | 'abstain';
@@ -285,6 +293,10 @@ export type TemplateId = 'editorial' | 'studio' | 'collective' | 'blank';
 
 export interface Team {
   id: string;
+  /** A team in the live app: ledger proofs are real or pending, never the demo's stand-ins. */
+  live?: boolean;
+  /** The team's contract, when its settled entries are recorded on-chain. */
+  chain?: { address: string; chainId: number };
   name: Text;
   purpose: Text;
   createdAt: string;

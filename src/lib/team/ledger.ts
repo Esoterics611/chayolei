@@ -39,18 +39,22 @@ export function tierOf(kind: EntryKind): Tier {
   return SETTLED.includes(kind) ? 'settled' : 'signed';
 }
 
-/** Append an entry (and, every ANCHOR_BATCH signed entries, an anchor entry). */
+/** Append an entry (and, every ANCHOR_BATCH signed entries, an anchor entry).
+ *  In the demo, proofs are stand-ins; in a live team a settled entry has no
+ *  proof until its transaction confirms (the chain bridge fills it in). */
 export function appendEntry(team: Team, e: NewEntry): LedgerEntry {
   const seq = team.ledger.length + 1;
   const tier = e.tier ?? tierOf(e.kind);
   const key = `${team.id}|${seq}|${e.kind}|${e.at}|${e.actorId}`;
   const proof: LedgerEntry['proof'] = {};
   if (tier === 'settled') {
-    proof.tx = fakeHash(key);
-    proof.block = BLOCK_BASE + seq * 3;
+    if (!team.live) {
+      proof.tx = fakeHash(key);
+      proof.block = BLOCK_BASE + seq * 3;
+    }
   } else {
     const signedBefore = team.ledger.filter(x => x.tier === 'signed').length;
-    proof.sig = fakeHash(key, 8);
+    if (!team.live) proof.sig = fakeHash(key, 8);
     proof.batch = Math.floor(signedBefore / ANCHOR_BATCH) + 1;
   }
   const entry: LedgerEntry = { ...e, id: `e${seq}`, seq, tier, proof };
@@ -66,6 +70,19 @@ export function appendEntry(team: Team, e: NewEntry): LedgerEntry {
     }
   }
   return entry;
+}
+
+/** Batches of signed entries whose anchor is confirmed on-chain. */
+export function anchoredBatches(team: Team): Set<number> {
+  const out = new Set<number>();
+  for (const e of team.ledger) if (e.kind === 'anchor' && e.proof.tx) out.add(Number(e.data?.batch ?? 0));
+  return out;
+}
+
+/** Whether an entry's proof is in: a settled entry's transaction, or the
+ *  anchor of a signed entry's batch. (Always true in the demo.) */
+export function isConfirmed(e: LedgerEntry, anchored: Set<number>): boolean {
+  return e.tier === 'settled' ? !!e.proof.tx : anchored.has(e.proof.batch ?? 0);
 }
 
 // ── Derived figures ──────────────────────────────────────────────

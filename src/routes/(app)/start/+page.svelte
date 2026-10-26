@@ -4,7 +4,7 @@
   import type { TemplateId } from '$lib/team/types';
   import { store } from '$lib/team/store.svelte';
   import { ui } from '$lib/team/ui.svelte';
-  import { TEMPLATES, RULE_ORDER } from '$lib/team/templates';
+  import { PERMISSIONS, TEMPLATES, RULE_ORDER } from '$lib/team/templates';
   import { fakeHash } from '$lib/team/ledger';
   import { lt, t } from '$lib/team/i18n';
   import { go } from '$lib/team/nav';
@@ -27,7 +27,6 @@
   const tpl = $derived(TEMPLATES[template]);
   const slug = $derived(name.trim().toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '') || 'team');
   const link = $derived(`https://chayolei.app/join/${slug}-${fakeHash(name + you, 3).slice(2)}`);
-  const PERMS = ['take_work', 'review_work', 'accept_work', 'release', 'manage_plan', 'propose', 'vote', 'spend'] as const;
 
   const initials = (s: string) => s.trim().split(/\s+/).map(w => w[0] ?? '').join('').slice(0, 2).toUpperCase() || '?';
 
@@ -46,14 +45,17 @@
       title: t('start.signCreate', { name: name.trim() }),
       lines: [t('start.signLine1'), t('start.signLine2', { role }), t('start.signLine3')],
       confirmLabel: t('start.create'),
-      onConfirm: () => {
-        const team = store.createTeam({
+      onConfirm: async () => {
+        const team = await store.createTeam({
           name: name.trim(), purpose: purpose.trim(), templateId: template,
-          founder: { name: you.trim(), initials: initials(you), wallet: fakeHash(`${you}|${Date.now()}`, 20) },
+          // The live app uses the signed-in wallet; the demo makes one up.
+          founder: { name: you.trim(), initials: initials(you), wallet: store.live ? '' : fakeHash(`${you}|${Date.now()}`, 20) },
         });
         if (!team) return false;
         ui.toast('success', t('start.created'));
-        go('/plan');
+        // In the live app, the team's real invite link comes next.
+        if (store.live) ui.afterSign = { kind: 'invite' };
+        await go('/plan');
       },
     });
   }
@@ -116,7 +118,7 @@
             {#each tpl.roles as r (r.id)}
               <li>
                 <span class="rn">{lt(r.name)}</span>
-                <span class="rp">{PERMS.filter(p => r.permissions.includes(p)).map(p => t(`perm.${p}`)).join(' · ')}</span>
+                <span class="rp">{PERMISSIONS.filter(p => r.permissions.includes(p)).map(p => t(`perm.${p}`)).join(' · ')}</span>
               </li>
             {/each}
           </ul>
@@ -137,10 +139,14 @@
     <div class="form">
       <div class="panel pad invite">
         <h2 class="q">{t('start.invite')}</h2>
-        <p class="muted">{t('start.inviteHint')}</p>
-        <div class="link"><code>{link}</code><button type="button" class="btn btn-sm" onclick={copy}><Copy size={14} />{t('start.copy')}</button></div>
+        {#if store.live}
+          <p class="muted">{t('start.inviteLive')}</p>
+        {:else}
+          <p class="muted">{t('start.inviteHint')}</p>
+          <div class="link"><code>{link}</code><button type="button" class="btn btn-sm" onclick={copy}><Copy size={14} />{t('start.copy')}</button></div>
+        {/if}
       </div>
-      <p class="passkey"><KeyRound size={16} />{t('start.passkey')}</p>
+      {#if !store.live}<p class="passkey"><KeyRound size={16} />{t('start.passkey')}</p>{/if}
       <div class="form-actions">
         <button type="button" class="btn" onclick={() => (step = 2)}><ArrowLeft size={15} class="flip-rtl" />{t('start.back')}</button>
         <button type="button" class="btn btn-primary" onclick={create}><FingerprintPattern size={15} />{t('start.create')}</button>

@@ -93,6 +93,38 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // ── Teams (the new UI) — members read, the server writes ───
+    // teams/{teamId} is the team's core, with memberUids. Its ledger,
+    // messages and versions are subcollections; a draft is readable only
+    // by its author until it is saved as a version (docs/TEAM_BACKEND.md).
+    function isTeamMember(teamId) {
+      return isAuthenticated()
+        && request.auth.uid in get(/databases/$(database)/documents/teams/$(teamId)).data.memberUids;
+    }
+    match /teams/{teamId} {
+      allow read:  if isAuthenticated() && request.auth.uid in resource.data.memberUids;
+      allow write: if false;
+
+      match /ledger/{entryId} {
+        allow read:  if isTeamMember(teamId);
+        allow write: if false;
+      }
+      match /messages/{messageId} {
+        allow read:  if isTeamMember(teamId);
+        allow write: if false;
+      }
+      match /versions/{versionId} {
+        allow read:  if isTeamMember(teamId)
+          && (resource.data.kind == 'version' || resource.data.authorId == request.auth.uid);
+        allow write: if false;
+      }
+    }
+
+    // ── Team invites — server only; the token in the link is the secret ──
+    match /teamInvites/{token} {
+      allow read, write: if false;
+    }
+
     // ── Payment Streams ────────────────────────────────────────
     match /paymentStreams/{streamId} {
       allow read:  if isAuthenticated();

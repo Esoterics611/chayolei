@@ -12,14 +12,6 @@ const MASIMA_REWARDS_ABI = [
   'function isTafkidApproved(bytes32) external view returns (bool)',
 ] as const;
 
-const TREASURY_ABI = [
-  'function receiveETH() external payable',
-] as const;
-
-const TMIM_ABI = [
-  'function burn(address from, uint256 amount) external',
-] as const;
-
 // ── provider / signer (lazy) ───────────────────────────────────
 let _provider: ethers.JsonRpcProvider | null = null;
 let _signer:   ethers.Wallet | null = null;
@@ -107,33 +99,4 @@ export async function mintTafkidReward(
   );
   await tx.wait(1);
   return tx.hash;
-}
-
-/**
- * Redeem TMIM on-chain:
- *   1. Burn TMIM from the user's wallet (deployer has BURNER_ROLE).
- *   2. Send ETH from deployer wallet to user (1 TMIM = $0.10, at ~$3000/ETH).
- * Returns the ETH-send tx hash.
- */
-export async function redeemTmimOnChain(
-  userWallet: string,
-  tmimAmount: number,
-): Promise<string | null> {
-  if (!userWallet || !userWallet.startsWith('0x')) return null;
-  if (tmimAmount <= 0) return null;
-
-  const signer  = getSigner();
-  const tmim    = new ethers.Contract(requireEnv('VITE_TMIM_TOKEN_ADDRESS'), TMIM_ABI, signer);
-
-  // 1. Burn TMIM from user wallet (deployer has BURNER_ROLE)
-  const burnTx = await tmim.burn(userWallet, BigInt(tmimAmount));
-  await burnTx.wait(1);
-
-  // 2. Send ETH to user: 1 TMIM = $0.10, assuming ~$3000/ETH → 1 TMIM = 1/30000 ETH
-  const weiPerTmim = ethers.parseEther('1') / BigInt(30000);
-  const ethToSend  = weiPerTmim * BigInt(tmimAmount);
-  const sendTx = await signer.sendTransaction({ to: userWallet, value: ethToSend });
-  await sendTx.wait(1);
-
-  return sendTx.hash;
 }

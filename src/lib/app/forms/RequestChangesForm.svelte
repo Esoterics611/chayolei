@@ -1,14 +1,13 @@
 <script lang="ts">
   import { store } from '$lib/team/store.svelte';
-  import * as E from '$lib/team/engine';
   import { t } from '$lib/team/i18n';
 
   let { done, changeId }: { done: () => void; changeId: string } = $props();
   let note = $state('');
 
-  function submit(e: SubmitEvent) {
+  async function submit(e: SubmitEvent) {
     e.preventDefault();
-    const ok = store.run((tm, me, now) => { E.requestChanges(tm, me, changeId, note, now); return true; }, t('review.changesSent'));
+    const ok = await store.do({ type: 'requestChanges', changeId, note }, t('review.changesSent'));
     if (ok) done();
   }
 </script>

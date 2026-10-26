@@ -5,7 +5,6 @@
   // otherwise the members by vote. Always TMIM.
   import { store } from '$lib/team/store.svelte';
   import { ui } from '$lib/team/ui.svelte';
-  import * as E from '$lib/team/engine';
   import { ruleValue } from '$lib/team/rules';
   import { lt, t, fmtTmim, fmtNum } from '$lib/team/i18n';
   import { go } from '$lib/team/nav';
@@ -52,9 +51,9 @@
         byVote ? t('treasury.decidedByVote', { limit: fmtTmim(limit) }) : t('treasury.decidedByRole', { limit: fmtTmim(limit) }),
         type === 'transfer' ? t('decide.accountNow', { amount: fmtTmim(team.treasury.teamAccount) }) : t('decide.ifPasses.budget', { objective: lt(team.objectives.find(o => o.id === objective)?.title), to: fmtTmim(Number(budget)) }),
       ],
-      onConfirm: () => {
-        const c = store.run((tm, me, now) => E.requestMoney(tm, me, { action, title: finalTitle, why }, now), t('treasury.requested'));
-        if (!c) return false;
+      onConfirm: async () => {
+        const c = await store.do({ type: 'requestMoney', action, title: finalTitle, why }, t('treasury.requested'));
+        if (!c?.id) return false;
         done();
         go(`/decide/p/${c.id}`);
       },

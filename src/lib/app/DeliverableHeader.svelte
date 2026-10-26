@@ -11,6 +11,7 @@
   import { nextStep } from './next';
   import { runStep } from './actions';
   import { objectiveTitle } from './format';
+  import AiMark from '$lib/ui/AiMark.svelte';
   import CalendarClock from '@lucide/svelte/icons/calendar-clock';
   import GitCommitHorizontal from '@lucide/svelte/icons/git-commit-horizontal';
   import ArrowRight from '@lucide/svelte/icons/arrow-right';
@@ -34,6 +35,7 @@
       {#if latest}<span class="fact"><GitCommitHorizontal size={14} />v{latest.n}</span>{/if}
       <span class="fact"><Amount value={d.reward} /></span>
       {#if d.due}<span class="fact"><CalendarClock size={14} />{t('common.due', { date: fmtDate(d.due) })}</span>{/if}
+      {#if d.assist}<AiMark />{/if}
     </div>
   </div>
   <People {team} {d} labels />

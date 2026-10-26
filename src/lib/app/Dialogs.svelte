@@ -9,6 +9,9 @@
   import RequestMoneyForm from './forms/RequestMoneyForm.svelte';
   import ContributeForm from './forms/ContributeForm.svelte';
   import RequestChangesForm from './forms/RequestChangesForm.svelte';
+  import InviteForm from './forms/InviteForm.svelte';
+  // Loaded when first opened: the first screen doesn't need it.
+  const planSuggestForm = () => import('./forms/PlanSuggestForm.svelte');
 
   let open = $state(false);
   $effect(() => { open = !!ui.dialog; });
@@ -17,13 +20,16 @@
   const TITLES = {
     newObjective: 'plan.newObjective',
     newDeliverable: 'plan.newDeliverable',
+    suggestPlan: 'planner.title',
     proposeRule: 'decide.proposeRule',
     requestMoney: 'decide.requestMoney',
     contribute: 'treasury.contribute',
     requestChanges: 'review.requestChanges',
+    invite: 'invite.title',
   } as const;
   const DESCRIPTIONS: Partial<Record<keyof typeof TITLES, string>> = {
     newObjective: 'plan.objectiveDesc',
+    suggestPlan: 'planner.desc',
     proposeRule: 'decide.proposeDesc',
     requestMoney: 'decide.requestDesc',
   };
@@ -31,11 +37,13 @@
 
 {#if ui.dialog}
   {@const req = ui.dialog}
-  <Dialog bind:open title={t(TITLES[req.kind])} description={DESCRIPTIONS[req.kind] ? t(DESCRIPTIONS[req.kind]!) : undefined} onclose={() => (ui.dialog = null)}>
+  <Dialog bind:open title={t(TITLES[req.kind])} description={DESCRIPTIONS[req.kind] ? t(DESCRIPTIONS[req.kind]!) : undefined} width={req.kind === 'suggestPlan' ? 'lg' : 'md'} onclose={() => (ui.dialog = null)}>
     {#if req.kind === 'newObjective'}
       <NewObjectiveForm done={close} />
     {:else if req.kind === 'newDeliverable'}
       <NewDeliverableForm done={close} objectiveId={req.objectiveId} />
+    {:else if req.kind === 'suggestPlan'}
+      {#await planSuggestForm() then { default: PlanSuggestForm }}<PlanSuggestForm done={close} objectiveId={req.objectiveId} />{/await}
     {:else if req.kind === 'proposeRule'}
       <ProposeRuleForm done={close} ruleKey={req.ruleKey} />
     {:else if req.kind === 'requestMoney'}
@@ -44,6 +52,8 @@
       <ContributeForm done={close} />
     {:else if req.kind === 'requestChanges'}
       <RequestChangesForm done={close} changeId={req.changeId} />
+    {:else if req.kind === 'invite'}
+      <InviteForm done={close} />
     {/if}
   </Dialog>
 {/if}

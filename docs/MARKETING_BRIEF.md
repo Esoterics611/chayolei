@@ -1,6 +1,6 @@
 # Chayolei — Marketing Brief
 
-> Revised 2026-10-25 (third revision the same day). **This is the positioning.** It supersedes the framing in `README.md`'s older sections, `PUBLIC_INTRODUCTION.md`, `TOMCHEI_TMIMIM_OVERVIEW.md`, `INVESTOR_PITCH.md` and `GO_TO_MARKET.md` wherever they disagree. The economic model is in `CLAUDE.md`. The UI built on this brief is `UX_REDESIGN.md`; the prompt for a pitch artifact is `PITCH_ARTIFACT_PROMPT.md`.
+> Revised 2026-10-25 (third revision the same day). **This is the positioning.** It supersedes the framing in `PUBLIC_INTRODUCTION.md`, `TOMCHEI_TMIMIM_OVERVIEW.md`, `INVESTOR_PITCH.md` and `GO_TO_MARKET.md` wherever they disagree. The economic model is in `CLAUDE.md`. The UI built on this brief is `UX_REDESIGN.md`; the prompt for a pitch artifact is `PITCH_ARTIFACT_PROMPT.md`.
 
 ---
 
@@ -128,6 +128,8 @@ This needs to be unmistakable in every piece of copy:
 - Share of released work whose credits come entirely from the ledger.
 
 ## 13. Open questions for the owner
+
+> Tracked with what the code assumes meanwhile in `DECISIONS.md`; record answers there.
 
 1. **On-chain redemption** (to be decided in the future). The contracts can redeem TMIM for USDC at a set rate; until the owner decides, the product shows TMIM only.
 2. **Name and framing.** "Chayolei Beis Dovid", IDF ranks and "soldiers" carry the heritage but read as a Torah-only, military product to a global audience. Keep, keep as heritage under a broader product name, or rename?

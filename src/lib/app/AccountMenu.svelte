@@ -1,6 +1,7 @@
 <script lang="ts">
-  // The demo's account menu: act as any member to walk the whole flow
-  // (owner → reviewer → approver), plus language, theme and reset.
+  // The account menu. In the demo: act as any member to walk the whole flow
+  // (owner → reviewer → approver), and reset. In the live app: who is signed
+  // in, and sign out. Both: language, theme, wallet.
   import { store } from '$lib/team/store.svelte';
   import { ui, type Theme } from '$lib/team/ui.svelte';
   import { lt, t } from '$lib/team/i18n';
@@ -15,6 +16,7 @@
   import Monitor from '@lucide/svelte/icons/monitor';
   import Wallet from '@lucide/svelte/icons/wallet';
   import RotateCcw from '@lucide/svelte/icons/rotate-ccw';
+  import LogOut from '@lucide/svelte/icons/log-out';
 
   let { compact = false }: { compact?: boolean } = $props();
   let open = $state(false);
@@ -37,16 +39,21 @@
     store.reset();
     go('/');
   }
+
+  async function signOut() {
+    open = false;
+    await store.signOut();
+  }
 </script>
 
 {#if me}
   <Popover bind:open align="end" width="300px">
     {#snippet trigger({ open: isOpen, toggle, id })}
-      <button type="button" class="trigger" aria-expanded={isOpen} aria-controls={id} onclick={toggle} aria-label="{t('account.acting')}: {lt(me.name)}, {rolesOf(store.team, me.id)}">
+      <button type="button" class="trigger" aria-expanded={isOpen} aria-controls={id} onclick={toggle} aria-label={compact ? `${t(store.live ? 'account.signedIn' : 'account.acting')}: ${lt(me.name)}, ${rolesOf(store.team, me.id)}` : undefined}>
         <Avatar id={me.id} initials={me.initials} name={lt(me.name)} ai={me.ai} size="sm" />
         {#if !compact}
           <span class="txt">
-            <span class="acting">{t('account.acting')}</span>
+            <span class="acting">{t(store.live ? 'account.signedIn' : 'account.acting')}</span>
             <span class="name">{lt(me.name).split(' ')[0]} · {rolesOf(store.team, me.id)}</span>
           </span>
           <ChevronDown size={14} />
@@ -54,6 +61,13 @@
       </button>
     {/snippet}
     {#snippet children({ close })}
+      {#if store.live}
+      <section>
+        <p class="label">{t('account.signedIn')}</p>
+        <p class="pname">{lt(me.name)}</p>
+        <p class="hint"><code>{me.wallet.slice(0, 6)}…{me.wallet.slice(-4)}</code> · {rolesOf(store.team, me.id)}</p>
+      </section>
+      {:else}
       <section>
         <p class="label">{t('account.acting')}</p>
         <p class="hint">{t('account.actingHint')}</p>
@@ -67,6 +81,7 @@
           {/each}
         </div>
       </section>
+      {/if}
       <hr />
       <section class="row">
         <p class="label">{t('account.language')}</p>
@@ -87,7 +102,11 @@
       </section>
       <hr />
       <a class="link" href={href('/wallet')} onclick={close}><Wallet size={15} />{t('account.wallet')}</a>
-      <button type="button" class="link" onclick={reset}><RotateCcw size={15} />{t('account.reset')}</button>
+      {#if store.live}
+        <button type="button" class="link" onclick={signOut}><LogOut size={15} />{t('account.signOut')}</button>
+      {:else}
+        <button type="button" class="link" onclick={reset}><RotateCcw size={15} />{t('account.reset')}</button>
+      {/if}
     {/snippet}
   </Popover>
 {/if}

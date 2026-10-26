@@ -17,17 +17,20 @@ export interface SignRequest {
   lines: string[];
   warnings?: string[];
   confirmLabel?: string;
-  onConfirm: () => boolean | void;
+  /** Runs the action; false (or a promise of false) means it was refused. */
+  onConfirm: () => boolean | void | Promise<boolean | void>;
 }
 
 /** The app's shared forms, opened from any screen or the command palette. */
 export type DialogRequest =
   | { kind: 'newObjective' }
   | { kind: 'newDeliverable'; objectiveId?: string }
+  | { kind: 'suggestPlan'; objectiveId: string }
   | { kind: 'proposeRule'; ruleKey?: RuleKey }
   | { kind: 'requestMoney'; type?: 'transfer' | 'budget'; objectiveId?: string; to?: string }
   | { kind: 'contribute' }
-  | { kind: 'requestChanges'; changeId: string };
+  | { kind: 'requestChanges'; changeId: string }
+  | { kind: 'invite' };
 
 const PREFS_KEY = 'chayolei-ui-v1';
 
@@ -46,6 +49,8 @@ class UiState {
   sign = $state<SignRequest | null>(null);
   paletteOpen = $state(false);
   dialog = $state<DialogRequest | null>(null);
+  /** The demo simulates signing; the live app waits for the real action. Set by the store. */
+  demo = $state(true);
   private nextToast = 1;
 
   dir = $derived<'rtl' | 'ltr'>(this.locale === 'he' ? 'rtl' : 'ltr');
@@ -114,6 +119,17 @@ class UiState {
   openDialog(req: DialogRequest): void {
     this.paletteOpen = false;
     this.dialog = req;
+  }
+
+  /** A form to open once the confirm-and-sign dialog has closed. */
+  afterSign: DialogRequest | null = null;
+
+  /** Called by the sign dialog when it closes. */
+  signClosed(): void {
+    this.sign = null;
+    const next = this.afterSign;
+    this.afterSign = null;
+    if (next) this.openDialog(next);
   }
 }
 

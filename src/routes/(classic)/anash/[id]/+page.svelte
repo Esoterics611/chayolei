@@ -49,8 +49,6 @@
   );
 
   let showPromoteConfirm = $state(false);
-  let showRedeemModal = $state(false);
-  let redeemAmount = $state(0);
   let isSelf = $derived(talmid?.id === app.currentUserId);
 </script>
 
@@ -184,21 +182,6 @@
         </div>
       </div>
     {/if}
-    {#if isSelf}
-      <button
-        onclick={() => { redeemAmount = 0; showRedeemModal = true; }}
-        class="mt-4 w-full py-2 text-xs font-medium transition-colors duration-150"
-        style="
-          border: 1px solid rgba(125,108,63,0.3);
-          border-radius: var(--radius-md);
-          background-color: rgba(125,108,63,0.08);
-          color: var(--color-accent-secondary);
-          cursor: pointer;
-        "
-        onmouseenter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(125,108,63,0.18)'; }}
-        onmouseleave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(125,108,63,0.08)'; }}
-      >פדה TMIM</button>
-    {/if}
   </div>
 
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -322,75 +305,3 @@
   />
 {/if}
 
-<!-- Redeem TMIM Modal -->
-{#if showRedeemModal && talmid}
-  <!-- svelte-ignore a11y_no_static_element_interactions -->
-  <div class="fixed inset-0 z-[90] flex items-center justify-center p-4" dir="rtl">
-    <!-- svelte-ignore a11y_click_events_have_key_events -->
-    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick={() => showRedeemModal = false}></div>
-    <div
-      class="relative z-10 w-full max-w-sm p-6 space-y-4"
-      style="
-        border: 1px solid var(--color-border-primary);
-        border-radius: var(--radius-2xl);
-        background-color: var(--color-bg-secondary);
-        box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
-      "
-    >
-      <h3 class="text-lg font-semibold" style="color: var(--color-text-primary); font-family: var(--font-hebrew);">פדיון TMIM</h3>
-      <p class="text-xs" style="color: var(--color-text-secondary);">יתרה: <span class="font-mono font-semibold" style="color: var(--color-accent-secondary);">{formatTmim(talmid.tokenBalance)}</span></p>
-      <div class="space-y-1.5">
-        <label class="text-xs" style="color: var(--color-text-tertiary);" for="redeem-amount">כמות</label>
-        <input
-          id="redeem-amount"
-          type="number"
-          bind:value={redeemAmount}
-          min="1"
-          max={talmid.tokenBalance}
-          style="
-            width: 100%;
-            padding: 0.625rem 1rem;
-            border: 1px solid var(--color-border-primary);
-            border-radius: var(--radius-md);
-            background-color: var(--color-bg-primary);
-            color: var(--color-text-primary);
-            font-size: 0.875rem;
-            outline: none;
-          "
-        />
-      </div>
-      {#if redeemAmount > 0}
-        <div class="text-center text-sm">
-          <span class="font-mono font-bold" style="color: var(--color-accent-secondary);">{redeemAmount} TMIM</span>
-          <span class="mx-2" style="color: var(--color-text-tertiary);">=</span>
-          <span class="font-mono font-bold" style="color: var(--color-status-success);">${(redeemAmount * 0.10).toFixed(2)}</span>
-        </div>
-      {/if}
-      <div class="flex gap-3 justify-end">
-        <button
-          onclick={() => showRedeemModal = false}
-          class="px-4 py-2 text-sm transition-colors duration-150"
-          style="
-            border: 1px solid var(--color-border-primary);
-            border-radius: var(--radius-md);
-            color: var(--color-text-secondary);
-            background: none;
-            cursor: pointer;
-          "
-        >ביטול</button>
-        <button
-          onclick={() => { app.redeemTmim(talmid!.id, redeemAmount); showRedeemModal = false; }}
-          disabled={redeemAmount < 1 || redeemAmount > talmid.tokenBalance}
-          class="px-4 py-2 text-sm font-medium transition-colors duration-150"
-          style="
-            background-color: rgba(125,108,63,0.15);
-            border: 1px solid rgba(125,108,63,0.35);
-            border-radius: var(--radius-md);
-            color: var(--color-accent-secondary);
-            cursor: pointer;
-          "
-        >פדה</button>
-      </div>
-    </div>
-  </div>
-{/if}
