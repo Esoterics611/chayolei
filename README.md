@@ -29,7 +29,8 @@ Chayolei is **not** a bank, an employer, a legal entity or an investment. TMIM p
 - 🔄 Deploying the team contracts to Base Sepolia; redeploying the governance contracts with audit fixes L-1, L-2, M-2.
 - ✅ **Notifications** in the app; an **accessibility audit** (WCAG 2.2 A/AA, every screen, both languages and themes, desktop and phone) and a size budget, in CI.
 - ✅ **The AI planner:** suggests a breakdown of an objective that a lead edits and adds; what is added shows as AI-assisted. Needs `ANTHROPIC_API_KEY` on the server ([`docs/TEAM_BACKEND.md`](docs/TEAM_BACKEND.md) §6a); the demo shows a labelled sample.
-- ⬜ Passkey sign-in and sponsored fees for every action; push notifications; the other AI helpers; a usability test (`docs/UX_REDESIGN.md` §11).
+- ⬜ Passkey sign-in and fee-free contributions (every other action is already sponsored); these wait on the owner's choice of wallet strategy ([`docs/WALLETS.md`](docs/WALLETS.md)).
+- ⬜ Push notifications; the other AI helpers; a usability test (`docs/UX_REDESIGN.md` §11).
 - ⬜ External audit; Base mainnet.
 
 Open questions for the owner, and what the code assumes meanwhile, are in [`docs/DECISIONS.md`](docs/DECISIONS.md).
@@ -92,6 +93,7 @@ An earlier governance deployment (C1) was at `0xa7E7098012C6DE7395128f8d3afE606C
 | [`docs/UX_TECH_DESIGN.md`](docs/UX_TECH_DESIGN.md) | How the new UI is built |
 | [`docs/TEAM_BACKEND.md`](docs/TEAM_BACKEND.md) | The live backend and the chain bridge |
 | [`docs/TEAM_CONTRACTS.md`](docs/TEAM_CONTRACTS.md) | The per-team contracts |
+| [`docs/WALLETS.md`](docs/WALLETS.md) | Passkeys and sponsored fees: options and what they need |
 | [`contracts/audit/README.md`](contracts/audit/README.md) | The governance contracts' audit package |
 
 Older documents (`GO_TO_MARKET`, `INVESTOR_PITCH`, `PUBLIC_INTRODUCTION`, `TOMCHEI_TMIMIM_OVERVIEW`, `SPEC_1`, `SPEC_2`, `BACKEND_PLAN`) predate the current model; each says at the top what it no longer governs.
