@@ -113,6 +113,18 @@ Members can call their team's contract without the app: a block explorer, their 
 
 Entries recorded this way carry `data.via = 'chain'`; the ledger says *Done on the team's contract outside the app*. Tested in `reconcile.test.ts` and on a local chain (`team-chain.test.ts`: a vote and a transfer sent straight to the contract).
 
+## 6c. Push to members' devices (`src/lib/server/push.ts`)
+
+Push is for what blocks someone or is about to expire (`UX_REDESIGN.md` phase 8), so a member can close Chayolei and still hear about it; everything else stays in the bell.
+
+- **What is sent** (`src/lib/team/push.ts`, `pushItems`): a review waiting on you, an acceptance waiting on you, changes requested on your work, a request waiting for your approval, an objective of yours left without a lead; and, a day before it closes, a vote you haven't cast (urgent). Not news, stalls of your own, or scheduled pay. Text in each device's language, the team's name as the title, a link to the screen that clears it.
+- **Once each:** every item has a key, kept per member in `teams/{id}/system/push` while it waits; a transaction claims new keys before anything is sent, so two servers never send it twice. A new review round is a new key.
+- **When:** after every action through the app (the commands route) and every reconciled transaction, the server looks at what now waits on whom; a sweep every 10 minutes looks at teams whose next vote closes within a day (`closesSoonest` on the core).
+- **Devices:** a member turns push on per device from the bell (permission, the service worker `src/service-worker.ts`, a subscription sent to `POST /api/push`), and off again (`DELETE /api/push`); at most 10 devices. Subscriptions are server-only (`pushSubscriptions`); one the push service no longer knows (404/410) is deleted. The service worker caches nothing: it shows notifications and opens their link. The demo has no push server; it keeps the in-app reminder.
+- **Configuration:** `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` (a secret), `VAPID_SUBJECT`; without them push is off and the bell doesn't offer it.
+
+Tested: `push.test.ts` (what is sent, keys, languages), `src/lib/server/push.test.ts` on the emulator (subscribing, sending once, forgetting dead devices, the vote sweep) and `scripts/e2e/run-push-sw.sh` (Chromium shows a message delivered to the service worker).
+
 ## 7. Running it
 
 ```bash
@@ -135,4 +147,4 @@ Local live app: start the emulators (`npx firebase emulators:start --only firest
 - **Size:** each action reads the whole team. Comfortable for a small team's first years (thousands of entries); later, keep running balances on the core and read only recent entries. The core document (changes with their comments) stays far below Firestore's 1 MB for small teams; very long comment threads would move to a subcollection.
 - **One relayer per server instance:** the relayer counts its own nonces in memory, so run one instance per relayer key (or one relayer service).
 - **Reconciliation** (§6b) needs a long-running server instance, as the classic governance listener does; on a serverless deploy, call `reconcileTeams()` from a scheduled job instead.
-- **Not yet:** passkey sign-in and sponsored fees for contributions (members' own transfers pay their fee), push notifications, and moving the classic app's campaigns and assignments into teams (new teams start fresh).
+- **Not yet:** passkey sign-in and sponsored fees for contributions (members' own transfers pay their fee), and moving the classic app's campaigns and assignments into teams (new teams start fresh).

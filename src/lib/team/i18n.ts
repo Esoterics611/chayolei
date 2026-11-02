@@ -870,6 +870,19 @@ const en: Dict = {
   'entry.commented_ai': '{actor} commented on “{deliverable}” from the first-pass reviewer’s notes',
   'entry.message_ai': '{actor} posted the {helper}’s answer in the thread of “{target}”',
   'err.ai.too_short': 'There isn’t enough in this thread to summarize yet.',
+  'push.review': '“{title}” waits for your review',
+  'push.accept': '“{title}” is reviewed and waits for your acceptance',
+  'push.revise': 'Changes were requested on “{title}”',
+  'push.approve_money': '“{title}” waits for your approval',
+  'push.lead': '“{objective}” has no lead: its work needs someone to approve it',
+  'push.closing': 'A vote you haven’t cast closes within a day: “{title}”',
+  'notify.push': 'Notify me on this device',
+  'notify.pushOn': 'Notifications on for this device · Turn off',
+  'notify.pushHint': 'Only when something waits on you or a vote you haven’t cast closes within a day, even when Chayolei is closed.',
+  'notify.pushBlocked': 'Notifications are blocked for Chayolei in this browser’s settings.',
+  'err.push.unavailable': 'Notifications to devices aren’t set up on this server.',
+  'err.push.failed': 'This device couldn’t be set up for notifications. Please try again.',
+  'err.push.devices': 'Notifications are on for {n} devices already. Turn them off on one first.',
 };
 
 const he: Dict = {
@@ -1713,6 +1726,19 @@ const he: Dict = {
   'entry.commented_ai': '{actor} העיר/ה על „{deliverable}” מהערות המבקר הראשוני',
   'entry.message_ai': '{actor} פרסם/ה את תשובת {helper} בשיחה על „{target}”',
   'err.ai.too_short': 'אין עדיין מספיק בשיחה הזו כדי לסכם.',
+  'push.review': '„{title}” מחכה לביקורת שלך',
+  'push.accept': '„{title}” נבדק ומחכה לאישור שלך',
+  'push.revise': 'התבקשו תיקונים ב„{title}”',
+  'push.approve_money': '„{title}” מחכה לאישור שלך',
+  'push.lead': 'ל„{objective}” אין מוביל/ה: העבודה בו צריכה מי שיאשר אותה',
+  'push.closing': 'הצבעה שעוד לא הצבעת בה נסגרת תוך יום: „{title}”',
+  'notify.push': 'התראות למכשיר הזה',
+  'notify.pushOn': 'התראות פעילות במכשיר הזה · לכבות',
+  'notify.pushHint': 'רק כשמשהו מחכה לך או כשהצבעה שלא הצבעת בה נסגרת תוך יום, גם כש־Chayolei סגור.',
+  'notify.pushBlocked': 'ההתראות של Chayolei חסומות בהגדרות הדפדפן הזה.',
+  'err.push.unavailable': 'התראות למכשירים לא הוגדרו בשרת הזה.',
+  'err.push.failed': 'לא ניתן היה להגדיר התראות במכשיר הזה. אפשר לנסות שוב.',
+  'err.push.devices': 'ההתראות כבר פעילות ב־{n} מכשירים. קודם יש לכבות באחד מהם.',
 };
 
 export const DICTS: Record<Locale, Dict> = { en, he };

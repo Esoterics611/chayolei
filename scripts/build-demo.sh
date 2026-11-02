@@ -21,7 +21,7 @@ git ls-files -z --cached --others --exclude-standard -- src static package.json 
 ln -s "$ROOT/node_modules" "$WORK/node_modules"
 
 cd "$WORK"
-rm -rf "src/routes/(classic)" src/routes/api src/hooks.server.ts src/lib/server
+rm -rf "src/routes/(classic)" src/routes/api src/hooks.server.ts src/lib/server src/service-worker.ts
 # The hash router renders on the client only; it takes no ssr option.
 rm -f src/routes/+layout.ts
 

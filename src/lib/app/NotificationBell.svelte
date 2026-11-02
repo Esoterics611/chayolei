@@ -23,6 +23,14 @@
   let seen = $state<Record<string, string>>(read(SEEN_KEY));
   let reminded = $state<Record<string, boolean>>(read(REMINDED_KEY));
   let permission = $state(typeof Notification === 'undefined' ? 'unsupported' : Notification.permission);
+  // The live app pushes to this device even when Chayolei is closed, if the member turns it on.
+  let push = $state<'unsupported' | 'unavailable' | 'blocked' | 'off' | 'on' | 'busy'>('unsupported');
+  $effect(() => { if (store.live) void store.pushState().then(s => { push = s; }); });
+  async function togglePush() {
+    const want = push !== 'on';
+    push = 'busy';
+    push = (await store.setPush(want)) ?? (want ? 'off' : 'on');
+  }
 
   const key = $derived(`${store.team.id}:${store.me}`);
   // First visit: the last three days count as new.
@@ -54,9 +62,10 @@
     permission = await Notification.requestPermission();
   }
 
-  // Remind once per vote, a day before it closes, while the app is open.
+  // Remind once per vote, a day before it closes, while the app is open
+  // (devices with push get it from the server instead).
   $effect(() => {
-    if (permission !== 'granted') return;
+    if (permission !== 'granted' || push === 'on') return;
     for (const c of closing) {
       const id = `${store.team.id}:${c.id}:${store.me}`;
       if (untrack(() => reminded[id])) continue;
@@ -113,7 +122,14 @@
     {:else}
       <p class="empty">{t('notify.empty')}</p>
     {/if}
-    {#if permission === 'default'}
+    {#if store.live && push !== 'unsupported' && push !== 'unavailable'}
+      {#if push === 'blocked'}
+        <p class="hint">{t('notify.pushBlocked')}</p>
+      {:else}
+        <button type="button" class="remind" aria-pressed={push === 'on'} disabled={push === 'busy'} onclick={togglePush}>{push === 'on' ? t('notify.pushOn') : t('notify.push')}</button>
+        <p class="hint">{t('notify.pushHint')}</p>
+      {/if}
+    {:else if permission === 'default'}
       <button type="button" class="remind" onclick={askToRemind}>{t('notify.remind')}</button>
     {:else if permission === 'granted'}
       <p class="hint">{t('notify.reminding')}</p>

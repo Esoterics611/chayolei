@@ -15,7 +15,7 @@ import type { Command, CommandResult } from './commands';
 import { activeMember, member } from './rules';
 import { lt, t } from './i18n';
 import { ui } from './ui.svelte';
-import type { ChainInfo, InviteInfo, LiveClient, Refusal, Signed } from './live';
+import type { ChainInfo, InviteInfo, LiveClient, PushState, Refusal, Signed } from './live';
 import type { PlanSuggestion } from './planner';
 import type { ReviewSuggestion, Sources, Summary, ThreadRef } from './helpers';
 
@@ -315,6 +315,20 @@ class TeamStore {
       if (e instanceof DomainError) { this.explain(e); return undefined; }
       throw e;
     }
+  }
+
+  /** Live app: whether this device gets push notifications. */
+  async pushState(): Promise<PushState> {
+    if (!LIVE) return 'unsupported';
+    return (await this.liveClient()).pushState();
+  }
+
+  /** Live app: turn push on or off for this device. */
+  async setPush(on: boolean): Promise<PushState | undefined> {
+    const client = await this.liveClient();
+    const r = on ? await client.enablePush(ui.locale) : await client.disablePush();
+    if (!r.ok) { this.explain(r.error); return undefined; }
+    return r.value;
   }
 
   /** A join link for the active team: real in the live app, illustrative in the demo. */

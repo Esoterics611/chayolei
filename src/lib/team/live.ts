@@ -159,6 +159,53 @@ export class LiveClient {
     return r.ok ? { ok: true, value: r.value.suggestion } : r;
   }
 
+  // ── Push on this device ───────────────────────────────────────
+
+  /** Whether this device gets pushes: unsupported here, off on the server, blocked by the browser, off, or on. */
+  async pushState(): Promise<PushState> {
+    if (typeof navigator === 'undefined' || !('serviceWorker' in navigator) || typeof PushManager === 'undefined') return 'unsupported';
+    const info = await fetch('/api/push').then(r => r.json()).catch(() => ({ enabled: false }));
+    if (!info.enabled) return 'unavailable';
+    if (Notification.permission === 'denied') return 'blocked';
+    const reg = await navigator.serviceWorker.getRegistration();
+    return (await reg?.pushManager.getSubscription()) ? 'on' : 'off';
+  }
+
+  /** Turn push on for this device: ask permission, register the worker, subscribe, tell the server. */
+  async enablePush(locale: Locale): Promise<Reply<PushState>> {
+    try {
+      const info = await fetch('/api/push').then(r => r.json());
+      if (!info.enabled || !info.publicKey) return { ok: false, error: { key: 'err.push.unavailable' } };
+      if ((await Notification.requestPermission()) !== 'granted') return { ok: true, value: 'blocked' };
+      const { dev } = await import('$app/environment');
+      const reg = await navigator.serviceWorker.register('/service-worker.js', { type: dev ? 'module' : 'classic' });
+      await navigator.serviceWorker.ready;
+      const sub = (await reg.pushManager.getSubscription())
+        ?? await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: base64Url(info.publicKey) });
+      const r = await this.call<{ ok: true }>('/api/push', { subscription: sub.toJSON(), locale });
+      return r.ok ? { ok: true, value: 'on' } : r;
+    } catch (e) {
+      console.error('[push]', e);
+      return { ok: false, error: { key: 'err.push.failed' } };
+    }
+  }
+
+  /** Turn push off for this device. */
+  async disablePush(): Promise<Reply<PushState>> {
+    try {
+      const reg = await navigator.serviceWorker.getRegistration();
+      const sub = await reg?.pushManager.getSubscription();
+      if (sub) {
+        await this.call('/api/push', { endpoint: sub.endpoint }, 'DELETE');
+        await sub.unsubscribe();
+      }
+      return { ok: true, value: 'off' };
+    } catch (e) {
+      console.error('[push]', e);
+      return { ok: false, error: { key: 'err.push.failed' } };
+    }
+  }
+
   prepareTeam(input: TeamInput): Promise<Reply<Prepare<{ request: ForwardRequest }>>> {
     return this.call('/api/teams/prepare', input);
   }
@@ -194,12 +241,12 @@ export class LiveClient {
     return r.ok ? { ok: true, value: r.value.team } : r;
   }
 
-  private async call<T>(url: string, body: unknown): Promise<Reply<T>> {
+  private async call<T>(url: string, body: unknown, method = 'POST'): Promise<Reply<T>> {
     try {
       const { auth } = await import('$lib/firebase');
       const token = await auth.currentUser?.getIdToken();
       if (!token) return { ok: false, error: { key: 'live.signedOut' } };
-      const res = await fetch(url, post(body, token));
+      const res = await fetch(url, { ...post(body, token), method });
       return reply<T>(res);
     } catch {
       return { ok: false, error: { key: 'live.offline' } };
@@ -284,6 +331,17 @@ export class LiveClient {
     this.cores = new Map();
     this.active = '';
   }
+}
+
+export type PushState = 'unsupported' | 'unavailable' | 'blocked' | 'off' | 'on';
+
+/** A VAPID public key (base64url) as the bytes PushManager wants. */
+function base64Url(s: string): Uint8Array<ArrayBuffer> {
+  const b64 = (s + '='.repeat((4 - (s.length % 4)) % 4)).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = atob(b64);
+  const out = new Uint8Array(new ArrayBuffer(raw.length));
+  for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+  return out;
 }
 
 export interface ChainInfo {

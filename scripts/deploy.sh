@@ -32,7 +32,9 @@ gcloud builds submit --project "$PROJECT" --config cloudbuild.yaml --substitutio
 runtime_env="FIREBASE_PROJECT_ID=${PROJECT}"
 for v in BASE_SEPOLIA_RPC_URL VITE_GOVERNANCE_ADDRESS VITE_CHAYOLEI_REGISTRY_ADDRESS \
          VITE_MASIMA_REWARDS_ADDRESS VITE_TMIM_TOKEN_ADDRESS GOVERNANCE_START_BLOCK \
-         TEAM_FACTORY_ADDRESS TEAM_FORWARDER_ADDRESS TEAM_CHAIN_RPC_URL TEAM_EXPLORER_URL TEAM_AI_MODEL; do
+         TEAM_FACTORY_ADDRESS TEAM_FORWARDER_ADDRESS TEAM_CHAIN_RPC_URL TEAM_EXPLORER_URL TEAM_AI_MODEL \
+         TEAM_START_BLOCK TEAM_RECONCILE_DELAY_SECONDS TEAM_STARTS_PER_ACCOUNT_DAY TEAM_STARTS_PLATFORM_DAY \
+         TEAM_INVITES_PER_TEAM_DAY TEAM_JOINS_PER_TEAM_DAY VAPID_PUBLIC_KEY VAPID_SUBJECT; do
   val="$(env_val "$v")"
   [ -n "$val" ] && runtime_env+=",${v}=${val}"
 done
@@ -46,8 +48,12 @@ if [ -n "$(env_val TEAM_FACTORY_ADDRESS)" ]; then
   scaling+=(--max-instances 1)
 fi
 if [ "$(env_val TEAM_AI)" = "1" ]; then
-  # The AI planner's Claude API key, from Secret Manager (docs/DEPLOY.md).
+  # The AI helpers' Claude API key, from Secret Manager (docs/DEPLOY.md).
   secrets+=",ANTHROPIC_API_KEY=anthropic-api-key:latest"
+fi
+if [ "$(env_val TEAM_PUSH)" = "1" ]; then
+  # Push to members' devices: the VAPID private key, from Secret Manager.
+  secrets+=",VAPID_PRIVATE_KEY=vapid-private-key:latest"
 fi
 
 echo "Deploying ${SERVICE} to ${REGION}"

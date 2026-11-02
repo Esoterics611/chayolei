@@ -24,6 +24,7 @@ import { adminDb } from '$lib/server/firebase-admin';
 import { getChain } from '$lib/server/team-chain';
 import type { Chain } from '$lib/server/team-chain';
 import { recordFromChain } from '$lib/server/teams';
+import { notifyTeam } from '$lib/server/push';
 import { FORWARDER, TEAM, TMIM } from '$lib/team/chain';
 import type { ChainEvent, ChainTx } from '$lib/team/reconcile';
 
@@ -163,6 +164,7 @@ export async function reconcileTeams(opts: { delaySeconds?: number } = {}): Prom
         const r = await recordFromChain(teamId, txs);
         recorded += r.recorded;
         noted += r.noted;
+        if (r.recorded) void notifyTeam(teamId).catch(e => console.error('[push] notifying failed', e));
       }
     }
     await checkpoint().set({ lastBlock: to, updatedAt: new Date().toISOString() }, { merge: true });

@@ -24,6 +24,8 @@ export interface TeamCore extends Omit<Team, 'ledger' | 'messages' | 'deliverabl
   memberUids: string[];
   ledgerCount: number;
   updatedAt: string;
+  /** When the first vote still open closes, so the server can remind voters in time (src/lib/server/push.ts). */
+  closesSoonest: string | null;
 }
 
 export interface TeamDocs {
@@ -53,6 +55,9 @@ export function toDocs(team: Team, now: string): TeamDocs {
       memberUids: team.members.filter(m => !m.ai && !m.leftAt).map(m => m.id),
       ledgerCount: ledger.length,
       updatedAt: now,
+      closesSoonest: team.changes
+        .map(c => (c.status === 'open' && c.kind !== 'work' && (c.kind !== 'money' || c.decidedBy === 'vote') ? c.closesAt ?? '' : ''))
+        .filter(Boolean).sort()[0] ?? null,
     },
     ledger,
     messages,
@@ -62,7 +67,7 @@ export function toDocs(team: Team, now: string): TeamDocs {
 
 export function fromDocs(docs: TeamDocs): Team {
   const { core, ledger, messages, versions } = docs;
-  const { memberUids: _uids, ledgerCount: _count, updatedAt: _at, deliverables, ...rest } = core;
+  const { memberUids: _uids, ledgerCount: _count, updatedAt: _at, closesSoonest: _closes, deliverables, ...rest } = core;
   const byDeliverable = new Map<string, Version[]>();
   for (const { deliverableId, ...v } of versions) {
     const list = byDeliverable.get(deliverableId) ?? [];
