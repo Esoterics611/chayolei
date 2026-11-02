@@ -34,7 +34,8 @@ export type DialogRequest =
   | { kind: 'requestMoney'; type?: 'transfer' | 'budget'; objectiveId?: string; to?: string }
   | { kind: 'contribute' }
   | { kind: 'requestChanges'; changeId: string }
-  | { kind: 'invite' };
+  | { kind: 'invite' }
+  | { kind: 'importClassic' };
 
 const PREFS_KEY = 'chayolei-ui-v1';
 

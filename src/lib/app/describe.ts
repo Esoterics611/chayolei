@@ -86,11 +86,11 @@ export function describe(team: Team, e: LedgerEntry): Described {
     case 'member_joined':
       return { text: t('entry.member_joined', { actor }), icon: UserPlus, groups: group('people'), href: href('/decide/members') };
     case 'objective_created':
-      return { text: t('entry.objective_created', { actor, objective }), icon: ListTree, groups: group('work'), href: href(`/plan/${e.refs.objectiveId}`) };
+      return { text: t(d.imported ? 'entry.objective_imported' : 'entry.objective_created', { actor, objective }), icon: ListTree, groups: group('work'), href: href(`/plan/${e.refs.objectiveId}`) };
     case 'deliverable_created':
-      return { text: t(d.assist ? 'entry.deliverable_created_ai' : 'entry.deliverable_created', { actor, deliverable, reward: fmtTmim(Number(d.reward ?? 0)) }), icon: FilePlus, groups: group('work'), href: dLink() };
+      return { text: t(d.imported ? 'entry.deliverable_imported' : d.assist ? 'entry.deliverable_created_ai' : 'entry.deliverable_created', { actor, deliverable, reward: fmtTmim(Number(d.reward ?? 0)) }), icon: FilePlus, groups: group('work'), href: dLink() };
     case 'assigned':
-      return { text: t('entry.assigned', { actor, deliverable }), icon: Hand, groups: group('work', 'people'), href: dLink() };
+      return { text: t(d.imported ? 'entry.assigned_imported' : 'entry.assigned', { actor, deliverable }), icon: Hand, groups: group('work', 'people'), href: dLink() };
     case 'version_saved':
       return { text: t('entry.version_saved', { actor, n: d.n, deliverable }), icon: GitCommitHorizontal, groups: group('work'), href: dLink('/work') };
     case 'review_requested':
@@ -106,7 +106,7 @@ export function describe(team: Team, e: LedgerEntry): Described {
     case 'released':
       return { text: t('entry.released', { actor, deliverable, n: d.n }), icon: BookOpenCheck, groups: group('work'), href: dLink() };
     case 'task_created':
-      return { text: t(d.assist ? 'entry.task_created_ai' : 'entry.task_created', { actor, deliverable }), icon: ListPlus, groups: group('work'), href: dLink('/tasks') };
+      return { text: t(d.imported ? 'entry.task_imported' : d.assist ? 'entry.task_created_ai' : 'entry.task_created', { actor, deliverable }), icon: ListPlus, groups: group('work'), href: dLink('/tasks') };
     case 'task_done':
       return { text: t('entry.task_done', { actor, deliverable }), icon: SquareCheck, groups: group('work'), href: dLink('/tasks') };
     case 'change_opened':

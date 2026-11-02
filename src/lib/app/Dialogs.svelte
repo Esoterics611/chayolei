@@ -16,6 +16,7 @@
   const reviewHelperForm = () => import('./forms/ReviewHelperForm.svelte');
   const summaryForm = () => import('./forms/SummaryForm.svelte');
   const sourcesForm = () => import('./forms/SourcesForm.svelte');
+  const importClassicForm = () => import('./forms/ImportClassicForm.svelte');
 
   let open = $state(false);
   $effect(() => { open = !!ui.dialog; });
@@ -34,6 +35,7 @@
     contribute: 'treasury.contribute',
     requestChanges: 'review.requestChanges',
     invite: 'invite.title',
+    importClassic: 'classic.title',
   } as const;
   const DESCRIPTIONS: Partial<Record<keyof typeof TITLES, string>> = {
     newObjective: 'plan.objectiveDesc',
@@ -41,6 +43,7 @@
     aiReview: 'helper.review.desc',
     aiSummary: 'helper.summary.desc',
     aiSources: 'helper.sources.desc',
+    importClassic: 'classic.desc',
     proposeRule: 'decide.proposeDesc',
     proposeRoles: 'decide.proposeRolesDesc',
     requestMoney: 'decide.requestDesc',
@@ -74,6 +77,8 @@
       <RequestChangesForm done={close} changeId={req.changeId} />
     {:else if req.kind === 'invite'}
       <InviteForm done={close} />
+    {:else if req.kind === 'importClassic'}
+      {#await importClassicForm() then { default: ImportClassicForm }}<ImportClassicForm done={close} />{/await}
     {/if}
   </Dialog>
 {/if}

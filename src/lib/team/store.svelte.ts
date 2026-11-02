@@ -15,7 +15,7 @@ import type { Command, CommandResult } from './commands';
 import { activeMember, member } from './rules';
 import { lt, t } from './i18n';
 import { ui } from './ui.svelte';
-import type { ChainInfo, InviteInfo, LiveClient, PushState, Refusal, Signed } from './live';
+import type { CampaignChoice, ChainInfo, InviteInfo, LiveClient, PushState, Refusal, Signed } from './live';
 import type { PlanSuggestion } from './planner';
 import type { ReviewSuggestion, Sources, Summary, ThreadRef } from './helpers';
 
@@ -315,6 +315,25 @@ class TeamStore {
       if (e instanceof DomainError) { this.explain(e); return undefined; }
       throw e;
     }
+  }
+
+  /** Live app: the classic campaigns the member started or joined, to bring into the active team. */
+  async classicCampaigns(): Promise<CampaignChoice[] | undefined> {
+    const team = this.team;
+    if (!LIVE || !team) return undefined;
+    const r = await (await this.liveClient()).classicCampaigns(team.id);
+    if (!r.ok) { this.explain(r.error); return undefined; }
+    return r.value;
+  }
+
+  /** Live app: bring a classic campaign into the active team as an objective. */
+  async importClassic(mivtzaId: string): Promise<{ objectiveId: string; budgetLeft: number } | undefined> {
+    const team = this.team;
+    if (!LIVE || !team) return undefined;
+    const r = await (await this.liveClient()).importClassic(team.id, mivtzaId);
+    if (!r.ok) { this.explain(r.error); return undefined; }
+    this.replace(r.value.team);
+    return { objectiveId: r.value.objectiveId, budgetLeft: r.value.budgetLeft };
   }
 
   /** Live app: whether this device gets push notifications. */

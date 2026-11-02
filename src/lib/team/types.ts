@@ -78,6 +78,8 @@ export interface Objective {
   budget: number;
   due?: string;
   createdAt: string;
+  /** Brought in from the classic app's campaign. */
+  source?: { kind: 'classic'; id: string };
 }
 
 export type Stage =

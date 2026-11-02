@@ -125,6 +125,17 @@ Push is for what blocks someone or is about to expire (`UX_REDESIGN.md` phase 8)
 
 Tested: `push.test.ts` (what is sent, keys, languages), `src/lib/server/push.test.ts` on the emulator (subscribing, sending once, forgetting dead devices, the vote sweep) and `scripts/e2e/run-push-sw.sh` (Chromium shows a message delivered to the service worker).
 
+## 6d. Bringing in the classic app's campaigns (`src/lib/server/classic-import.ts`)
+
+Teams started fresh; the classic app's work (campaigns → assignments → tasks, `src/routes/(classic)`) can now come into a team, one campaign at a time:
+
+- **Who and what:** a member who may change the team's plan sees the classic campaigns they started or joined (`GET /api/teams/[id]/classic`) and brings one in (`POST … { mivtzaId }`), from **Bring in a campaign** in Plan (live app only).
+- **How it maps** (`src/lib/team/classic.ts`): the campaign becomes an objective (title, description, due date), led by the member who brings it in. Its **unfinished** assignments become deliverables (title, description as the scope with a link to the work so far, the assignment's TMIM reward or the team's standard one, due date), each with its tasks (done when approved there). Whoever held an assignment keeps it, and its reviewer stays, **if they are on the team** and their role allows it; otherwise it opens for the team. **Finished** assignments were paid in the classic system: they are listed in the objective's description and touch neither the budget nor the ledger's payouts.
+- **The charter still decides money:** the objective starts without a budget; the dialog says what the campaign had left and offers *Request a budget*, decided as any money change.
+- **Once, by the server:** the server reads the classic records and builds the plan; no browser sends it (it places work with people, which no member's own action does). The objective keeps `source: { kind: 'classic', id }`, so the same campaign can't come in twice. Its entries say *from the classic app* in the ledger.
+
+Tested: `classic.test.ts` (mapping, engine), `src/lib/server/classic-import.test.ts` on the emulator, and the live browser test (`run-live.sh`: Mendel brings in a campaign with Levi's assignment).
+
 ## 7. Running it
 
 ```bash
@@ -147,4 +158,4 @@ Local live app: start the emulators (`npx firebase emulators:start --only firest
 - **Size:** each action reads the whole team. Comfortable for a small team's first years (thousands of entries); later, keep running balances on the core and read only recent entries. The core document (changes with their comments) stays far below Firestore's 1 MB for small teams; very long comment threads would move to a subcollection.
 - **One relayer per server instance:** the relayer counts its own nonces in memory, so run one instance per relayer key (or one relayer service).
 - **Reconciliation** (§6b) needs a long-running server instance, as the classic governance listener does; on a serverless deploy, call `reconcileTeams()` from a scheduled job instead.
-- **Not yet:** passkey sign-in and sponsored fees for contributions (members' own transfers pay their fee), and moving the classic app's campaigns and assignments into teams (new teams start fresh).
+- **Not yet:** passkey sign-in and sponsored fees for contributions (members' own transfers pay their fee): both wait on the wallet decision (`WALLETS.md`, `DECISIONS.md` #11, #12).

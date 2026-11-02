@@ -13,6 +13,7 @@ import {
   activeMember, can, leavesNoVoter, member, requirePermission, requireValidRuleValue, ruleCurrent, ruleValue, voters,
 } from './rules';
 import { charterFromTemplate, TEMPLATES } from './templates';
+import type { ImportPlan } from './classic';
 
 export const STALL_DAYS = 7;
 const DAY = 86_400_000;
@@ -236,6 +237,45 @@ export function setPeople(team: Team, me: string, deliverableId: string, people:
   if (people.reviewerId !== undefined) d.reviewerId = people.reviewerId || undefined;
   if (people.approverId !== undefined) d.approverId = people.approverId || undefined;
   touch(d, now);
+}
+
+/**
+ * Bring a classic campaign into the team (classic.ts): an objective, its
+ * unfinished assignments as deliverables, their tasks. People keep what they
+ * held there when they are on the team and may do it. Run only by the server,
+ * from the classic records, never sent by a browser: it places work with
+ * people, which no member's action does.
+ */
+export function importPlan(team: Team, me: string, plan: ImportPlan, now: string): Objective {
+  requirePermission(team, me, 'manage_plan');
+  if (team.objectives.some(o => o.source?.kind === plan.source.kind && o.source.id === plan.source.id)) throw new DomainError('err.already_imported');
+  const o: Objective = {
+    id: newId('o'), title: plan.title, description: plan.description, ownerId: me, budget: 0, due: plan.due,
+    createdAt: now, source: plan.source,
+  };
+  team.objectives.push(o);
+  const imported = { imported: plan.source.kind };
+  appendEntry(team, { kind: 'objective_created', at: now, actorId: me, refs: { objectiveId: o.id }, data: imported });
+  for (const x of plan.deliverables) {
+    const reviewerId = x.reviewerId && can(team, x.reviewerId, 'review_work') ? x.reviewerId : undefined;
+    const d: Deliverable = {
+      id: newId('d'), objectiveId: o.id, title: x.title, scope: x.scope, reviewerId, approverId: me,
+      reward: Math.max(0, Math.round(x.reward)), due: x.due, stage: 'open', versions: [], lastActivityAt: now,
+    };
+    team.deliverables.push(d);
+    appendEntry(team, { kind: 'deliverable_created', at: now, actorId: me, refs: { objectiveId: o.id, deliverableId: d.id }, data: { reward: d.reward, ...imported } });
+    if (x.ownerId && activeMember(team, x.ownerId) && can(team, x.ownerId, 'take_work')) {
+      d.ownerId = x.ownerId;
+      d.stage = 'assigned';
+      appendEntry(team, { kind: 'assigned', at: now, actorId: x.ownerId, refs: { deliverableId: d.id, objectiveId: o.id, memberId: x.ownerId }, data: imported });
+    }
+    for (const t of x.tasks) {
+      const task: Task = { id: newId('t'), deliverableId: d.id, title: t.title, ownerId: t.ownerId && activeMember(team, t.ownerId) ? t.ownerId : undefined, done: t.done };
+      team.tasks.push(task);
+      appendEntry(team, { kind: 'task_created', at: now, actorId: me, refs: { deliverableId: d.id, taskId: task.id, objectiveId: o.id }, data: { ...imported, ...(t.done ? { done: 1 } : {}) } });
+    }
+  }
+  return o;
 }
 
 /** Take the lead of an objective whose lead has left: you then approve its

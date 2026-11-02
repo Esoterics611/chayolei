@@ -206,6 +206,17 @@ export class LiveClient {
     }
   }
 
+  // ── The classic app's campaigns ───────────────────────────────
+
+  async classicCampaigns(teamId: string): Promise<Reply<CampaignChoice[]>> {
+    const r = await this.call<{ campaigns: CampaignChoice[] }>(`/api/teams/${encodeURIComponent(teamId)}/classic`, undefined, 'GET');
+    return r.ok ? { ok: true, value: r.value.campaigns } : r;
+  }
+
+  importClassic(teamId: string, mivtzaId: string): Promise<Reply<{ objectiveId: string; budgetLeft: number; team: Team }>> {
+    return this.call(`/api/teams/${encodeURIComponent(teamId)}/classic`, { mivtzaId });
+  }
+
   prepareTeam(input: TeamInput): Promise<Reply<Prepare<{ request: ForwardRequest }>>> {
     return this.call('/api/teams/prepare', input);
   }
@@ -246,7 +257,8 @@ export class LiveClient {
       const { auth } = await import('$lib/firebase');
       const token = await auth.currentUser?.getIdToken();
       if (!token) return { ok: false, error: { key: 'live.signedOut' } };
-      const res = await fetch(url, { ...post(body, token), method });
+      const init = method === 'GET' ? { method, headers: { Authorization: `Bearer ${token}` } } : { ...post(body, token), method };
+      const res = await fetch(url, init);
       return reply<T>(res);
     } catch {
       return { ok: false, error: { key: 'live.offline' } };
@@ -279,25 +291,30 @@ export class LiveClient {
     const deep: Deep = { teamId, ledger: [], messages: [], versions: new Map(), subs: [] };
     this.deep = deep;
     const base = (name: string) => collection(db, 'teams', teamId, name);
+    // Access ends when the member leaves or is removed: stop following quietly.
+    const lost = (e: { code?: string }) => {
+      if (e.code !== 'permission-denied') console.error('[live] listener failed', e);
+      if (this.deep === deep) { deep.subs.forEach(u => u()); this.deep = null; }
+    };
     const mine = new Map<string, StoredVersion>();
     const shared = new Map<string, StoredVersion>();
     const mergeVersions = () => { deep.versions = new Map([...shared, ...mine]); };
     deep.subs.push(
-      onSnapshot(base('ledger'), s => { deep.ledger = s.docs.map(d => d.data() as LedgerEntry); this.emit(); }),
-      onSnapshot(base('messages'), s => { deep.messages = s.docs.map(d => d.data() as Message); this.emit(); }),
+      onSnapshot(base('ledger'), s => { deep.ledger = s.docs.map(d => d.data() as LedgerEntry); this.emit(); }, lost),
+      onSnapshot(base('messages'), s => { deep.messages = s.docs.map(d => d.data() as Message); this.emit(); }, lost),
       // Saved versions, and my own drafts: what the access rules let me read.
       onSnapshot(query(base('versions'), where('kind', '==', 'version')), s => {
         shared.clear();
         for (const d of s.docs) shared.set(d.id, d.data() as StoredVersion);
         mergeVersions();
         this.emit();
-      }),
+      }, lost),
       onSnapshot(query(base('versions'), where('authorId', '==', uid)), s => {
         mine.clear();
         for (const d of s.docs) mine.set(d.id, d.data() as StoredVersion);
         mergeVersions();
         this.emit();
-      }),
+      }, lost),
     );
   }
 
@@ -334,6 +351,16 @@ export class LiveClient {
 }
 
 export type PushState = 'unsupported' | 'unavailable' | 'blocked' | 'off' | 'on';
+
+/** A classic campaign the member may bring into a team. */
+export interface CampaignChoice {
+  id: string;
+  title: string;
+  status: string;
+  assignments: number;
+  budgetLeft: number;
+  objectiveId?: string;
+}
 
 /** A VAPID public key (base64url) as the bytes PushManager wants. */
 function base64Url(s: string): Uint8Array<ArrayBuffer> {

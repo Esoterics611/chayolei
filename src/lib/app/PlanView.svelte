@@ -32,6 +32,7 @@
   import ListTree from '@lucide/svelte/icons/list-tree';
   import Sparkles from '@lucide/svelte/icons/sparkles';
   import Flag from '@lucide/svelte/icons/flag';
+  import ArchiveRestore from '@lucide/svelte/icons/archive-restore';
   import AiMark from '$lib/ui/AiMark.svelte';
 
   let { objectiveId }: { objectiveId?: string } = $props();
@@ -84,6 +85,9 @@
       <button type="button" aria-pressed={view === 'outline'} onclick={() => setView('outline')}><LayoutList size={15} />{t('plan.outline')}</button>
       <button type="button" aria-pressed={view === 'board'} onclick={() => setView('board')}><SquareKanban size={15} />{t('plan.board')}</button>
     </div>
+    {#if canPlan && store.live && !objectiveId}
+      <button type="button" class="btn" onclick={() => ui.openDialog({ kind: 'importClassic' })}><ArchiveRestore size={16} />{t('classic.open')}</button>
+    {/if}
     {#if canPlan}
       <button type="button" class="btn btn-primary" onclick={() => (objectiveId ? ui.openDialog({ kind: 'newDeliverable', objectiveId }) : ui.openDialog({ kind: 'newObjective' }))}>
         <Plus size={16} />{objectiveId ? t('plan.newDeliverable') : t('plan.newObjective')}

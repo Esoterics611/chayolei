@@ -1,9 +1,10 @@
 // End-to-end check of the live app (VITE_TEAM_BACKEND=firestore) against the
 // Firebase emulators, with two simulated browser wallets: sign in, start a
 // team, invite, join, pass a budget by vote, take work, version it, review,
-// accept and pay, and plan with the AI planner (Claude stood in for by a
-// local server on port 4321: the runners point the app's ANTHROPIC_BASE_URL
-// at it). Run it with scripts/e2e/run-live.sh.
+// accept and pay, plan with the AI planner (Claude stood in for by a local
+// server on port 4321: the runners point the app's ANTHROPIC_BASE_URL at it),
+// bring in a classic campaign, and leave the team. Run it with
+// scripts/e2e/run-live.sh.
 import { createRequire } from 'node:module';
 import { createServer } from 'node:http';
 import { mkdirSync } from 'node:fs';
@@ -55,6 +56,20 @@ export async function confirmSign(page) {
   const dialog = page.locator('dialog:has(button.sign)');
   await dialog.locator('button.sign').click();
   await dialog.waitFor({ state: 'detached', timeout: 20000 });
+}
+
+/** Write a Firestore document straight into the emulator (the classic app's records). */
+async function putDoc(path, data) {
+  const host = process.env.FIRESTORE_EMULATOR_HOST ?? '127.0.0.1:8080';
+  const project = process.env.GCLOUD_PROJECT ?? 'demo-chayolei';
+  const value = v => Array.isArray(v) ? { arrayValue: { values: v.map(value) } }
+    : typeof v === 'number' ? (Number.isInteger(v) ? { integerValue: String(v) } : { doubleValue: v })
+    : { stringValue: String(v) };
+  const fields = Object.fromEntries(Object.entries(data).map(([k, v]) => [k, value(v)]));
+  const res = await fetch(`http://${host}/v1/projects/${project}/databases/(default)/documents/${path}`, {
+    method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer owner' }, body: JSON.stringify({ fields }),
+  });
+  if (!res.ok) throw new Error(`seeding ${path} failed: ${res.status} ${await res.text()}`);
 }
 
 // A stand-in for the Claude Messages API, answering every request with one plan.
@@ -215,6 +230,37 @@ try {
   }
   if (!ask.body.messages[0].content.includes('"title": "Volume 1"')) throw new Error('the planner was not shown the objective');
   console.log('OK: the AI planner suggested, the lead edited and added; shown as AI-assisted');
+
+  // ── A classic campaign comes into the team: Mendel started it, Levi held an assignment ──
+  const mUid = `wallet_${m.wallet.address.toLowerCase()}`;
+  const lUid = `wallet_${l.wallet.address.toLowerCase()}`;
+  const now = new Date().toISOString();
+  await putDoc('mivtzaot/m-shabbos', { shem: 'Shabbos sugyos', description: 'Chapter 1 of Shabbos', creatorId: mUid, enrolledIds: [mUid, lUid], status: 'active', tokenAllocation: 3000, tokensUsed: 800, masimotCount: 2, createdAt: now, updatedAt: now });
+  await putDoc('masimot/a-sugya1', { shem: 'Sugya 1 notes', description: 'Notes on the first sugya', mivtzaId: 'm-shabbos', assigneeId: lUid, status: 'in_progress', tokenAllocation: 300, createdAt: now });
+  await putDoc('masimot/a-intro', { shem: 'Introduction', mivtzaId: 'm-shabbos', status: 'approved', tokenAllocation: 200, createdAt: now });
+  await putDoc('tafkidim/t-outline', { shem: 'Outline', masimaId: 'a-sugya1', mivtzaId: 'm-shabbos', assigneeId: lUid, status: 'approved', createdAt: now });
+  await m.page.goto(BASE + '/plan');
+  await m.page.getByRole('button', { name: 'Bring in a campaign' }).click();
+  await dlg(m.page).getByText('Shabbos sugyos').waitFor({ timeout: 20000 });
+  await shot(m.page, '13-classic-campaigns');
+  await dlg(m.page).getByRole('button', { name: 'Bring in', exact: true }).click();
+  await dlg(m.page).getByText('2,200 TMIM left of its allocation', { exact: false }).waitFor({ timeout: 20000 });
+  await m.page.getByRole('heading', { level: 1, name: 'Shabbos sugyos' }).waitFor({ timeout: 20000 });
+  await shot(m.page, '14-classic-brought-in');
+  await dlg(m.page).locator('.form-actions').getByRole('button', { name: 'Close' }).click();
+  await m.page.getByRole('link', { name: 'Sugya 1 notes' }).first().waitFor({ timeout: 20000 });
+  console.log('OK: a classic campaign brought in as an objective, with Levi’s assignment');
+
+  // ── Levi leaves: his access ends; Mendel sees him under former members ──
+  await l.page.goto(BASE + '/decide/members');
+  await l.page.locator('li.panel', { hasText: 'Levi Stern' }).getByRole('button', { name: 'Leave the team' }).click();
+  await confirmSign(l.page);
+  await l.page.getByRole('link', { name: 'Start a team' }).first().waitFor({ timeout: 20000 });
+  await shot(l.page, '15-levi-left');
+  await m.page.goto(BASE + '/decide/members');
+  await m.page.getByRole('heading', { name: 'Former members (1)' }).waitFor({ timeout: 20000 });
+  await shot(m.page, '16-former-member');
+  console.log('OK: Levi left the team; his access ended and he is listed as a former member');
 } catch (e) {
   // Leave a picture of every open page for whoever reads the failure.
   for (const [i, page] of browser.contexts().flatMap(c => c.pages()).entries()) await shot(page, `fail-${i}`).catch(() => {});

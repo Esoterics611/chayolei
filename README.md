@@ -20,17 +20,21 @@ Inside the platform every amount is **TMIM**: budgets, rewards, payouts, balance
 
 Chayolei is **not** a bank, an employer, a legal entity or an investment. TMIM promises no value or return. Teams remain responsible for the laws that apply to them. ([Claims we don't make](docs/MARKETING_BRIEF.md).)
 
-## Status (2026-10-26)
+## Status (2026-11-02)
 
 - ✅ **The new UI** for teams: Home, Plan, Work, Decide, Treasury, Ledger, in English and Hebrew, light and dark, desktop and phone. It runs as a clickable **demo** on sample data, or as the **live app** on Firestore (`VITE_TEAM_BACKEND=firestore`), where members sign in with a wallet, start teams, invite and join by link, and every action is checked by the server against the team's charter.
-- ✅ **Per-team contracts** (`TeamFactory`, `Team`): each team's charter, votes, budgets, team account and payouts on-chain, under the team's monthly cap and a platform allowance. 31 tests.
+- ✅ **Per-team contracts** (`TeamFactory`, `Team`): each team's charter, votes, who holds which role, budgets, team account and payouts on-chain, under the team's monthly cap and a platform allowance. 38 tests.
+- ✅ **Roles by vote and leaving:** a role change card (no roles removes someone), decided like a rule; anyone may leave; a team is never left without a voter. A former member's unfinished work goes back to the plan; their record stays.
+- ✅ **Reconciliation:** actions taken on a team's contract outside the app (a vote from a block explorer, TMIM sent straight to the team) are recorded in its ledger.
+- ✅ **Rate limits** on what costs the platform: new teams, invite links, joins.
 - ✅ **The chain bridge**: with the team contracts configured, each settled action is signed by the member, relayed by the platform (which pays the fee) and recorded with its transaction. Tested end to end in the browser on a local chain.
 - ✅ The original app's pages, at their old URLs, with on-chain governance votes counted once.
 - 🔄 Deploying the team contracts to Base Sepolia; redeploying the governance contracts with audit fixes L-1, L-2, M-2.
-- ✅ **Notifications** in the app; an **accessibility audit** (WCAG 2.2 A/AA, every screen, both languages and themes, desktop and phone) and a size budget, in CI.
-- ✅ **The AI planner:** suggests a breakdown of an objective that a lead edits and adds; what is added shows as AI-assisted. Needs `ANTHROPIC_API_KEY` on the server ([`docs/TEAM_BACKEND.md`](docs/TEAM_BACKEND.md) §6a); the demo shows a labelled sample.
+- ✅ **Notifications** in the app, and **push** to members' devices when it is closed, only for what blocks them or is about to expire (needs VAPID keys, §6c); an **accessibility audit** (WCAG 2.2 A/AA, every screen, both languages and themes, desktop and phone) and a size budget, in CI.
+- ✅ **AI helpers**, each only when a member asks and only suggesting: the **planner** (a breakdown of an objective), a **first-pass reviewer** (notes on a version, kept as comments), a **summarizer** (a thread's digest) and a **source finder** (web sources, from search citations). What is kept shows as AI-assisted. Needs `ANTHROPIC_API_KEY` on the server ([`docs/TEAM_BACKEND.md`](docs/TEAM_BACKEND.md) §6a); the demo shows labelled samples.
+- ✅ **Classic campaigns into teams:** a lead brings in a campaign they started or joined; its unfinished assignments become deliverables, kept by whoever held them (§6d).
 - ⬜ Passkey sign-in and fee-free contributions (every other action is already sponsored); these wait on the owner's choice of wallet strategy ([`docs/WALLETS.md`](docs/WALLETS.md)).
-- ⬜ Push notifications; the other AI helpers; a usability test (`docs/UX_REDESIGN.md` §11).
+- ⬜ A usability test with five people from two language groups (`docs/UX_REDESIGN.md` §11); AI helpers as charter roles a team can vote on (`DECISIONS.md` #8).
 - ⬜ External audit; Base mainnet.
 
 Open questions for the owner, and what the code assumes meanwhile, are in [`docs/DECISIONS.md`](docs/DECISIONS.md).

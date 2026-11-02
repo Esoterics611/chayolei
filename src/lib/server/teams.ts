@@ -33,6 +33,7 @@ import { Contract } from 'ethers';
 import { isRecorded, reconcileTx } from '$lib/team/reconcile';
 import { checkLimit, spendLimit } from '$lib/server/rate-limit';
 import type { ChainTx } from '$lib/team/reconcile';
+import type { ImportPlan } from '$lib/team/classic';
 
 const teams = () => adminDb.collection('teams');
 const invites = () => adminDb.collection('teamInvites');
@@ -319,6 +320,29 @@ export async function recordFromChain(teamId: string, txs: ChainTx[]): Promise<{
       return { recorded, noted };
     });
     return value;
+  });
+}
+
+/**
+ * Bring a classic campaign into a team as `uid` (classic-import.ts). Only the
+ * server builds the plan, from the classic records; on an on-chain team it
+ * runs under the lock like any action, and its entries are anchored.
+ */
+export async function importIntoTeam(teamId: string, uid: string, plan: ImportPlan): Promise<{ objectiveId: string; team: Team }> {
+  const run = async () => {
+    const { value, team } = await mutate(teamId, (t, now) => {
+      requireMember(t, uid);
+      return E.importPlan(t, uid, plan, now).id;
+    });
+    return { objectiveId: value, team: viewFor(team, uid) };
+  };
+  const core = await teams().doc(teamId).get();
+  if (!core.exists) throw new DomainError('err.not_found');
+  if (!(core.data() as TeamCore).chain) return run();
+  return withTeamLock(teamId, async () => {
+    const r = await run();
+    await anchorPending(teamId).catch(e => console.error('[teams] anchoring failed; will retry', e));
+    return r;
   });
 }
 
