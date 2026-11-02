@@ -15,12 +15,13 @@
   import Coins from '@lucide/svelte/icons/hand-coins';
   import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
   import CalendarClock from '@lucide/svelte/icons/calendar-clock';
+  import Flag from '@lucide/svelte/icons/flag';
   import ArrowRight from '@lucide/svelte/icons/arrow-right';
 
   let { team, items, now }: { team: Team; items: NeedItem[]; now: string } = $props();
 
-  const ICON = { review: GitPullRequest, accept: BadgeCheck, revise: RotateCcw, vote: Vote, approve_money: Coins, stalled: TriangleAlert, pay_schedule: CalendarClock };
-  const TONE = { review: 'review', accept: 'accepted', revise: 'changes', vote: 'assigned', approve_money: 'progress', stalled: 'stalled', pay_schedule: 'progress' };
+  const ICON = { review: GitPullRequest, accept: BadgeCheck, revise: RotateCcw, vote: Vote, approve_money: Coins, stalled: TriangleAlert, pay_schedule: CalendarClock, lead: Flag };
+  const TONE = { review: 'review', accept: 'accepted', revise: 'changes', vote: 'assigned', approve_money: 'progress', stalled: 'stalled', pay_schedule: 'progress', lead: 'stalled' };
   const DAY = 86_400_000;
 
   function view(n: NeedItem): { title: string; meta: string; link: string } {
@@ -67,6 +68,10 @@
       case 'pay_schedule': {
         const s = team.treasury.schedules.find(x => x.id === n.scheduleId)!;
         return { title: t('need.pay_schedule', { name: firstName(team, s.memberId) }), meta: t('need.pay_schedule.meta', { amount: fmtTmim(s.amount), objective: objectiveTitle(team, s.objectiveId) }), link: href('/treasury') };
+      }
+      case 'lead': {
+        const o = team.objectives.find(x => x.id === n.objectiveId);
+        return { title: t('need.lead', { objective: lt(o?.title) }), meta: t('need.lead.meta', { name: firstName(team, o?.ownerId), when: fmtRelative(n.since, now) }), link: href(`/plan/${n.objectiveId}`) };
       }
     }
   }

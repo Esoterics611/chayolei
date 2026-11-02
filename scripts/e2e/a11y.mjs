@@ -78,6 +78,13 @@ try {
           await p.waitForTimeout(250);
           await audit(p, `planner dialog ${locale} ${theme} ${size}`);
         }
+        // The role-change dialog, with a member picked and a role added.
+        await p.goto(BASE + '#/decide/members');
+        await p.getByRole('button', { name: /^(Change roles|שינוי תפקידים)$/ }).nth(1).click();
+        await p.locator('dialog[open] fieldset input[type=checkbox]').first().waitFor();
+        await p.locator('dialog[open] fieldset input[type=checkbox]:not(:checked)').first().check();
+        await p.waitForTimeout(250);
+        await audit(p, `roles dialog ${locale} ${theme} ${size}`);
         await ctx.close();
       }
     }

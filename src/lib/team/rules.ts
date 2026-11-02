@@ -34,19 +34,29 @@ export function requireValidRuleValue(key: RuleKey, value: number): void {
   }
 }
 
+/** Anyone who is or was on the team (for names in the record). */
 export function member(team: Team, id: string | undefined): Member | undefined {
   return id ? team.members.find(m => m.id === id) : undefined;
 }
 
-export function permissionsOf(team: Team, memberId: string): Set<Permission> {
-  const m = member(team, memberId);
+/** Someone on the team now: not one who has left. */
+export function activeMember(team: Team, id: string | undefined): Member | undefined {
+  const m = member(team, id);
+  return m && !m.leftAt ? m : undefined;
+}
+
+export const activeMembers = (team: Team): Member[] => team.members.filter(m => !m.leftAt);
+
+/** What a set of roles may do. */
+export function permissionsFor(team: Team, roleIds: string[]): Set<Permission> {
   const out = new Set<Permission>();
-  if (!m) return out;
-  for (const roleId of m.roleIds) {
-    const role = team.charter.roles.find(r => r.id === roleId);
-    role?.permissions.forEach(p => out.add(p));
-  }
+  for (const roleId of roleIds) team.charter.roles.find(r => r.id === roleId)?.permissions.forEach(p => out.add(p));
   return out;
+}
+
+export function permissionsOf(team: Team, memberId: string): Set<Permission> {
+  const m = activeMember(team, memberId);
+  return m ? permissionsFor(team, m.roleIds) : new Set();
 }
 
 export function can(team: Team, memberId: string, p: Permission): boolean {
@@ -57,7 +67,14 @@ export function requirePermission(team: Team, memberId: string, p: Permission): 
   if (!can(team, memberId, p)) throw new DomainError(`err.permission.${p}`);
 }
 
-/** Members who may vote on rule and money changes (AI members never vote). */
+/** Members who may vote on rule, role and money changes (AI members never vote). */
 export function voters(team: Team): Member[] {
-  return team.members.filter(m => !m.ai && can(team, m.id, 'vote'));
+  return team.members.filter(m => !m.ai && !m.leftAt && can(team, m.id, 'vote'));
+}
+
+/** Whether giving `memberId` these roles would leave no one who can vote
+ *  (the team could never decide anything again). Mirrors Team.sol. */
+export function leavesNoVoter(team: Team, memberId: string, roleIds: string[]): boolean {
+  if (!voters(team).some(m => m.id === memberId)) return false;
+  return voters(team).length === 1 && !permissionsFor(team, roleIds).has('vote');
 }

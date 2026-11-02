@@ -1,7 +1,7 @@
 <script lang="ts">
   import { untrack } from 'svelte';
   import { store } from '$lib/team/store.svelte';
-  import { can, ruleCurrent } from '$lib/team/rules';
+  import { activeMembers, can, ruleCurrent } from '$lib/team/rules';
   import { lt, t, fmtNum } from '$lib/team/i18n';
   import { dateToIso } from './dates';
 
@@ -19,8 +19,8 @@
   let due = $state('');
 
   const owner = $derived(team.objectives.find(o => o.id === objective)?.ownerId ?? '');
-  const reviewers = $derived(team.members.filter(m => can(team, m.id, 'review_work')));
-  const approvers = $derived(team.members.filter(m => can(team, m.id, 'accept_work')));
+  const reviewers = $derived(activeMembers(team).filter(m => can(team, m.id, 'review_work')));
+  const approvers = $derived(activeMembers(team).filter(m => can(team, m.id, 'accept_work')));
 
   async function submit(e: SubmitEvent) {
     e.preventDefault();

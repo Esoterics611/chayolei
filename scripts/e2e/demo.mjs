@@ -1,5 +1,6 @@
 // Smoke test of the static demo build (scripts/build-demo.sh): a vote, an
-// acceptance, the AI planner's flow, the rule-range check and Hebrew.
+// acceptance, the AI planner's flow, a role change, leaving the team, the
+// rule-range check and Hebrew.
 // Run with scripts/e2e/run-demo.sh.
 import { createRequire } from 'node:module';
 import { mkdirSync } from 'node:fs';
@@ -80,6 +81,34 @@ try {
   await shot(page, 'demo-06-ai-assisted');
   await page.goto(FILE + '#/ledger');
   await page.getByText('“Rashi: scope and sources” from the AI planner’s suggestion').first().waitFor({ timeout: 5000 });
+
+  // Roles by vote: Mendel proposes that Levi review too; the card shows the
+  // roles diff and what Levi may then also do.
+  await page.goto(FILE + '#/decide/members');
+  await page.locator('li.panel', { hasText: 'Levi Stern' }).getByRole('button', { name: 'Change roles' }).click();
+  const rolesForm = page.locator('dialog[open]');
+  await rolesForm.getByRole('checkbox', { name: /^Reviewer/ }).check();
+  await rolesForm.getByLabel('Why').fill('Two reviewers halve the wait.');
+  await rolesForm.getByRole('button', { name: 'Open the vote' }).click();
+  await confirm();
+  await page.getByText('They may then also: review work').first().waitFor({ timeout: 10000 });
+  await page.waitForTimeout(400);
+  await shot(page, 'demo-07-role-change');
+
+  // Leaving: Shmuel leaves; his record stays, under former members.
+  await page.keyboard.press('Control+k');
+  await page.getByPlaceholder('Search work, decisions, people… or type a command').fill('Act as Shmuel');
+  await page.keyboard.press('Enter');
+  await page.goto(FILE + '#/decide/members');
+  await page.locator('li.panel', { hasText: 'Shmuel Gold' }).getByRole('button', { name: 'Leave the team' }).click();
+  await page.locator('dialog:has(button.sign)').getByText('You keep the TMIM you were paid').waitFor({ timeout: 5000 });
+  await confirm();
+  await page.getByText('You left Brachos Translation Group').first().waitFor({ timeout: 10000 });
+  await page.goto(FILE + '#/decide/members');
+  await page.getByRole('heading', { name: 'Former members (1)' }).waitFor({ timeout: 5000 });
+  await page.locator('li.panel.gone', { hasText: 'Shmuel Gold' }).waitFor({ timeout: 5000 });
+  await page.goto(FILE + '#/ledger');
+  await page.getByText('Shmuel left the team').first().waitFor({ timeout: 5000 });
 
   // The proposal form refuses a 100% majority.
   await page.goto(FILE + '#/decide');

@@ -10,6 +10,12 @@ export const nameOf = (team: Team, id: string | undefined): string => lt(member(
 
 export const firstName = (team: Team, id: string | undefined): string => nameOf(team, id).split(' ')[0];
 
+/** Role names from ids, e.g. "Reviewer · Contributor"; "no role" for none. */
+export function roleNames(team: Team, ids: string[]): string {
+  const names = team.charter.roles.filter(r => ids.includes(r.id)).map(r => lt(r.name));
+  return names.length ? names.join(' · ') : t('decide.noRoles');
+}
+
 /** The member's charter roles, e.g. "Lead" or "Reviewer · Contributor". */
 export function rolesOf(team: Team, id: string | undefined): string {
   const m = member(team, id);
@@ -46,6 +52,11 @@ export const changeById = (team: Team, id: string | undefined): Change | undefin
 
 /** The one-line "what changes" summary of a rule or money change. */
 export function changeSummary(team: Team, c: Change): string {
+  if (c.kind === 'role') {
+    return c.to.length
+      ? t('decide.roleChange', { name: nameOf(team, c.memberId), from: roleNames(team, c.from), to: roleNames(team, c.to) })
+      : t('decide.removeMember', { name: nameOf(team, c.memberId) });
+  }
   if (c.kind === 'rule') return t('decide.ruleChange', { rule: t(`rule.${c.ruleKey}`), from: fmtRule(c.ruleKey, c.from), to: fmtRule(c.ruleKey, c.to) });
   if (c.kind === 'money') {
     const a = c.action;

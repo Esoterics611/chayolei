@@ -31,6 +31,7 @@
   import CalendarClock from '@lucide/svelte/icons/calendar-clock';
   import ListTree from '@lucide/svelte/icons/list-tree';
   import Sparkles from '@lucide/svelte/icons/sparkles';
+  import Flag from '@lucide/svelte/icons/flag';
   import AiMark from '$lib/ui/AiMark.svelte';
 
   let { objectiveId }: { objectiveId?: string } = $props();
@@ -56,6 +57,18 @@
   const DAY = 86_400_000;
   const stalledDays = (d: Deliverable) => (E.isStalled(d, now) ? Math.floor((new Date(now).getTime() - new Date(d.lastActivityAt).getTime()) / DAY) : undefined);
   const byStage = (s: Stage) => shown.filter(d => d.stage === s);
+
+  /** An objective whose lead has left: someone who may change the plan takes it over. */
+  function takeLead(objectiveId: string) {
+    const o = team.objectives.find(x => x.id === objectiveId);
+    if (!o) return;
+    ui.askToSign({
+      title: t('plan.takeLead'),
+      lines: [t('plan.takeLeadLine', { objective: lt(o.title) }), t('plan.takeLeadApprove')],
+      confirmLabel: t('plan.takeLead'),
+      onConfirm: async () => !!(await store.do({ type: 'takeLead', objectiveId }, t('plan.leadTaken'))),
+    });
+  }
 
   function toggleTask(id: string, done: boolean) {
     void store.do({ type: 'setTaskDone', taskId: id, done });
@@ -103,7 +116,12 @@
           <div class="o-title">
             <h2 id="o-{o.id}"><a href={href(`/plan/${o.id}`)}>{lt(o.title)}</a></h2>
             <div class="o-meta">
-              <Person {team} id={o.ownerId} />
+              {#if E.leadVacant(team, o)}
+                <span class="m vacant"><Flag size={13} />{t('plan.noLead')}</span>
+                {#if canPlan}<button type="button" class="btn btn-sm" onclick={() => takeLead(o.id)}>{t('plan.takeLead')}</button>{/if}
+              {:else}
+                <Person {team} id={o.ownerId} />
+              {/if}
               {#if o.due}<span class="m"><CalendarClock size={13} />{t('common.due', { date: fmtDate(o.due) })}</span>{/if}
               <span class="m">{t('plan.accepted', { done: fmtNum(accepted), total: fmtNum(ds.length) })}</span>
             </div>
@@ -213,6 +231,7 @@
   h2 a:hover { text-decoration: underline; text-underline-offset: 4px; text-decoration-color: var(--rule-strong); }
   .o-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; font-size: var(--fs-sm); color: var(--ink-2); }
   .m { display: inline-flex; align-items: center; gap: 5px; color: var(--ink-3); font-size: var(--fs-sm); }
+  .vacant { color: var(--st-stalled); font-weight: 500; }
   .budget { display: flex; flex-direction: column; gap: 10px; }
   .b-figs { display: grid; grid-template-columns: repeat(4, auto); gap: 12px; justify-content: space-between; }
   .b-figs > div { display: flex; flex-direction: column; gap: 2px; }

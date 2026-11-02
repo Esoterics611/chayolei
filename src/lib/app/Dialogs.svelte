@@ -10,8 +10,9 @@
   import ContributeForm from './forms/ContributeForm.svelte';
   import RequestChangesForm from './forms/RequestChangesForm.svelte';
   import InviteForm from './forms/InviteForm.svelte';
-  // Loaded when first opened: the first screen doesn't need it.
+  // Loaded when first opened: the first screen doesn't need them.
   const planSuggestForm = () => import('./forms/PlanSuggestForm.svelte');
+  const proposeRolesForm = () => import('./forms/ProposeRolesForm.svelte');
 
   let open = $state(false);
   $effect(() => { open = !!ui.dialog; });
@@ -22,6 +23,7 @@
     newDeliverable: 'plan.newDeliverable',
     suggestPlan: 'planner.title',
     proposeRule: 'decide.proposeRule',
+    proposeRoles: 'decide.proposeRoles',
     requestMoney: 'decide.requestMoney',
     contribute: 'treasury.contribute',
     requestChanges: 'review.requestChanges',
@@ -31,6 +33,7 @@
     newObjective: 'plan.objectiveDesc',
     suggestPlan: 'planner.desc',
     proposeRule: 'decide.proposeDesc',
+    proposeRoles: 'decide.proposeRolesDesc',
     requestMoney: 'decide.requestDesc',
   };
 </script>
@@ -46,6 +49,8 @@
       {#await planSuggestForm() then { default: PlanSuggestForm }}<PlanSuggestForm done={close} objectiveId={req.objectiveId} />{/await}
     {:else if req.kind === 'proposeRule'}
       <ProposeRuleForm done={close} ruleKey={req.ruleKey} />
+    {:else if req.kind === 'proposeRoles'}
+      {#await proposeRolesForm() then { default: ProposeRolesForm }}<ProposeRolesForm done={close} memberId={req.memberId} />{/await}
     {:else if req.kind === 'requestMoney'}
       <RequestMoneyForm done={close} type={req.type} objectiveId={req.objectiveId} to={req.to} />
     {:else if req.kind === 'contribute'}

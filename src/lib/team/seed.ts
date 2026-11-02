@@ -234,6 +234,14 @@ function seedBrachos(at: (d: number, h?: number) => string): Team {
   E.vote(team, 'levi', rv.id, 'for', at(0, 20));
   E.vote(team, 'rivka', rv.id, 'against', at(0, 10));
 
+  // An open vote on roles: Rivka as a reviewer too, so reviews wait less.
+  const rr = E.proposeRoles(team, 'yosef', {
+    memberId: 'rivka', to: ['reviewer', 'contributor'],
+    title: { en: 'Rivka reviews too', he: 'גם רבקה תבקר' },
+    why: { en: 'With one reviewer, every chapter waits for me. Rivka knows the sources well.', he: 'עם מבקר אחד, כל פרק מחכה לי. רבקה מכירה היטב את המקורות.' },
+  }, at(0, 8));
+  E.vote(team, 'yosef', rr.id, 'for', at(0, 7));
+
   // Rivka's weekly pay is due again today.
   team.treasury.schedules[0].nextAt = at(0, 2);
   return team;
@@ -252,6 +260,7 @@ function seedRadio(at: (d: number, h?: number) => string): Team {
   E.addMember(team, { id: 'kofi', name: 'Kofi Mensah', initials: 'KM', wallet: '0x9e3a7c1f5b8d2e6a0c4f8b1d5e9a3c7f2b6d0e4a' }, at(40, -2));
   E.addMember(team, { id: 'mira', name: 'Mira Haddad', initials: 'MH', wallet: '0x4c8e2a6d0f3b7e1c5a9d2f6b0e4c8a1d5f9b3e7c' }, at(39));
   E.addMember(team, { id: 'tomas', name: 'Tomás Rivera', initials: 'TR', wallet: '0x0f4b8e2c6a1d5f9b3e7c0a4d8f2b6e1c5a9d3f7b' }, at(38));
+  E.addMember(team, { id: 'jonah', name: 'Jonah Bell', initials: 'JB', wallet: '0x5a1e9c3f7b2d6a0e4c8f1b5d9e3a7c2f6b0d4e8a' }, at(38, -2));
 
   const s1 = E.addObjective(team, 'ada', {
     title: { en: 'Season 1: six episodes', he: 'עונה 1: שישה פרקים' },
@@ -262,18 +271,23 @@ function seedRadio(at: (d: number, h?: number) => string): Team {
     title: { en: 'Budget for season 1', he: 'תקציב לעונה 1' },
     why: { en: 'Six episodes at about 500 each, plus editing.', he: 'שישה פרקים בכ־500 כל אחד, ועוד עריכה.' },
   }, at(37, -1));
-  for (const [m, h] of [['ada', 2], ['kofi', 5], ['mira', 9], ['tomas', 14]] as const) E.vote(team, m, b.id, 'for', at(37, -h));
+  for (const [m, h] of [['ada', 2], ['kofi', 5], ['mira', 9], ['tomas', 14], ['jonah', 18]] as const) E.vote(team, m, b.id, 'for', at(37, -h));
 
   const ep = (en: string, he: string) =>
     E.addDeliverable(team, 'ada', s1.id, { title: { en, he }, scope: { en: 'Script, recording and edit.', he: 'תסריט, הקלטה ועריכה.' } }, at(36));
   const e1 = ep('Episode 1 — Who keeps the harbor lights on', 'פרק 1 — מי מדליק את אורות הנמל');
   const e2 = ep('Episode 2 — The fish market at dawn', 'פרק 2 — שוק הדגים עם שחר');
   const e3 = ep('Episode 3 — Night shift on the ferry', 'פרק 3 — משמרת לילה במעבורת');
-  ep('Episode 4 — Letters from the lighthouse', 'פרק 4 — מכתבים מהמגדלור');
+  const e4 = ep('Episode 4 — Letters from the lighthouse', 'פרק 4 — מכתבים מהמגדלור');
   E.setPeople(team, 'ada', e1.id, { reviewerId: 'mira' }, at(36));
   E.setPeople(team, 'ada', e2.id, { reviewerId: 'kofi' }, at(36));
 
   E.take(team, 'kofi', e1.id, at(34));
+  E.take(team, 'jonah', e4.id, at(33));
+  E.saveVersion(team, 'jonah', e4.id, [
+    'Cold open: a letter from 1962, read aloud by the keeper’s granddaughter.',
+    'Segment one: the logbook, and what the keepers wrote about the storms.',
+  ], 'Outline', at(30));
   E.saveVersion(team, 'kofi', e1.id, [
     'Cold open: the foghorn at 5 a.m., and Joe, who has kept the harbor lights for thirty-one years.',
     'Segment one: how the lights are checked every night, lamp by lamp.',
@@ -285,6 +299,8 @@ function seedRadio(at: (d: number, h?: number) => string): Team {
   E.release(team, 'ada', e1.id, at(21));
 
   E.take(team, 'mira', e2.id, at(20));
+  // Jonah moves away; his outline stays as v1 for whoever takes the episode next.
+  E.leave(team, 'jonah', at(16));
   E.saveVersion(team, 'mira', e2.id, [
     'Cold open: ice cracking under the crates at 4 a.m.',
     'Segment one: the auction, in the buyers’ own words.',

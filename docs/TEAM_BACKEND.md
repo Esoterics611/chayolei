@@ -28,12 +28,15 @@ teamInvites/{token}             invite links (server only)
 
 A member's id **is** their sign-in uid (`wallet_<address>`), so the access rules compare ids with `request.auth.uid` directly.
 
+**Leaving.** Someone who leaves (or is removed by a role change to no roles) stays in `members`, with `leftAt` and no roles, so the record still names them; `memberUids` lists only people on the team now, so they lose read access at once. A new invite brings them back as the same member, with the joiner roles.
+
 ## 3. The server (`src/lib/server/teams.ts`)
 
 - **One transaction per action:** read the core and its three subcollections, rebuild the `Team`, apply the command as the signed-in member, write back the core and what changed (new ledger entries and messages, changed or removed versions). Ledger docs are written with `create()`, and every action rewrites the core, so concurrent actions serialize on the core document and can never both take the same `seq` (tested with five concurrent writers).
 - **Who may do what** is the engine's job (the charter); `applyCommand` checks the data first: types, lengths (`LIMITS`), member ids, dates, known rule keys and vote choices.
 - **Refusals** come back as `422 { error: { key, vars } }` (403 for non-members, 404 for unknown teams and dead invites); the browser shows the message key in the member's language.
 - **What a member receives:** the team with other members' drafts removed (`viewFor`).
+- **Only people on the team act:** `requireMember` refuses someone who has left (403), whatever their old roles.
 
 | Endpoint | Does |
 |---|---|
@@ -51,6 +54,7 @@ All but the invite preview need `Authorization: Bearer <Firebase ID token>`.
 - **Sign-in:** the wallet signs a one-time nonce (`/api/auth/nonce`, `/api/auth/verify`, as the classic app does) and gets a Firebase session; uid `wallet_<address>`.
 - **Listeners:** the member's teams (`memberUids array-contains uid`), and for the active team its ledger, messages, saved versions and the member's own drafts. The active team is shown only when its ledger has caught up with the core's `ledgerCount`, so figures never disagree mid-update; until then the last consistent state stays on screen.
 - **Replies win ties:** after an action the store puts the server's reply in place at once (so a screen can open what was just created) and ignores listener snapshots older than it.
+- **Leaving** drops the team from the store at once and opens the member's next team (or the gate); the access rules then stop its listeners.
 - **The shell** shows a gate until a team is open: loading, *Sign in with your wallet*, or *Start a team*. `/start` and `/join/[token]` work without a team.
 
 ## 5. Access rules (`firestore.rules`)
@@ -61,7 +65,7 @@ Members read their team, its ledger and messages; saved versions are readable by
 
 With `TEAM_FACTORY_ADDRESS`, `TEAM_FORWARDER_ADDRESS`, `VITE_TMIM_TOKEN_ADDRESS` and `TEAM_RELAYER_PRIVATE_KEY` set (`.env.example`), every new team is created on-chain and records its settled actions on its own `Team` contract (`TEAM_CONTRACTS.md`). Code: `src/lib/team/chain.ts` (which commands settle, the exact call each makes, the charter as the contract's config) and `src/lib/server/team-chain.ts` (relaying, checks, anchors).
 
-**A settled action** (propose a rule or money change, vote, close a vote, approve or decline, accept and pay, release, scheduled pay):
+**A settled action** (propose a rule, role or money change, vote, close a vote, approve or decline, accept and pay, release, scheduled pay, leave the team):
 1. The browser asks `POST /api/teams/[id]/prepare`; the server checks the action with the engine and returns the exact ERC-2771 forward request (`from` = the member's wallet, `to` = the team's contract, the call, a nonce and a 15-minute deadline). A new proposal's id is chosen here, since the contract keys proposals by it.
 2. The member's wallet signs it (EIP-712); the browser sends the command and the signature to `/commands`.
 3. Under the team's lock (one recorded action at a time, so the chain and the ledger agree on order) the server rechecks the action, checks that the signed request is exactly the expected call signed by that member, simulates it to surface the contract's own reason for a refusal, and the relayer submits it, paying the fee.

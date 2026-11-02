@@ -4,12 +4,14 @@
 // refusals throw DomainError with an i18n key. `now` is an ISO timestamp.
 
 import type {
-  Assist, Change, Deliverable, MoneyAction, MoneyChange, Member, Objective, RuleChange, RuleKey,
+  Assist, Change, CharterChange, Deliverable, MoneyAction, MoneyChange, Member, Objective, RoleChange, RuleChange, RuleKey,
   Stage, Task, Team, TemplateId, Text, Version, VoteChoice, WorkChange,
 } from './types';
 import { DomainError } from './types';
 import { appendEntry, acceptanceCost, issuedInMonth, objectiveFigures, objectivePaid, fakeHash } from './ledger';
-import { can, member, requirePermission, requireValidRuleValue, ruleCurrent, ruleValue, voters } from './rules';
+import {
+  activeMember, can, leavesNoVoter, member, requirePermission, requireValidRuleValue, ruleCurrent, ruleValue, voters,
+} from './rules';
 import { charterFromTemplate, TEMPLATES } from './templates';
 
 export const STALL_DAYS = 7;
@@ -72,20 +74,25 @@ export function isStalled(d: Deliverable, now: string): boolean {
   return new Date(now).getTime() - new Date(d.lastActivityAt).getTime() > STALL_DAYS * DAY;
 }
 
-/** Who decides acceptance: the named approver, else the objective's owner. */
+/** Who decides acceptance: the named approver, else the objective's lead,
+ *  while they are on the team (no one, once they have left). */
 export function approverOf(team: Team, d: Deliverable): string | undefined {
-  return d.approverId ?? team.objectives.find(o => o.id === d.objectiveId)?.ownerId;
+  const id = d.approverId ?? team.objectives.find(o => o.id === d.objectiveId)?.ownerId;
+  return activeMember(team, id) ? id : undefined;
 }
 
 /** Who reviews: the named reviewer, else the approver. */
 export function reviewerOf(team: Team, d: Deliverable): string | undefined {
-  return d.reviewerId ?? approverOf(team, d);
+  return d.reviewerId && activeMember(team, d.reviewerId) ? d.reviewerId : approverOf(team, d);
 }
 
-export const isOpenForVotes = (c: Change): c is RuleChange | MoneyChange =>
-  c.status === 'open' && (c.kind === 'rule' || (c.kind === 'money' && c.decidedBy === 'vote'));
+/** An objective whose lead has left: someone who may change the plan can take the lead. */
+export const leadVacant = (team: Team, o: Objective): boolean => !activeMember(team, o.ownerId);
 
-export function tally(team: Team, c: RuleChange | MoneyChange) {
+export const isOpenForVotes = (c: Change): c is CharterChange =>
+  c.status === 'open' && (c.kind === 'rule' || c.kind === 'role' || (c.kind === 'money' && c.decidedBy === 'vote'));
+
+export function tally(team: Team, c: CharterChange) {
   const eligible = voters(team).length;
   const forVotes = c.votes.filter(v => v.choice === 'for').length;
   const against = c.votes.filter(v => v.choice === 'against').length;
@@ -111,7 +118,8 @@ export type NeedItem =
   | { kind: 'vote'; changeId: string; closesAt: string }
   | { kind: 'approve_money'; changeId: string; since: string }
   | { kind: 'stalled'; deliverableId: string; since: string }
-  | { kind: 'pay_schedule'; scheduleId: string; since: string };
+  | { kind: 'pay_schedule'; scheduleId: string; since: string }
+  | { kind: 'lead'; objectiveId: string; since: string };
 
 export function needsYou(team: Team, me: string, now: string): NeedItem[] {
   const out: NeedItem[] = [];
@@ -135,6 +143,13 @@ export function needsYou(team: Team, me: string, now: string): NeedItem[] {
   if (can(team, me, 'spend')) {
     for (const s of team.treasury.schedules) {
       if (s.nextAt <= now && s.nextAt <= s.until) out.push({ kind: 'pay_schedule', scheduleId: s.id, since: s.nextAt });
+    }
+  }
+  if (can(team, me, 'manage_plan')) {
+    for (const o of team.objectives) {
+      // Only objectives with work still to decide need a lead.
+      const unfinished = team.deliverables.some(d => d.objectiveId === o.id && d.stage !== 'released' && d.stage !== 'accepted');
+      if (unfinished && leadVacant(team, o)) out.push({ kind: 'lead', objectiveId: o.id, since: member(team, o.ownerId)?.leftAt ?? o.createdAt });
     }
   }
   return out;
@@ -223,6 +238,16 @@ export function setPeople(team: Team, me: string, deliverableId: string, people:
   touch(d, now);
 }
 
+/** Take the lead of an objective whose lead has left: you then approve its
+ *  deliverables that name no other approver. */
+export function takeLead(team: Team, me: string, objectiveId: string, now: string): void {
+  requirePermission(team, me, 'manage_plan');
+  const o = objective(team, objectiveId);
+  if (!leadVacant(team, o)) throw new DomainError('err.lead_taken');
+  o.ownerId = me;
+  appendEntry(team, { kind: 'objective_lead', at: now, actorId: me, refs: { objectiveId: o.id, memberId: me } });
+}
+
 function touch(d: Deliverable, now: string) {
   if (now > d.lastActivityAt) d.lastActivityAt = now;
 }
@@ -306,7 +331,7 @@ export function requestReview(team: Team, me: string, deliverableId: string, now
 
 export function comment(team: Team, me: string, changeId: string, body: string, paragraph: number | undefined, now: string): void {
   const c = change(team, changeId);
-  if (!member(team, me)) throw new DomainError('err.not_member');
+  if (!activeMember(team, me)) throw new DomainError('err.not_member');
   if (!body.trim()) throw new DomainError('err.empty');
   if (c.kind !== 'work') throw new DomainError('err.stage');
   c.comments.push({ id: newId('m'), authorId: me, body: body.trim(), at: now, paragraph });
@@ -448,7 +473,7 @@ export function requestMoney(team: Team, me: string, input: { action: MoneyActio
   const a = input.action;
   let amount: number;
   if (a.type === 'transfer') {
-    if (!member(team, a.to)) throw new DomainError('err.not_member');
+    if (!activeMember(team, a.to)) throw new DomainError('err.not_member');
     if (!Number.isInteger(a.amount) || a.amount <= 0) throw new DomainError('err.invalid_value');
     amount = a.amount;
   } else {
@@ -473,6 +498,67 @@ export function requestMoney(team: Team, me: string, input: { action: MoneyActio
   return c;
 }
 
+/** Role ids as the charter lists them, each once; refuses ids the charter doesn't have. */
+function rolesInOrder(team: Team, ids: string[]): string[] {
+  const set = new Set(ids);
+  if ([...set].some(id => !team.charter.roles.some(r => r.id === id))) throw new DomainError('err.invalid_input');
+  return team.charter.roles.filter(r => set.has(r.id)).map(r => r.id);
+}
+
+const sameRoles = (a: string[], b: string[]) => a.length === b.length && a.every(x => b.includes(x));
+
+/** Propose new roles for a member, decided by vote like a rule. No roles removes them from the team. */
+export function proposeRoles(
+  team: Team, me: string, input: { memberId: string; to: string[]; title: Text; why: Text; id?: string }, now: string,
+): RoleChange {
+  requirePermission(team, me, 'propose');
+  const m = activeMember(team, input.memberId);
+  if (!m) throw new DomainError('err.not_member');
+  const to = rolesInOrder(team, input.to);
+  const from = rolesInOrder(team, m.roleIds);
+  if (sameRoles(to, from)) throw new DomainError('err.roles_unchanged');
+  if (team.changes.some(c => c.kind === 'role' && c.memberId === m.id && c.status === 'open')) throw new DomainError('err.roles_open');
+  if (leavesNoVoter(team, m.id, to)) throw new DomainError('err.last_voter');
+  const c: RoleChange = {
+    kind: 'role', id: changeId(team, input.id), title: input.title, why: input.why, memberId: m.id, from, to,
+    proposerId: me, status: 'open', votes: [], at: now, closesAt: addHours(now, ruleValue(team, 'vote_hours')),
+  };
+  team.changes.push(c);
+  appendEntry(team, { kind: 'change_opened', at: now, actorId: me, refs: { changeId: c.id, memberId: m.id }, data: { from: from.join(','), to: to.join(',') } });
+  return c;
+}
+
+/** Leave the team. What you were paid stays yours; your unfinished work goes back to the plan. */
+export function leave(team: Team, me: string, now: string): void {
+  const m = activeMember(team, me);
+  if (!m) throw new DomainError('err.not_member');
+  if (leavesNoVoter(team, me, [])) throw new DomainError('err.last_voter');
+  const roles = m.roleIds.join(',');
+  depart(team, m, now);
+  appendEntry(team, { kind: 'member_left', at: now, actorId: me, refs: { memberId: me }, data: { roles } });
+}
+
+/** Someone leaves or is removed: no roles, and nothing left waiting on them. Their
+ *  unfinished deliverables reopen for someone else to take (saved versions stay,
+ *  their private draft goes); reviews and approvals fall back to the objective's lead. */
+function depart(team: Team, m: Member, now: string): void {
+  m.roleIds = [];
+  m.leftAt = now;
+  for (const d of team.deliverables) {
+    if (d.ownerId === m.id && WORKING.includes(d.stage)) {
+      d.ownerId = undefined;
+      d.stage = 'open';
+      d.versions = d.versions.filter(v => v.kind !== 'draft');
+      for (const c of workChangesOf(team, d.id)) if (c.status === 'open' || c.status === 'reviewed') c.status = 'superseded';
+      touch(d, now);
+    }
+    if (d.reviewerId === m.id) d.reviewerId = undefined;
+    if (d.approverId === m.id) d.approverId = undefined;
+  }
+  for (const t of team.tasks) if (t.ownerId === m.id && !t.done) t.ownerId = undefined;
+  team.treasury.schedules = team.treasury.schedules.filter(s => s.memberId !== m.id);
+}
+
 export function vote(team: Team, me: string, changeId: string, choice: VoteChoice, now: string): void {
   const c = change(team, changeId);
   if (!isOpenForVotes(c)) throw new DomainError('err.vote_closed');
@@ -495,7 +581,7 @@ export function closeVoting(team: Team, me: string, changeId: string, now: strin
 }
 
 function decide(team: Team, changeId: string, now: string): void {
-  const c = change(team, changeId) as RuleChange | MoneyChange;
+  const c = change(team, changeId) as CharterChange;
   const t = tally(team, c);
   if (!t.passing) {
     c.status = 'failed';
@@ -503,10 +589,14 @@ function decide(team: Team, changeId: string, now: string): void {
     appendEntry(team, { kind: 'change_failed', at: now, actorId: c.proposerId, refs: { changeId: c.id }, data: { forPct: Math.round(t.forPct), turnout: Math.round(t.turnoutPct) } });
     return;
   }
-  // Passed, but no longer possible: more than the team account holds, or a
-  // budget below what has been paid from it since it was proposed.
-  const impossible = c.kind !== 'money' ? undefined
+  // Passed, but no longer possible: more than the team account holds or to
+  // someone who has left, a budget below what has been paid from it since it
+  // was proposed, or roles for a member whose roles changed meanwhile, or that
+  // would leave no one to vote. The same checks as Team.sol.
+  const impossible = c.kind === 'role' ? roleChangeImpossible(team, c)
+    : c.kind !== 'money' ? undefined
     : c.action.type === 'transfer' && c.action.amount > team.treasury.teamAccount ? 'insufficient'
+    : c.action.type === 'transfer' && !activeMember(team, c.action.to) ? 'not_member'
     : c.action.type === 'budget' && c.action.to < objectivePaid(team, c.action.objectiveId) ? 'below_paid'
     : undefined;
   if (impossible) {
@@ -521,7 +611,24 @@ function decide(team: Team, changeId: string, now: string): void {
   apply(team, c, now);
 }
 
-function apply(team: Team, c: RuleChange | MoneyChange, now: string): void {
+function roleChangeImpossible(team: Team, c: RoleChange): string | undefined {
+  const m = activeMember(team, c.memberId);
+  if (!m || !sameRoles(rolesInOrder(team, m.roleIds), c.from)) return 'roles_moved';
+  if (leavesNoVoter(team, m.id, c.to)) return 'last_voter';
+  return undefined;
+}
+
+function apply(team: Team, c: CharterChange, now: string): void {
+  if (c.kind === 'role') {
+    const m = activeMember(team, c.memberId)!;
+    if (c.to.length) m.roleIds = [...c.to];
+    else depart(team, m, now);
+    appendEntry(team, {
+      kind: 'roles_changed', at: now, actorId: c.proposerId, refs: { changeId: c.id, memberId: m.id },
+      data: { from: c.from.join(','), to: c.to.join(',') },
+    });
+    return;
+  }
   if (c.kind === 'rule') {
     const r = team.charter.rules.find(x => x.key === c.ruleKey)!;
     const version = r.history[r.history.length - 1].version + 1;
@@ -550,6 +657,7 @@ export function approveMoney(team: Team, me: string, changeId: string, now: stri
   if (c.kind !== 'money' || c.decidedBy !== 'role' || c.status !== 'open') throw new DomainError('err.stage');
   requirePermission(team, me, 'spend');
   if (c.proposerId === me) throw new DomainError('err.self_approve');
+  if (c.action.type === 'transfer' && !activeMember(team, c.action.to)) throw new DomainError('err.not_member');
   if (c.action.type === 'transfer' && c.action.amount > team.treasury.teamAccount) {
     throw new DomainError('err.insufficient', { account: team.treasury.teamAccount, amount: c.action.amount });
   }
@@ -577,7 +685,7 @@ export function declineMoney(team: Team, me: string, changeId: string, now: stri
 
 /** A member moves TMIM from their own balance into the team account. */
 export function contribute(team: Team, me: string, amount: number, now: string): void {
-  if (!member(team, me)) throw new DomainError('err.not_member');
+  if (!activeMember(team, me)) throw new DomainError('err.not_member');
   if (!Number.isInteger(amount) || amount <= 0) throw new DomainError('err.invalid_value');
   const balance = team.ledger.reduce((s, e) => s + (e.amounts ?? []).filter(a => a.memberId === me).reduce((x, a) => x + a.amount, 0), 0);
   if (amount > balance) throw new DomainError('err.insufficient', { account: balance, amount });
@@ -609,7 +717,7 @@ export function paySchedule(team: Team, me: string, scheduleId: string, now: str
 // ── Threads ──────────────────────────────────────────────────────
 
 export function postMessage(team: Team, me: string, ref: { type: 'deliverable' | 'change'; id: string }, body: string, now: string): void {
-  if (!member(team, me)) throw new DomainError('err.not_member');
+  if (!activeMember(team, me)) throw new DomainError('err.not_member');
   if (!body.trim()) throw new DomainError('err.empty');
   team.messages.push({ id: newId('m'), ref, authorId: me, body: body.trim(), at: now });
   const refs = ref.type === 'deliverable' ? { deliverableId: ref.id } : { changeId: ref.id };
@@ -646,13 +754,22 @@ export function createTeam(
   return team;
 }
 
-/** Add a member by invite, with the template's joiner role unless roles are given. */
+/** Add a member by invite, with the template's joiner role unless roles are
+ *  given. Someone who left and comes back is the same member again. */
 export function addMember(team: Team, input: { id?: string; name: Text; initials: string; wallet: string; roleIds?: string[]; ai?: boolean }, now: string): Member {
-  const m: Member = {
+  const roleIds = input.roleIds ?? [...TEMPLATES[team.templateId].joinerRoleIds];
+  const former = input.id ? team.members.find(x => x.id === input.id) : undefined;
+  if (former && !former.leftAt) throw new DomainError('err.invalid_input');
+  const m: Member = former ?? {
     id: input.id ?? newId('u'), name: input.name, initials: input.initials, wallet: input.wallet,
-    roleIds: input.roleIds ?? [...TEMPLATES[team.templateId].joinerRoleIds], joinedAt: now, ai: input.ai,
+    roleIds, joinedAt: now, ai: input.ai,
   };
-  team.members.push(m);
+  if (former) {
+    Object.assign(m, { name: input.name, initials: input.initials, wallet: input.wallet, roleIds, joinedAt: now });
+    delete m.leftAt;
+  } else {
+    team.members.push(m);
+  }
   appendEntry(team, { kind: 'member_joined', at: now, actorId: m.id, refs: { memberId: m.id } });
   return m;
 }

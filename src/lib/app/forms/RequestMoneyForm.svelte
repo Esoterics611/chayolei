@@ -5,7 +5,7 @@
   // otherwise the members by vote. Always TMIM.
   import { store } from '$lib/team/store.svelte';
   import { ui } from '$lib/team/ui.svelte';
-  import { ruleValue } from '$lib/team/rules';
+  import { activeMembers, ruleValue } from '$lib/team/rules';
   import { lt, t, fmtTmim, fmtNum } from '$lib/team/i18n';
   import { go } from '$lib/team/nav';
   import Amount from '$lib/ui/Amount.svelte';
@@ -74,7 +74,7 @@
       <label class="field">
         <span class="label">{t('treasury.to')}</span>
         <select class="input" bind:value={to}>
-          {#each team.members as m (m.id)}<option value={m.id}>{lt(m.name)}</option>{/each}
+          {#each activeMembers(team) as m (m.id)}<option value={m.id}>{lt(m.name)}</option>{/each}
         </select>
       </label>
       <label class="field">

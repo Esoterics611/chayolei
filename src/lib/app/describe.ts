@@ -7,7 +7,7 @@ import type { Component } from 'svelte';
 import type { LedgerEntry, Team } from '$lib/team/types';
 import { fmtTmim, t } from '$lib/team/i18n';
 import { href } from '$lib/team/nav';
-import { changeById, changeTitle, deliverableTitle, firstName, fmtRule, objectiveTitle } from './format';
+import { changeById, changeTitle, deliverableTitle, firstName, fmtRule, objectiveTitle, roleNames } from './format';
 import Sparkles from '@lucide/svelte/icons/sparkles';
 import UserPlus from '@lucide/svelte/icons/user-plus';
 import ListTree from '@lucide/svelte/icons/list-tree';
@@ -34,6 +34,10 @@ import Target from '@lucide/svelte/icons/target';
 import CalendarClock from '@lucide/svelte/icons/calendar-clock';
 import MessageSquareText from '@lucide/svelte/icons/message-square-text';
 import Anchor from '@lucide/svelte/icons/anchor';
+import UserCog from '@lucide/svelte/icons/user-cog';
+import UserMinus from '@lucide/svelte/icons/user-minus';
+import LogOut from '@lucide/svelte/icons/log-out';
+import Flag from '@lucide/svelte/icons/flag';
 
 export type LedgerFilter = 'all' | 'money' | 'decisions' | 'work' | 'rules' | 'people';
 export const LEDGER_FILTERS: LedgerFilter[] = ['all', 'money', 'decisions', 'work', 'rules', 'people'];
@@ -71,7 +75,9 @@ export function describe(team: Team, e: LedgerEntry): Described {
   const reviewLink = () => (e.refs.changeId ? href(`/d/${e.refs.deliverableId}/review/${e.refs.changeId}`) : dLink());
   const cLink = () => href(`/decide/p/${e.refs.changeId}`);
   const group = (...g: LedgerFilter[]): LedgerFilter[] => ['all', ...g];
-  const kindGroups = (): LedgerFilter[] => (c?.kind === 'rule' ? ['rules'] : c?.kind === 'money' ? ['money'] : []);
+  const kindGroups = (): LedgerFilter[] => (c?.kind === 'rule' ? ['rules'] : c?.kind === 'money' ? ['money'] : c?.kind === 'role' ? ['people'] : []);
+  const ids = (v: string | number | undefined) => (v ? String(v).split(',') : []);
+  const memberName = firstName(team, e.refs.memberId);
 
   switch (e.kind) {
     case 'team_created':
@@ -109,6 +115,14 @@ export function describe(team: Team, e: LedgerEntry): Described {
           icon: Scale, groups: group('rules', 'decisions'), href: cLink(),
         };
       }
+      if (c?.kind === 'role') {
+        return {
+          text: c.to.length
+            ? t('entry.change_opened.role', { actor, name: memberName, to: roleNames(team, ids(d.to)) })
+            : t('entry.change_opened.remove', { actor, name: memberName }),
+          icon: UserCog, groups: group('people', 'decisions'), href: cLink(),
+        };
+      }
       return { text: t('entry.change_opened.money', { actor, amount: fmtTmim(Number(d.amount ?? 0)), change }), icon: Coins, groups: group('money', 'decisions'), href: cLink() };
     case 'vote_cast':
       return { text: t('entry.vote_cast', { actor, change }), icon: Vote, groups: group('decisions', ...kindGroups()), href: cLink() };
@@ -136,6 +150,14 @@ export function describe(team: Team, e: LedgerEntry): Described {
       const target = e.refs.deliverableId ? deliverable : change;
       return { text: t('entry.message', { actor, target }), icon: MessageSquareText, groups: group('work'), href: e.refs.deliverableId ? dLink('/thread') : cLink() };
     }
+    case 'roles_changed':
+      return ids(d.to).length
+        ? { text: t('entry.roles_changed', { name: memberName, roles: roleNames(team, ids(d.to)) }), icon: UserCog, groups: group('people', 'decisions'), href: href('/decide/members') }
+        : { text: t('entry.member_removed', { name: memberName }), icon: UserMinus, groups: group('people', 'decisions'), href: href('/decide/members') };
+    case 'member_left':
+      return { text: t('entry.member_left', { actor }), icon: LogOut, groups: group('people'), href: href('/decide/members') };
+    case 'objective_lead':
+      return { text: t('entry.objective_lead', { actor, objective }), icon: Flag, groups: group('work', 'people'), href: href(`/plan/${e.refs.objectiveId}`) };
     case 'anchor':
       return { text: t('entry.anchor', { batch: d.batch }), icon: Anchor, groups: group() };
   }

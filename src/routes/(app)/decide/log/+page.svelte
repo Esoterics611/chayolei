@@ -13,6 +13,7 @@
   import Scale from '@lucide/svelte/icons/scale';
   import Coins from '@lucide/svelte/icons/hand-coins';
   import BadgeCheck from '@lucide/svelte/icons/badge-check';
+  import UserCog from '@lucide/svelte/icons/user-cog';
 
   const team = $derived(store.team);
   const decided = $derived(
@@ -28,7 +29,7 @@
     }
     return [...m.entries()];
   });
-  const ICON = { work: BadgeCheck, rule: Scale, money: Coins };
+  const ICON = { work: BadgeCheck, rule: Scale, money: Coins, role: UserCog };
 
   function outcome(c: Change): string {
     if (c.kind === 'work') return t('decide.outcome.work', { name: firstName(team, c.decidedBy) });

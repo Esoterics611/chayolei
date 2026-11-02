@@ -12,7 +12,7 @@ import { seedTeams } from './seed';
 import * as E from './engine';
 import { applyCommand, SETTLED_COMMANDS } from './commands';
 import type { Command, CommandResult } from './commands';
-import { member } from './rules';
+import { activeMember, member } from './rules';
 import { t } from './i18n';
 import { ui } from './ui.svelte';
 import type { ChainInfo, InviteInfo, LiveClient, Refusal, Signed } from './live';
@@ -50,7 +50,7 @@ class TeamStore {
   /** The active team. Screens can rely on it: in the live app the (app)
    *  layout renders them only once it has loaded (`status === 'ready'`). */
   team = $derived((this.teams.find(x => x.id === this.activeTeamId) ?? (LIVE ? undefined : this.teams[0])) as Team);
-  me = $derived(LIVE ? this.uid : this.team ? (this.acting[this.team.id] ?? this.team.members[0]?.id) : '');
+  me = $derived(LIVE ? this.uid : this.team ? this.actingIn(this.team) : '');
   meMember = $derived(this.team ? member(this.team, this.me) : undefined);
 
   init(): void {
@@ -94,7 +94,9 @@ class TeamStore {
           const mine = this.teams.find(x => x.id === n.id);
           return mine && mine.ledger.length > n.ledger.length ? mine : n;
         });
-        if (firstTeams) {
+        // The active team is gone from my teams (I left, or was removed): open another.
+        const gone = !firstTeams && this.activeTeamId && !teams.some(x => x.id === this.activeTeamId);
+        if (firstTeams || gone) {
           firstTeams = false;
           const saved = readLocal(ACTIVE_KEY);
           const pick = teams.find(x => x.id === saved)?.id ?? teams[0]?.id ?? '';
@@ -159,6 +161,12 @@ class TeamStore {
     this.save();
   }
 
+  /** Demo: who is acting in a team (someone still on it). */
+  private actingIn(team: Team): string {
+    const chosen = this.acting[team.id];
+    return activeMember(team, chosen)?.id ?? team.members.find(m => !m.leftAt)?.id ?? '';
+  }
+
   // ── Both ───────────────────────────────────────────────────────
 
   switchTeam(id: string): void {
@@ -215,6 +223,14 @@ class TeamStore {
     }
     const r = await client.send(team.id, command, signed);
     if (!r.ok) { this.explain(r.error); return undefined; }
+    if (cmd.type === 'leave') {
+      // No longer mine: the access rules stop my listeners; open another team.
+      this.teams = this.teams.filter(x => x.id !== team.id);
+      this.switchTeam(this.teams[0]?.id ?? '');
+      this.status = 'ready';
+      if (success) ui.toast('success', success);
+      return r.value.result;
+    }
     this.replace(r.value.team);
     this.now = new Date().toISOString();
     if (success) ui.toast('success', success);

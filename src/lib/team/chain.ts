@@ -15,7 +15,7 @@ import { PERMISSIONS, RULE_ORDER, TEMPLATES, charterFromTemplate } from './templ
 const ERRORS = [
   'error NotPermitted(uint16 permission)', 'error NotMember(address account)', 'error AlreadyMember(address account)',
   'error InvalidConfig()', 'error InvalidValue()', 'error UnknownProposal()', 'error ProposalExists()',
-  'error RuleProposalOpen()', 'error NotOpen()', 'error VotingClosed()', 'error NotByVote()', 'error ByVote()',
+  'error RuleProposalOpen()', 'error RolesProposalOpen()', 'error LastVoter()', 'error NotOpen()', 'error VotingClosed()', 'error NotByVote()', 'error ByVote()',
   'error SelfApproval()', 'error NotProposer()', 'error SelfAcceptance()', 'error InsufficientAccount(uint256 account, uint256 amount)',
   'error BudgetExceeded(uint256 cost, uint256 left)', 'error CapExceeded(uint256 cost, uint256 issued, uint256 cap)',
   'error AlreadyAccepted()', 'error NotAccepted()', 'error AlreadyReleased()', 'error RefUsed()', 'error InviteInvalid()',
@@ -30,6 +30,8 @@ export const TEAM = new Interface([
   'function proposeRule(bytes32 ref, uint8 key, uint256 value)',
   'function proposeTransfer(bytes32 ref, address to, uint256 amount)',
   'function proposeBudget(bytes32 ref, bytes32 objective, uint256 newBudget)',
+  'function proposeRoles(bytes32 ref, address member, uint16 roles)',
+  'function leave()',
   'function approve(bytes32 ref)',
   'function decline(bytes32 ref)',
   'function vote(bytes32 ref, uint8 choice)',
@@ -45,6 +47,8 @@ export const TEAM = new Interface([
   'function issuedThisMonth() view returns (uint256)',
   'function teamAccount() view returns (uint256)',
   'function rolesOf(address) view returns (uint16)',
+  'function memberCount() view returns (uint32)',
+  'function voterCount() view returns (uint32)',
   ...ERRORS,
 ]);
 
@@ -105,6 +109,15 @@ export const idHash = (id: string) => keccak256(toUtf8Bytes(id));
 export const contentHash = (paragraphs: string[]) => keccak256(toUtf8Bytes(paragraphs.join('\n\n')));
 
 const RULE_INDEX = Object.fromEntries(RULE_ORDER.map((k, i) => [k, i])) as Record<RuleKey, number>;
+
+/** Role ids as the contract's role bits: bit i is the charter's i-th role. */
+export function roleBits(team: Pick<Team, 'charter'>, ids: string[]): number {
+  return ids.reduce((bits, id) => {
+    const i = team.charter.roles.findIndex(r => r.id === id);
+    if (i < 0) throw new DomainError('err.invalid_input');
+    return bits | (1 << i);
+  }, 0);
+}
 const CHOICE = { for: 1, against: 2, abstain: 3 } as const;
 
 function permissionBits(ps: Permission[]): number {
@@ -115,14 +128,13 @@ function permissionBits(ps: Permission[]): number {
 export function charterConfig(input: { name: string; purpose: string; templateId: TemplateId }) {
   const tpl = TEMPLATES[input.templateId];
   const charter = charterFromTemplate(input.templateId, new Date(0).toISOString());
-  const roleBits = (ids: string[]) => ids.reduce((bits, id) => bits | (1 << charter.roles.findIndex(r => r.id === id)), 0);
   return {
     profileHash: keccak256(AbiCoder.defaultAbiCoder().encode(
       ['string', 'string', 'string[]'], [input.name, input.purpose, charter.roles.map(r => r.id)],
     )),
     rolePermissions: charter.roles.map(r => permissionBits(r.permissions)),
-    founderRoles: roleBits(tpl.founderRoleIds),
-    joinerRoles: roleBits(tpl.joinerRoleIds),
+    founderRoles: roleBits({ charter }, tpl.founderRoleIds),
+    joinerRoles: roleBits({ charter }, tpl.joinerRoleIds),
     rules: RULE_ORDER.map(k => BigInt(tpl.rules[k])),
   };
 }
@@ -156,6 +168,10 @@ export function callFor(team: Team, cmd: Command): { to: string; data: string } 
       return cmd.action.type === 'transfer'
         ? enc('proposeTransfer', [ref(cmd.id), wallet(team, cmd.action.to), BigInt(cmd.action.amount)])
         : enc('proposeBudget', [ref(cmd.id), idHash(cmd.action.objectiveId), BigInt(cmd.action.to)]);
+    case 'proposeRoles':
+      return enc('proposeRoles', [ref(cmd.id), wallet(team, cmd.memberId), roleBits(team, cmd.to)]);
+    case 'leave':
+      return enc('leave', []);
     case 'vote':
       return enc('vote', [ref(cmd.changeId), CHOICE[cmd.choice]]);
     case 'closeVoting':
@@ -197,6 +213,7 @@ export function chainErrorKey(name: string): string {
     BudgetExceeded: 'err.chain.budget', CapExceeded: 'err.chain.cap', AllowanceExceeded: 'err.chain.allowance',
     PlatformCapExceeded: 'err.chain.allowance', InsufficientAccount: 'err.chain.account', NotPermitted: 'err.chain.permission',
     VotingClosed: 'err.vote_closed', InviteInvalid: 'err.invite_invalid',
+    LastVoter: 'err.last_voter', RolesProposalOpen: 'err.roles_open', NotMember: 'err.not_member',
   };
   return known[name] ?? 'err.chain.refused';
 }

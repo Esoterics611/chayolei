@@ -9,6 +9,7 @@
   import Popover from '$lib/ui/Popover.svelte';
   import Avatar from '$lib/ui/Avatar.svelte';
   import { rolesOf } from './format';
+  import { activeMembers } from '$lib/team/rules';
   import ChevronDown from '@lucide/svelte/icons/chevron-down';
   import Check from '@lucide/svelte/icons/check';
   import Sun from '@lucide/svelte/icons/sun';
@@ -72,7 +73,7 @@
         <p class="label">{t('account.acting')}</p>
         <p class="hint">{t('account.actingHint')}</p>
         <div class="people">
-          {#each store.team.members as m (m.id)}
+          {#each activeMembers(store.team) as m (m.id)}
             <button type="button" class="person" aria-pressed={m.id === me.id} onclick={() => actAs(m.id)}>
               <Avatar id={m.id} initials={m.initials} name={lt(m.name)} ai={m.ai} size="sm" />
               <span class="txt"><span class="pname">{lt(m.name)}</span><span class="role">{rolesOf(store.team, m.id)}</span></span>

@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import * as E from './engine';
 import { seedTeams } from './seed';
 import { memberBalance, objectiveFigures, statements, issuedInMonth, ANCHOR_BATCH, anchoredBatches, isConfirmed } from './ledger';
-import { ruleValue, ruleCurrent } from './rules';
+import { can, ruleValue, ruleCurrent, voters } from './rules';
+import { toDocs } from './persist';
 import type { Team, WorkChange } from './types';
 import { DomainError } from './types';
 
@@ -40,10 +41,19 @@ describe('seed', () => {
   it('gives each persona something to do', () => {
     const t = brachos();
     const kinds = (m: string) => E.needsYou(t, m, NOW).map(n => n.kind).sort();
-    expect(kinds('mendel')).toEqual(['accept', 'approve_money', 'pay_schedule', 'vote']);
+    expect(kinds('mendel')).toEqual(['accept', 'approve_money', 'pay_schedule', 'vote', 'vote']);
     expect(kinds('yosef')).toEqual(['review']);
-    expect(kinds('levi')).toEqual(['stalled']);
-    expect(kinds('shmuel')).toEqual(['vote']);
+    expect(kinds('levi')).toEqual(['stalled', 'vote']);
+    expect(kinds('shmuel')).toEqual(['vote', 'vote']);
+  });
+
+  it('shows a former member, whose unfinished episode went back to the plan', () => {
+    const radio = seedTeams(NOW).teams.find(t => t.id === 'radio')!;
+    const jonah = radio.members.find(m => m.id === 'jonah')!;
+    expect(jonah.leftAt).toBeDefined();
+    const e4 = byTitle(radio, 'Episode 4');
+    expect(e4).toMatchObject({ stage: 'open', ownerId: undefined });
+    expect(E.versionsOf(e4).map(v => v.authorId)).toEqual(['jonah']);
   });
 });
 
@@ -224,6 +234,116 @@ describe('money', () => {
     E.paySchedule(t, 'mendel', 'sched-rivka', NOW);
     expect(memberBalance(t, 'rivka')).toBe(rivka + 150);
     expect(errKey(() => E.paySchedule(t, 'mendel', 'sched-rivka', NOW))).toBe('err.not_due');
+  });
+});
+
+describe('roles and leaving', () => {
+  const ALL = ['mendel', 'yosef', 'levi', 'shmuel', 'rivka'];
+  const voteAll = (t: Team, id: string, who = ALL) => {
+    for (const m of who) if (t.changes.find(c => c.id === id)!.status === 'open') E.vote(t, m, id, 'for', NOW);
+  };
+
+  it('a vote gives a member new roles, and the charter’s permissions follow', () => {
+    const t = brachos();
+    expect(can(t, 'levi', 'spend')).toBe(false);
+    const c = E.proposeRoles(t, 'shmuel', { memberId: 'levi', to: ['contributor', 'lead'], title: 'Levi leads', why: 'He knows the sources' }, NOW);
+    expect(c).toMatchObject({ kind: 'role', from: ['contributor'], to: ['lead', 'contributor'], status: 'open' });
+    expect(E.needsYou(t, 'rivka', NOW).some(n => n.kind === 'vote' && n.changeId === c.id)).toBe(true);
+    voteAll(t, c.id);
+    expect(c.status).toBe('passed');
+    expect(can(t, 'levi', 'spend')).toBe(true);
+    expect(t.ledger.at(-1)).toMatchObject({ kind: 'roles_changed', tier: 'settled', refs: { memberId: 'levi' }, data: { from: 'contributor', to: 'lead,contributor' } });
+  });
+
+  it('refuses role changes that could not work', () => {
+    const t = brachos();
+    const p = (memberId: string, to: string[]) => () => E.proposeRoles(t, 'mendel', { memberId, to, title: 'x', why: 'y' }, NOW);
+    expect(errKey(p('levi', ['contributor']))).toBe('err.roles_unchanged');
+    expect(errKey(p('levi', ['owner']))).toBe('err.invalid_input');
+    expect(errKey(p('nobody', ['lead']))).toBe('err.not_member');
+    p('levi', ['reviewer'])();
+    expect(errKey(p('levi', []))).toBe('err.roles_open');
+    p('shmuel', ['reviewer'])();
+  });
+
+  it('a vote with no roles removes a member: their unfinished work goes back to the plan, the record stays', () => {
+    const t = brachos();
+    const stalled = t.deliverables.find(d => d.ownerId === 'levi' && E.isStalled(d, NOW))!;
+    const paidBefore = memberBalance(t, 'levi');
+    const c = E.proposeRoles(t, 'mendel', { memberId: 'levi', to: [], title: 'Remove Levi', why: 'Inactive' }, NOW);
+    voteAll(t, c.id);
+    expect(c.status).toBe('passed');
+    const levi = t.members.find(m => m.id === 'levi')!;
+    expect(levi).toMatchObject({ roleIds: [], leftAt: NOW });
+    expect(stalled).toMatchObject({ stage: 'open', ownerId: undefined });
+    expect(stalled.versions.some(v => v.kind === 'draft')).toBe(false);
+    expect(voters(t).map(m => m.id)).not.toContain('levi');
+    expect(memberBalance(t, 'levi')).toBe(paidBefore);
+    expect(toDocs(t, NOW).core.memberUids).not.toContain('levi');
+    expect(t.ledger.at(-1)).toMatchObject({ kind: 'roles_changed', data: { to: '' } });
+    expect(errKey(() => E.take(t, 'levi', stalled.id, NOW))).toBe('err.permission.take_work');
+    expect(errKey(() => E.postMessage(t, 'levi', { type: 'deliverable', id: stalled.id }, 'hi', NOW))).toBe('err.not_member');
+    E.take(t, 'rivka', stalled.id, NOW);
+    expect(stalled.ownerId).toBe('rivka');
+  });
+
+  it('a member who leaves hands their reviews back to the approver, and may come back', () => {
+    const t = brachos();
+    const ch4 = byTitle(t, 'Chapter 4');
+    expect(E.reviewerOf(t, ch4)).toBe('yosef');
+    E.leave(t, 'yosef', NOW);
+    expect(t.ledger.at(-1)).toMatchObject({ kind: 'member_left', tier: 'settled', actorId: 'yosef', data: { roles: 'reviewer' } });
+    expect(E.reviewerOf(t, ch4)).toBe('mendel');
+    expect(E.needsYou(t, 'mendel', NOW).some(n => n.kind === 'review' && n.deliverableId === ch4.id)).toBe(true);
+    expect(errKey(() => E.leave(t, 'yosef', NOW))).toBe('err.not_member');
+    E.addMember(t, { id: 'yosef', name: 'Yosef Adler', initials: 'YA', wallet: '0x3f9e' }, later(1));
+    const yosef = t.members.find(m => m.id === 'yosef')!;
+    expect(yosef.leftAt).toBeUndefined();
+    expect(yosef.roleIds).toEqual(['contributor']);
+    expect(t.members.filter(m => m.id === 'yosef')).toHaveLength(1);
+    expect(errKey(() => E.addMember(t, { id: 'yosef', name: 'Y', initials: 'Y', wallet: '0x3f9e' }, later(2)))).toBe('err.invalid_input');
+  });
+
+  it('never leaves a team without someone who can vote', () => {
+    const t = E.createTeam({ name: 'Solo', purpose: '', templateId: 'blank', founder: { id: 'ana', name: 'Ana', initials: 'A', wallet: '0x1' } }, NOW);
+    expect(errKey(() => E.leave(t, 'ana', NOW))).toBe('err.last_voter');
+    expect(errKey(() => E.proposeRoles(t, 'ana', { memberId: 'ana', to: [], title: 'x', why: 'y' }, NOW))).toBe('err.last_voter');
+    E.addMember(t, { id: 'ben', name: 'Ben', initials: 'B', wallet: '0x2' }, NOW);
+    E.leave(t, 'ana', NOW);
+    expect(errKey(() => E.leave(t, 'ben', NOW))).toBe('err.last_voter');
+  });
+
+  it('fails a role change, or a transfer, whose member left before the vote ended', () => {
+    const t = brachos();
+    t.treasury.teamAccount = 10_000;
+    const roles = E.proposeRoles(t, 'mendel', { memberId: 'shmuel', to: ['reviewer'], title: 'x', why: 'y' }, NOW);
+    const pay = E.requestMoney(t, 'mendel', { action: { type: 'transfer', to: 'shmuel', amount: 2500 }, title: 'x', why: 'y' }, NOW);
+    for (const id of [roles.id, pay.id]) for (const m of ['mendel', 'yosef', 'levi']) E.vote(t, m, id, 'for', NOW);
+    E.leave(t, 'shmuel', NOW);
+    E.closeVoting(t, 'mendel', roles.id, NOW);
+    expect(roles.status).toBe('failed');
+    expect(t.ledger.at(-1)).toMatchObject({ kind: 'change_failed', data: { reason: 'roles_moved' } });
+    E.closeVoting(t, 'mendel', pay.id, NOW);
+    expect(pay.status).toBe('failed');
+    expect(t.ledger.at(-1)).toMatchObject({ kind: 'change_failed', data: { reason: 'not_member' } });
+  });
+
+  it('when the lead leaves, the team votes in a new one, who takes over the objectives', () => {
+    const t = brachos();
+    E.leave(t, 'mendel', NOW);
+    expect(t.objectives.every(o => E.leadVacant(t, o))).toBe(true);
+    const ch3 = byTitle(t, 'Chapter 3');
+    expect(E.approverOf(t, ch3)).toBeUndefined();
+    const c = E.proposeRoles(t, 'yosef', { memberId: 'shmuel', to: ['lead'], title: 'Shmuel leads', why: 'Someone must' }, NOW);
+    voteAll(t, c.id, ['yosef', 'levi', 'shmuel', 'rivka']);
+    expect(c.status).toBe('passed');
+    const lead = E.needsYou(t, 'shmuel', NOW).filter(n => n.kind === 'lead');
+    expect(lead.length).toBeGreaterThan(0);
+    E.takeLead(t, 'shmuel', ch3.objectiveId, NOW);
+    expect(E.approverOf(t, ch3)).toBe('shmuel');
+    expect(t.ledger.at(-1)).toMatchObject({ kind: 'objective_lead', tier: 'signed', refs: { objectiveId: ch3.objectiveId, memberId: 'shmuel' } });
+    expect(errKey(() => E.takeLead(t, 'shmuel', ch3.objectiveId, NOW))).toBe('err.lead_taken');
+    expect(errKey(() => E.takeLead(t, 'levi', ch3.objectiveId, NOW))).toBe('err.permission.manage_plan');
   });
 });
 

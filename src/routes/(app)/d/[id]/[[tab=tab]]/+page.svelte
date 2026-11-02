@@ -5,7 +5,7 @@
   import type { Version } from '$lib/team/types';
   import { store } from '$lib/team/store.svelte';
   import * as E from '$lib/team/engine';
-  import { can, ruleValue } from '$lib/team/rules';
+  import { activeMembers, can, ruleValue } from '$lib/team/rules';
   import { objectiveFigures } from '$lib/team/ledger';
   import { lt, t, fmtDate, fmtNum, fmtRelative, fmtTmim } from '$lib/team/i18n';
   import { href } from '$lib/team/nav';
@@ -226,7 +226,7 @@
           <input class="input" bind:value={taskTitle} placeholder={t('d.taskPlaceholder')} aria-label={t('plan.field.task')} required />
           <select class="input who" bind:value={taskOwner} aria-label={t('plan.field.taskOwner')}>
             <option value="">{t('plan.field.taskOwner')}</option>
-            {#each team.members as m (m.id)}<option value={m.id}>{lt(m.name)}</option>{/each}
+            {#each activeMembers(team) as m (m.id)}<option value={m.id}>{lt(m.name)}</option>{/each}
           </select>
           <button type="submit" class="btn"><Plus size={15} />{t('d.addTask')}</button>
         </form>

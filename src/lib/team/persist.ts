@@ -49,7 +49,8 @@ export function toDocs(team: Team, now: string): TeamDocs {
     core: {
       ...rest,
       deliverables: stored,
-      memberUids: team.members.filter(m => !m.ai).map(m => m.id),
+      // Who may read the team: its people now (not AI helpers, not those who left).
+      memberUids: team.members.filter(m => !m.ai && !m.leftAt).map(m => m.id),
       ledgerCount: ledger.length,
       updatedAt: now,
     },

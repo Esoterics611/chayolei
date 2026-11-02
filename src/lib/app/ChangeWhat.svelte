@@ -1,7 +1,8 @@
 <script lang="ts">
-  // What a rule or money change changes, as a diff: the rule's old and new
-  // value and version, or the TMIM that moves and the balance it leaves.
-  import type { MoneyChange, RuleChange, Team } from '$lib/team/types';
+  // What a rule, role or money change changes, as a diff: the rule's old and
+  // new value and version, the member's roles before and after, or the TMIM
+  // that moves and the balance it leaves.
+  import type { CharterChange, Team } from '$lib/team/types';
   import { ruleCurrent } from '$lib/team/rules';
   import { lt, t, fmtTmim } from '$lib/team/i18n';
   import { fmtRule, nameOf } from './format';
@@ -9,8 +10,14 @@
   import ArrowRight from '@lucide/svelte/icons/arrow-right';
   import Landmark from '@lucide/svelte/icons/landmark';
   import Target from '@lucide/svelte/icons/target';
+  import UserMinus from '@lucide/svelte/icons/user-minus';
 
-  let { team, c, compact = false }: { team: Team; c: RuleChange | MoneyChange; compact?: boolean } = $props();
+  let { team, c, compact = false }: { team: Team; c: CharterChange; compact?: boolean } = $props();
+
+  /** Each charter role the change touches: kept, added or removed. */
+  const roleRows = $derived(c.kind !== 'role' ? [] : team.charter.roles
+    .filter(r => c.from.includes(r.id) || c.to.includes(r.id))
+    .map(r => ({ id: r.id, name: lt(r.name), state: !c.from.includes(r.id) ? 'plus' : !c.to.includes(r.id) ? 'minus' : 'kept' })));
 
   const ruleVersion = $derived.by(() => {
     if (c.kind !== 'rule') return undefined;
@@ -25,7 +32,17 @@
   });
 </script>
 
-{#if c.kind === 'rule'}
+{#if c.kind === 'role'}
+  <div class="what">
+    <p class="subject"><Person {team} id={c.memberId} />{#if compact}<span class="visually-hidden">{nameOf(team, c.memberId)}</span>{/if}</p>
+    <div class="rule-diff roles">
+      {#each roleRows as r (r.id)}
+        <span class={r.state}>{r.state === 'plus' ? '+ ' : r.state === 'minus' ? '− ' : ''}{r.name}</span>
+      {/each}
+      {#if !c.to.length}<span class="out"><UserMinus size={13} />{t('decide.leavesTeam')}</span>{/if}
+    </div>
+  </div>
+{:else if c.kind === 'rule'}
   <div class="what">
     <p class="subject">{t(`rule.${c.ruleKey}`)}{#if !compact}<span class="desc"> — {t(`rule.${c.ruleKey}.desc`)}</span>{/if}</p>
     <div class="rule-diff">
@@ -58,5 +75,8 @@
   .desc { font-weight: 400; color: var(--ink-3); font-size: var(--fs-sm); }
   .flow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 12px; border-radius: var(--r-sm); border: 1px solid var(--rule); }
   .node { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: var(--surface-2); font-size: var(--fs-sm); }
+  .roles { flex-wrap: wrap; font-family: var(--font-ui); }
+  .kept { color: var(--ink-2); padding: 2px 8px; border-radius: 4px; border: 1px solid var(--rule); }
+  .out { display: inline-flex; align-items: center; gap: 4px; color: var(--st-changes); font-family: var(--font-ui); font-weight: 500; }
   .amt { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-mono); font-size: var(--fs-sm); color: var(--accent-text); font-weight: 500; }
 </style>

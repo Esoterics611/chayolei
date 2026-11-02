@@ -1,13 +1,14 @@
 <script lang="ts">
-  // The change card for rules and money (UX_REDESIGN.md §7.6): what changes,
+  // The change card for rules, roles and money (UX_REDESIGN.md §7.6): what changes,
   // why, who decides and by when, the tally, the consequences, the vote or
   // the approval, then the discussion and the record.
   import { page } from '$app/state';
-  import type { MoneyChange, RuleChange, VoteChoice } from '$lib/team/types';
+  import type { CharterChange, VoteChoice } from '$lib/team/types';
   import { store } from '$lib/team/store.svelte';
   import { ui } from '$lib/team/ui.svelte';
   import * as E from '$lib/team/engine';
-  import { can, ruleValue, voters } from '$lib/team/rules';
+  import { can, permissionsFor, ruleValue, voters } from '$lib/team/rules';
+  import { PERMISSIONS } from '$lib/team/templates';
   import { lt, t, fmtRelative, fmtTmim } from '$lib/team/i18n';
   import { href, go } from '$lib/team/nav';
   import ChangeCard from '$lib/ui/ChangeCard.svelte';
@@ -17,7 +18,7 @@
   import Person from '$lib/app/Person.svelte';
   import LedgerList from '$lib/app/LedgerList.svelte';
   import NotFound from '$lib/app/NotFound.svelte';
-  import { firstName, nameOf } from '$lib/app/format';
+  import { firstName, nameOf, roleNames } from '$lib/app/format';
   import ThumbsUp from '@lucide/svelte/icons/thumbs-up';
   import ThumbsDown from '@lucide/svelte/icons/thumbs-down';
   import CircleSlash from '@lucide/svelte/icons/circle-slash';
@@ -31,14 +32,14 @@
   const me = $derived(store.me);
   const now = $derived(store.now);
   const any = $derived(team.changes.find(x => x.id === page.params.changeId));
-  const c = $derived(any && any.kind !== 'work' ? (any as RuleChange | MoneyChange) : undefined);
+  const c = $derived(any && any.kind !== 'work' ? (any as CharterChange) : undefined);
 
   $effect(() => {
     // Work changes have their own card, next to the document.
     if (any?.kind === 'work') go(`/d/${any.deliverableId}/review/${any.id}`);
   });
 
-  const byVote = $derived(!!c && (c.kind === 'rule' || c.decidedBy === 'vote'));
+  const byVote = $derived(!!c && (c.kind !== 'money' || c.decidedBy === 'vote'));
   const tl = $derived(c && byVote ? E.tally(team, c) : undefined);
   const myVote = $derived(c?.votes.find(v => v.memberId === me));
   const mayVote = $derived(!!c && c.status === 'open' && byVote && can(team, me, 'vote') && voters(team).some(m => m.id === me));
@@ -49,6 +50,19 @@
   const consequences = $derived.by(() => {
     if (!c) return [];
     if (c.kind === 'rule') return [t('decide.ifPasses.rule')];
+    if (c.kind === 'role') {
+      const name = nameOf(team, c.memberId);
+      if (!c.to.length) return [t('decide.ifPasses.remove', { name }), t('decide.ifPasses.removeKeeps')];
+      const before = permissionsFor(team, c.from), after = permissionsFor(team, c.to);
+      const list = (ps: typeof PERMISSIONS) => ps.map(p => t(`perm.${p}`)).join(', ');
+      const gains = PERMISSIONS.filter(p => after.has(p) && !before.has(p));
+      const loses = PERMISSIONS.filter(p => before.has(p) && !after.has(p));
+      return [
+        t('decide.ifPasses.roles', { name, roles: roleNames(team, c.to) }),
+        ...(gains.length ? [t('decide.ifPasses.gains', { list: list(gains) })] : []),
+        ...(loses.length ? [t('decide.ifPasses.loses', { list: list(loses) })] : []),
+      ];
+    }
     if (c.action.type === 'transfer') {
       return [
         t('decide.ifPasses.transfer', { amount: fmtTmim(c.action.amount), name: nameOf(team, c.action.to) }),

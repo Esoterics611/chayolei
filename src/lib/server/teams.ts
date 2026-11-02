@@ -18,11 +18,11 @@ import { randomBytes } from 'node:crypto';
 import type { DocumentReference, Transaction } from 'firebase-admin/firestore';
 import { adminDb } from '$lib/server/firebase-admin';
 import * as E from '$lib/team/engine';
-import { applyCommand, LIMITS } from '$lib/team/commands';
+import { applyCommand, LIMITS, OPENS_CHANGE } from '$lib/team/commands';
 import type { Command, CommandResult } from '$lib/team/commands';
 import { diffDocs, fromDocs, ledgerDocId, toDocs, viewFor } from '$lib/team/persist';
 import type { StoredVersion, TeamCore, TeamDocs } from '$lib/team/persist';
-import { can, ruleValue } from '$lib/team/rules';
+import { activeMember, can, ruleValue } from '$lib/team/rules';
 import { RULE_ORDER, TEMPLATES } from '$lib/team/templates';
 import { DomainError } from '$lib/team/types';
 import type { LedgerEntry, Message, Team, TemplateId } from '$lib/team/types';
@@ -80,8 +80,9 @@ async function mutate<T>(teamId: string, fn: (team: Team, now: string, tx: Trans
   });
 }
 
+/** Only people on the team now may act on it (not those who left). */
 export function requireMember(team: Team, uid: string): void {
-  if (!team.members.some(m => m.id === uid)) throw new DomainError('err.not_your_team');
+  if (!activeMember(team, uid)) throw new DomainError('err.not_your_team');
 }
 
 const str = (v: unknown, max: number): string => {
@@ -187,8 +188,8 @@ export async function prepareCommand(teamId: string, uid: string, cmd: Command) 
   if (!team.chain || !SETTLED_COMMANDS.has(cmd.type)) return { onChain: false as const };
   const c = await chainFor(team);
   // The contract keys proposals by the change's id, so it is chosen here.
-  const command: Command = (cmd.type === 'proposeRule' || cmd.type === 'requestMoney') && !cmd.id
-    ? { ...cmd, id: E.newId('c') } : cmd;
+  const command: Command = OPENS_CHANGE.has(cmd.type) && !(cmd as { id?: string }).id
+    ? { ...cmd, id: E.newId('c') } as Command : cmd;
   dryRun(team, uid, command);
   return { onChain: true as const, command, ...(await prepareRequest(c, walletOf(uid), callFor(team, command))) };
 }
@@ -394,7 +395,7 @@ const joinCall = (team: Team, inv: InviteDoc) => {
 export async function prepareJoin(token: string, uid: string) {
   const inv = await inviteFor(token);
   const team = await loadTeam(inv.teamId);
-  if (!team.chain || team.members.some(m => m.id === uid)) return { onChain: false as const };
+  if (!team.chain || activeMember(team, uid)) return { onChain: false as const };
   if (!usable(inv, new Date().toISOString())) throw new DomainError('err.invite_invalid');
   const c = await chainFor(team);
   return { onChain: true as const, ...(await prepareRequest(c, walletOf(uid), joinCall(team, inv))) };
@@ -409,7 +410,7 @@ export async function acceptInvite(token: string, uid: string, input: unknown, s
     const { team } = await mutate(first.teamId, async (team, now, tx) => {
       const inv = await tx.get(invRef);
       const data = inv.data() as InviteDoc | undefined;
-      if (team.members.some(m => m.id === uid)) return; // already in: opening the link again is fine
+      if (activeMember(team, uid)) return; // already in: opening the link again is fine
       if (!data || data.teamId !== team.id || !usable(data, now)) throw new DomainError('err.invite_invalid');
       const from = team.ledger.length;
       E.addMember(team, { id: uid, name: you.name, initials: you.initials, wallet: walletOf(uid) }, now);
@@ -422,7 +423,7 @@ export async function acceptInvite(token: string, uid: string, input: unknown, s
   if (!(core.data() as TeamCore | undefined)?.chain) return join();
   return withTeamLock(first.teamId, async () => {
     const team = await loadTeam(first.teamId);
-    if (team.members.some(m => m.id === uid)) return viewFor(team, uid);
+    if (activeMember(team, uid)) return viewFor(team, uid);
     const inv = await inviteFor(token);
     if (!usable(inv, new Date().toISOString())) throw new DomainError('err.invite_invalid');
     const c = await chainFor(team);

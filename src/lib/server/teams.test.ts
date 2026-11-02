@@ -126,6 +126,37 @@ describe('teams in Firestore', () => {
     expect(messages.size).toBe(5);
   }, 60_000); // the emulator resolves transaction contention slowly
 
+  it('changes roles by vote, and lets a member leave and come back by invite', async () => {
+    const team = await editorialTeam();
+    // Shmuel becomes a reviewer too: a role change, decided by all three votes.
+    const { result: { id: roles } } = await run(team.id, LEVI, { type: 'proposeRoles', memberId: SHMUEL, to: ['reviewer', 'contributor'], title: 'Shmuel reviews', why: 'Speed' });
+    for (const uid of [LEAD, LEVI, SHMUEL]) await run(team.id, uid, { type: 'vote', changeId: roles!, choice: 'for' });
+    let core = (await adminDb.collection('teams').doc(team.id).get()).data()!;
+    expect(core.members.find((m: { id: string }) => m.id === SHMUEL).roleIds).toEqual(['reviewer', 'contributor']);
+    expect(await errKey(runTeamCommand(team.id, LEAD, { type: 'proposeRoles', memberId: LEVI, to: ['owner'], title: 'x', why: 'y' }))).toBe('err.invalid_input');
+
+    // Levi takes a deliverable, then leaves: it reopens, and he loses access.
+    const { result: { id: o } } = await run(team.id, LEAD, { type: 'addObjective', title: 'Vol', description: '' });
+    const { result: { id: d } } = await run(team.id, LEAD, { type: 'addDeliverable', objectiveId: o!, title: 'Ch', scope: '' });
+    await run(team.id, LEVI, { type: 'take', deliverableId: d! });
+    await run(team.id, LEVI, { type: 'leave' });
+    core = (await adminDb.collection('teams').doc(team.id).get()).data()!;
+    expect(core.memberUids).toEqual([LEAD, SHMUEL]);
+    expect(core.members.find((m: { id: string }) => m.id === LEVI)).toMatchObject({ roleIds: [] });
+    expect(core.deliverables[0]).toMatchObject({ stage: 'open' });
+    expect(core.deliverables[0].ownerId).toBeUndefined();
+    expect(await errKey(runTeamCommand(team.id, LEVI, { type: 'postMessage', ref: { type: 'deliverable', id: d! }, body: 'still here?' }))).toBe('err.not_your_team');
+
+    // A new invite brings him back as the same member, with the joiner role.
+    const { token } = await createInvite(team.id, LEAD);
+    const back = await acceptInvite(token, LEVI, { name: 'Levi Stern' });
+    expect(back.members.filter(m => m.id === LEVI)).toMatchObject([{ roleIds: ['contributor'] }]);
+    expect(back.members.find(m => m.id === LEVI)!.leftAt).toBeUndefined();
+    core = (await adminDb.collection('teams').doc(team.id).get()).data()!;
+    expect(core.memberUids).toContain(LEVI);
+    expect(back.ledger.slice(-1)[0]).toMatchObject({ kind: 'member_joined', actorId: LEVI });
+  });
+
   it('admits people through an invite link made by a member who may admit', async () => {
     const team = await createTeamFor(LEAD, { name: 'Radio', purpose: 'Community radio', templateId: 'editorial', you: { name: 'Ada' } });
     const { token } = await createInvite(team.id, LEAD);

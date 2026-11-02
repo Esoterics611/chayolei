@@ -27,6 +27,7 @@ export type DialogRequest =
   | { kind: 'newDeliverable'; objectiveId?: string }
   | { kind: 'suggestPlan'; objectiveId: string }
   | { kind: 'proposeRule'; ruleKey?: RuleKey }
+  | { kind: 'proposeRoles'; memberId?: string }
   | { kind: 'requestMoney'; type?: 'transfer' | 'budget'; objectiveId?: string; to?: string }
   | { kind: 'contribute' }
   | { kind: 'requestChanges'; changeId: string }

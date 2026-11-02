@@ -33,6 +33,8 @@ export interface Member {
   wallet: string;
   joinedAt: string;
   ai?: boolean;
+  /** When they left or were removed. Kept for the record; holds no roles. */
+  leftAt?: string;
 }
 
 export type RuleKey =
@@ -214,7 +216,28 @@ export interface MoneyChange {
   approvedBy?: string;
 }
 
-export type Change = WorkChange | RuleChange | MoneyChange;
+/** New roles for a member, decided by vote like a rule. No roles: they are removed from the team. */
+export interface RoleChange {
+  kind: 'role';
+  id: string;
+  title: Text;
+  why: Text;
+  memberId: string;
+  /** Their roles when proposed: it applies only if they still hold exactly these. */
+  from: string[];
+  to: string[];
+  proposerId: string;
+  status: ChangeStatus;
+  votes: Vote[];
+  at: string;
+  closesAt: string;
+  decidedAt?: string;
+}
+
+export type Change = WorkChange | RuleChange | MoneyChange | RoleChange;
+
+/** Changes the charter decides (by vote, or by a role within the spend limit), as opposed to work. */
+export type CharterChange = RuleChange | MoneyChange | RoleChange;
 
 export interface Message {
   id: string;
@@ -248,6 +271,9 @@ export type EntryKind =
   | 'budget_set'
   | 'scheduled_paid'
   | 'message'
+  | 'roles_changed'
+  | 'member_left'
+  | 'objective_lead'
   | 'anchor';
 
 export type Tier = 'settled' | 'signed';

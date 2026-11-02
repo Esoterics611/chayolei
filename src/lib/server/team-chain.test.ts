@@ -151,6 +151,29 @@ describe.skipIf(!enabled)('chain bridge (local chain)', () => {
     expect(await errKey(runTeamCommand(team.id, uid(founder), p.command, forged))).toBe('err.chain.signature');
   }, 120_000);
 
+  it('changes roles by vote on-chain, and lets a member leave there too', async () => {
+    const team = await onChainTeam();
+    const contract = new Contract(team.chain!.address, TEAM, provider);
+    // Levi becomes a reviewer as well: both members vote.
+    const { result: { id: roles } } = await act(team.id, founder, { type: 'proposeRoles', memberId: uid(levi), to: ['reviewer', 'contributor'], title: 'Levi reviews', why: 'Speed' });
+    await act(team.id, founder, { type: 'vote', changeId: roles!, choice: 'for' });
+    const { team: passed } = await act(team.id, levi, { type: 'vote', changeId: roles!, choice: 'for' });
+    expect(passed.members.find(m => m.id === uid(levi))?.roleIds).toEqual(['reviewer', 'contributor']);
+    expect(await contract.rolesOf(levi.address)).toBe(0b110n);
+    const changed = passed.ledger.findLast(e => e.kind === 'roles_changed')!;
+    expect(changed.proof.tx).toMatch(/^0x[0-9a-f]{64}$/);
+
+    // Levi leaves: his roles go on-chain too, and he no longer counts as a voter.
+    const { team: after } = await act(team.id, levi, { type: 'leave' });
+    expect(after.members.find(m => m.id === uid(levi))?.leftAt).toBeDefined();
+    expect(await contract.rolesOf(levi.address)).toBe(0n);
+    expect(await contract.voterCount()).toBe(1n);
+    expect(after.ledger.at(-1)).toMatchObject({ kind: 'member_left' });
+    expect(after.ledger.findLast(e => e.kind === 'member_left')!.proof.tx).toMatch(/^0x[0-9a-f]{64}$/);
+    // The founder is now the only one who can vote: the contract and the server both refuse.
+    expect(await errKey(prepareCommand(team.id, uid(founder), { type: 'leave' }))).toBe('err.last_voter');
+  }, 120_000);
+
   it('anchors each full batch of signed entries on-chain', async () => {
     const team = await onChainTeam();
     const { result: { id: o } } = await runTeamCommand(team.id, uid(founder), { type: 'addObjective', title: 'Vol', description: '' });

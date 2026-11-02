@@ -6,6 +6,7 @@
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
 import { time } from '@nomicfoundation/hardhat-network-helpers';
+import { anyValue } from '@nomicfoundation/hardhat-chai-matchers/withArgs';
 import type { HardhatEthersSigner } from '@nomicfoundation/hardhat-ethers/signers';
 import type { Team, TeamFactory, TeamForwarder, TMIMToken } from '../typechain-types';
 
@@ -468,6 +469,137 @@ describe('Team and TeamFactory', () => {
       await team.connect(founder).proposeBudget(ref, id('S1'), 100n);
       await expect(team.connect(stranger).decline(ref)).to.be.revertedWithCustomError(team, 'NotPermitted');
       await expect(team.connect(levi).decline(ref)).to.emit(team, 'ProposalDecided').withArgs(ref, S.Declined, 0, 0, 0, 0);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════════════
+  describe('roles by vote, and leaving', () => {
+    // Editorial: role 0 is lead (everything), role 1 contributor (take, review, propose, vote).
+    const LEAD = 0b01, CONTRIBUTOR = 0b10;
+
+    async function passByAll(team: Team, ref: string, voters: HardhatEthersSigner[]) {
+      for (const m of voters) {
+        if ((await team.proposal(ref)).status === BigInt(S.Open)) await team.connect(m).vote(ref, C.For);
+      }
+    }
+
+    it('gives a member new roles by vote and keeps the voter count', async () => {
+      const team = await brachos();
+      const ref = id('levi leads');
+      await expect(team.connect(shmuel).proposeRoles(ref, levi.address, LEAD | CONTRIBUTOR))
+        .to.emit(team, 'ProposalOpened').withArgs(ref, 3, shmuel.address, true, anyValue, 0, levi.address, ethers.ZeroHash, LEAD | CONTRIBUTOR, 0);
+      const p = await team.proposal(ref);
+      expect(p.kind).to.equal(3n);
+      expect(p.byVote).to.be.true;
+      expect(p.fromRoles).to.equal(BigInt(CONTRIBUTOR));
+      expect(await team.can(levi.address, P.spend)).to.be.false;
+      await team.connect(founder).vote(ref, C.For);
+      await team.connect(levi).vote(ref, C.Abstain);
+      await team.connect(shmuel).vote(ref, C.For);
+      await expect(team.connect(rivka).vote(ref, C.For))
+        .to.emit(team, 'RolesChanged').withArgs(levi.address, CONTRIBUTOR, LEAD | CONTRIBUTOR, ref);
+      expect(await team.rolesOf(levi.address)).to.equal(BigInt(LEAD | CONTRIBUTOR));
+      expect(await team.can(levi.address, P.spend | P.accept)).to.be.true;
+      expect(await team.voterCount()).to.equal(4n);
+      expect(await team.memberCount()).to.equal(4n);
+      expect(await team.openRolesProposal(levi.address)).to.equal(ethers.ZeroHash);
+    });
+
+    it('removes a member when the vote gives them no roles', async () => {
+      const team = await brachos();
+      const ref = id('remove rivka');
+      await team.connect(founder).proposeRoles(ref, rivka.address, 0);
+      await team.connect(founder).vote(ref, C.For);
+      await team.connect(levi).vote(ref, C.For);
+      await team.connect(shmuel).vote(ref, C.For);
+      await expect(team.connect(rivka).vote(ref, C.Against))
+        .to.emit(team, 'RolesChanged').withArgs(rivka.address, CONTRIBUTOR, 0, ref);
+      expect(await team.rolesOf(rivka.address)).to.equal(0n);
+      expect(await team.memberCount()).to.equal(3n);
+      expect(await team.voterCount()).to.equal(3n);
+      // No longer a member: can't propose, vote or be paid; may join again by invite.
+      await expect(team.connect(rivka).proposeRule(id('r'), R.review, 150n)).to.be.revertedWithCustomError(team, 'NotPermitted');
+      await expect(team.connect(founder).proposeTransfer(id('t'), rivka.address, 1n)).to.be.revertedWithCustomError(team, 'NotMember');
+      await join(team, rivka);
+      expect(await team.rolesOf(rivka.address)).to.equal(BigInt(CONTRIBUTOR));
+      expect(await team.voterCount()).to.equal(4n);
+    });
+
+    it('refuses role changes that could not work', async () => {
+      const team = await brachos();
+      await expect(team.connect(stranger).proposeRoles(id('a'), levi.address, LEAD)).to.be.revertedWithCustomError(team, 'NotPermitted');
+      await expect(team.connect(founder).proposeRoles(id('b'), stranger.address, LEAD)).to.be.revertedWithCustomError(team, 'NotMember');
+      await expect(team.connect(founder).proposeRoles(id('c'), levi.address, CONTRIBUTOR)).to.be.revertedWithCustomError(team, 'InvalidValue');
+      await expect(team.connect(founder).proposeRoles(id('d'), levi.address, 0b100)).to.be.revertedWithCustomError(team, 'InvalidValue');
+      await team.connect(founder).proposeRoles(id('e'), levi.address, LEAD);
+      await expect(team.connect(shmuel).proposeRoles(id('f'), levi.address, 0)).to.be.revertedWithCustomError(team, 'RolesProposalOpen');
+      // Another member's roles may be proposed meanwhile.
+      await team.connect(shmuel).proposeRoles(id('g'), rivka.address, LEAD);
+    });
+
+    it('lets a member leave, keeping what they were paid, and releases their vote', async () => {
+      const team = await brachos();
+      await fundByVote(team, 'Vol 1', 5000n);
+      await team.connect(founder).acceptAndPay(id('d1'), id('Vol 1'), shmuel.address, 1200n, ethers.ZeroAddress, id('v1'));
+      await expect(team.connect(shmuel).leave()).to.emit(team, 'MemberLeft').withArgs(shmuel.address, CONTRIBUTOR);
+      expect(await team.rolesOf(shmuel.address)).to.equal(0n);
+      expect(await team.memberCount()).to.equal(3n);
+      expect(await team.voterCount()).to.equal(3n);
+      expect(await tmim.balanceOf(shmuel.address)).to.equal(1200n);
+      await expect(team.connect(shmuel).leave()).to.be.revertedWithCustomError(team, 'NotMember');
+      await expect(team.connect(stranger).leave()).to.be.revertedWithCustomError(team, 'NotMember');
+    });
+
+    it('never leaves the team without a member who can vote', async () => {
+      const solo = await newTeam();
+      await expect(solo.connect(founder).leave()).to.be.revertedWithCustomError(solo, 'LastVoter');
+      // A second member who can't vote doesn't help.
+      const cfg = { ...editorial(), rolePermissions: [ALL, P.take] };
+      const team = await newTeam(cfg);
+      await join(team, levi);
+      expect(await team.voterCount()).to.equal(1n);
+      await expect(team.connect(founder).leave()).to.be.revertedWithCustomError(team, 'LastVoter');
+      await expect(team.connect(founder).proposeRoles(id('step down'), founder.address, CONTRIBUTOR)).to.be.revertedWithCustomError(team, 'LastVoter');
+      // Give Levi the vote first; then the founder may step down, and leave.
+      await team.connect(founder).proposeRoles(id('levi votes'), levi.address, LEAD);
+      await team.connect(founder).vote(id('levi votes'), C.For);
+      expect(await team.voterCount()).to.equal(2n);
+      await team.connect(founder).leave();
+      expect(await team.voterCount()).to.equal(1n);
+      await expect(team.connect(levi).leave()).to.be.revertedWithCustomError(team, 'LastVoter');
+    });
+
+    it('fails a role change whose member changed meanwhile', async () => {
+      const team = await brachos();
+      const ref = id('levi leads');
+      await team.connect(founder).proposeRoles(ref, levi.address, LEAD);
+      await team.connect(levi).leave();
+      await passByAll(team, ref, [founder, shmuel, rivka]);
+      const p = await team.proposal(ref);
+      expect(p.status).to.equal(BigInt(S.Failed));
+      expect(await team.rolesOf(levi.address)).to.equal(0n);
+      expect(await team.openRolesProposal(levi.address)).to.equal(ethers.ZeroHash);
+    });
+
+    it('fails a passed transfer to someone who has left', async () => {
+      const team = await brachos();
+      await tmim.mint(founder.address, 5000n, 'test');
+      await tmim.connect(founder).transfer(await team.getAddress(), 5000n);
+      const big = id('pay rivka');
+      await team.connect(founder).proposeTransfer(big, rivka.address, 3000n);
+      for (const m of [founder, levi, shmuel]) await team.connect(m).vote(big, C.For);
+      await team.connect(rivka).leave();
+      // Quorum and majority are met, but the recipient is no longer a member.
+      await expect(team.connect(founder).closeVoting(big))
+        .to.emit(team, 'ProposalDecided').withArgs(big, S.Failed, 3, 0, 0, 3);
+      const small = id('pay levi');
+      await team.connect(founder).proposeTransfer(small, levi.address, 100n);
+      await team.connect(levi).leave();
+      // The spend-limit path needs another member who may spend.
+      await team.connect(founder).proposeRoles(id('shmuel leads'), shmuel.address, LEAD | CONTRIBUTOR);
+      await passByAll(team, id('shmuel leads'), [founder, shmuel]);
+      await expect(team.connect(shmuel).approve(small)).to.be.revertedWithCustomError(team, 'NotMember');
+      expect(await team.teamAccount()).to.equal(5000n);
     });
   });
 

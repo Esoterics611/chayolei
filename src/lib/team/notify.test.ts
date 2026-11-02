@@ -36,10 +36,11 @@ describe('notifications', () => {
 
   it('flag votes about to close that the member hasn’t cast', () => {
     const t = brachos();
-    const open = t.changes.find(c => c.kind === 'rule' && c.status === 'open')!;
-    expect(closingSoon(t, 'shmuel', NOW, 24 * 7).map(c => c.id)).toEqual([open.id]);
+    const open = t.changes.filter(c => (c.kind === 'rule' || c.kind === 'role') && c.status === 'open');
+    expect(open.map(c => c.kind).sort()).toEqual(['role', 'rule']);
+    expect(closingSoon(t, 'shmuel', NOW, 24 * 7).map(c => c.id).sort()).toEqual(open.map(c => c.id).sort());
     expect(closingSoon(t, 'shmuel', NOW, 1)).toEqual([]);
-    E.vote(t, 'shmuel', open.id, 'for', NOW);
+    for (const c of open) E.vote(t, 'shmuel', c.id, 'for', NOW);
     expect(closingSoon(t, 'shmuel', NOW, 24 * 7)).toEqual([]);
   });
 });

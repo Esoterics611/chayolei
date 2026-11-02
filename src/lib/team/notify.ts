@@ -2,7 +2,7 @@
 // on them are "needs you" (engine.needsYou); this is the news: what others
 // did that concerns them, and votes about to close that they haven't cast.
 
-import type { Change, LedgerEntry, MoneyChange, RuleChange, Team } from './types';
+import type { Change, CharterChange, LedgerEntry, Team } from './types';
 import { approverOf, isOpenForVotes, reviewerOf } from './engine';
 import { voters } from './rules';
 
@@ -12,7 +12,7 @@ const WORK_NEWS = new Set<LedgerEntry['kind']>([
 ]);
 /** Decision news for a change's proposer and voters. */
 const CHANGE_NEWS = new Set<LedgerEntry['kind']>([
-  'change_passed', 'change_failed', 'rule_changed', 'budget_set', 'money_moved', 'message',
+  'change_passed', 'change_failed', 'rule_changed', 'roles_changed', 'budget_set', 'money_moved', 'message',
 ]);
 
 function onDeliverable(team: Team, me: string, deliverableId: string): boolean {
@@ -41,9 +41,9 @@ export function newsFor(team: Team, me: string, since: string): LedgerEntry[] {
 }
 
 /** Votes `me` hasn't cast that close within `hours`: the time-sensitive kind. */
-export function closingSoon(team: Team, me: string, now: string, hours = 24): (RuleChange | MoneyChange)[] {
+export function closingSoon(team: Team, me: string, now: string, hours = 24): CharterChange[] {
   if (!voters(team).some(m => m.id === me)) return [];
   const limit = new Date(new Date(now).getTime() + hours * 3_600_000).toISOString();
-  return team.changes.filter((c): c is RuleChange | MoneyChange =>
+  return team.changes.filter((c): c is CharterChange =>
     isOpenForVotes(c) && !!c.closesAt && c.closesAt > now && c.closesAt <= limit && !c.votes.some(v => v.memberId === me));
 }

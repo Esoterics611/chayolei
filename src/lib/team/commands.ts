@@ -32,6 +32,9 @@ export type Command =
   | { type: 'release'; deliverableId: string }
   | { type: 'proposeRule'; ruleKey: RuleKey; to: number; title: string; why: string; id?: string }
   | { type: 'requestMoney'; action: MoneyAction; title: string; why: string; id?: string }
+  | { type: 'proposeRoles'; memberId: string; to: string[]; title: string; why: string; id?: string }
+  | { type: 'leave' }
+  | { type: 'takeLead'; objectiveId: string }
   | { type: 'vote'; changeId: string; choice: VoteChoice }
   | { type: 'closeVoting'; changeId: string }
   | { type: 'approveMoney'; changeId: string }
@@ -44,9 +47,12 @@ export type CommandType = Command['type'];
 
 /** Commands an on-chain team records as transactions on its contract (the settled tier). */
 export const SETTLED_COMMANDS = new Set<CommandType>([
-  'proposeRule', 'requestMoney', 'vote', 'closeVoting', 'approveMoney', 'declineMoney',
-  'acceptAndPay', 'release', 'paySchedule',
+  'proposeRule', 'requestMoney', 'proposeRoles', 'vote', 'closeVoting', 'approveMoney', 'declineMoney',
+  'acceptAndPay', 'release', 'paySchedule', 'leave',
 ]);
+
+/** Commands that open a change: the live app picks its id first, since the team's contract keys proposals by it. */
+export const OPENS_CHANGE = new Set<CommandType>(['proposeRule', 'requestMoney', 'proposeRoles']);
 
 /** What an action created, so the screen can open it. */
 export interface CommandResult {
@@ -105,6 +111,14 @@ export function applyCommand(team: Team, me: string, cmd: Command, now: string):
       return { id: E.proposeRule(team, me, { ruleKey: cmd.ruleKey, to: Number(cmd.to), title: text(cmd.title), why: text(cmd.why), id: cmd.id }, now).id };
     case 'requestMoney':
       return { id: E.requestMoney(team, me, { action: cmd.action, title: text(cmd.title), why: text(cmd.why), id: cmd.id }, now).id };
+    case 'proposeRoles':
+      return { id: E.proposeRoles(team, me, { memberId: cmd.memberId, to: strings(cmd.to), title: text(cmd.title), why: text(cmd.why), id: cmd.id }, now).id };
+    case 'leave':
+      E.leave(team, me, now);
+      return {};
+    case 'takeLead':
+      E.takeLead(team, me, cmd.objectiveId, now);
+      return {};
     case 'vote':
       E.vote(team, me, cmd.changeId, cmd.choice, now);
       return {};
@@ -154,7 +168,7 @@ function checkInput(team: Team, cmd: Command): void {
   const newId = (v: unknown) => { if (v !== undefined && (typeof v !== 'string' || !/^[\w-]{1,64}$/.test(v))) bad(); };
   const memberId = (v: unknown) => {
     if (v === undefined || v === '') return;
-    if (typeof v !== 'string' || !team.members.some(m => m.id === v)) bad();
+    if (typeof v !== 'string' || !team.members.some(m => m.id === v && !m.leftAt)) bad();
   };
   const date = (v: unknown) => {
     if (v === undefined) return;
@@ -206,6 +220,12 @@ function checkInput(team: Team, cmd: Command): void {
       str(cmd.title, LIMITS.title); str(cmd.why, LIMITS.body); newId(cmd.id);
       break;
     }
+    case 'proposeRoles':
+      memberId(cmd.memberId);
+      if (typeof cmd.memberId !== 'string' || !Array.isArray(cmd.to) || cmd.to.length > team.charter.roles.length) bad();
+      for (const r of cmd.to) if (typeof r !== 'string' || !team.charter.roles.some(x => x.id === r)) bad();
+      str(cmd.title, LIMITS.title); str(cmd.why, LIMITS.body); newId(cmd.id);
+      break;
     case 'vote': if (!CHOICES.has(cmd.choice)) bad(); break;
     case 'contribute':
       if (typeof cmd.amount !== 'number') bad();
@@ -221,8 +241,8 @@ function checkInput(team: Team, cmd: Command): void {
 const TYPES: Record<CommandType, true> = {
   addObjective: true, addDeliverable: true, addPlan: true, addTask: true, setTaskDone: true, take: true, saveDraft: true,
   saveVersion: true, requestReview: true, comment: true, markReviewed: true, requestChanges: true,
-  acceptAndPay: true, release: true, proposeRule: true, requestMoney: true, vote: true, closeVoting: true,
-  approveMoney: true, declineMoney: true, contribute: true, paySchedule: true, postMessage: true,
+  acceptAndPay: true, release: true, proposeRule: true, requestMoney: true, proposeRoles: true, vote: true, closeVoting: true,
+  approveMoney: true, declineMoney: true, contribute: true, paySchedule: true, postMessage: true, leave: true, takeLead: true,
 };
 
 /** Whether untrusted input (a request body) names a known command. */

@@ -1,5 +1,5 @@
 <script lang="ts">
-  // The one interaction for every change (work, rules, money): what changes,
+  // The one interaction for every change (work, rules, roles, money): what changes,
   // who proposed it, who decides and by when, what happens if accepted, and
   // its status. Learn it once, use it everywhere (UX_REDESIGN.md §2).
   import type { Snippet } from 'svelte';
@@ -9,13 +9,14 @@
   import PenLine from '@lucide/svelte/icons/pen-line';
   import Scale from '@lucide/svelte/icons/scale';
   import Coins from '@lucide/svelte/icons/hand-coins';
+  import UserCog from '@lucide/svelte/icons/user-cog';
   import Gavel from '@lucide/svelte/icons/gavel';
   import ArrowRight from '@lucide/svelte/icons/arrow-right';
   import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
   import Quote from '@lucide/svelte/icons/quote';
 
   interface Props {
-    kind: 'work' | 'rule' | 'money';
+    kind: 'work' | 'rule' | 'money' | 'role';
     title: string;
     href?: string;
     status: ChangeStatus;
@@ -37,7 +38,7 @@
     consequencesTitle, consequences = [], warnings = [], aside, actions, compact = false, headingLevel = 2,
   }: Props = $props();
 
-  const ICON = { work: PenLine, rule: Scale, money: Coins };
+  const ICON = { work: PenLine, rule: Scale, money: Coins, role: UserCog };
   const KindIcon = $derived(ICON[kind]);
 </script>
 

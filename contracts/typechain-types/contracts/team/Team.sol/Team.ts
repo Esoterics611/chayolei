@@ -58,6 +58,7 @@ export declare namespace Team {
     closesAt: BigNumberish;
     proposer: AddressLike;
     to: AddressLike;
+    fromRoles: BigNumberish;
     objective: BytesLike;
     value: BigNumberish;
     stake: BigNumberish;
@@ -75,6 +76,7 @@ export declare namespace Team {
     closesAt: bigint,
     proposer: string,
     to: string,
+    fromRoles: bigint,
     objective: string,
     value: bigint,
     stake: bigint
@@ -90,6 +92,7 @@ export declare namespace Team {
     closesAt: bigint;
     proposer: string;
     to: string;
+    fromRoles: bigint;
     objective: string;
     value: bigint;
     stake: bigint;
@@ -140,7 +143,9 @@ export interface TeamInterface extends Interface {
       | "issuedThisMonth"
       | "join"
       | "joinerRoles"
+      | "leave"
       | "memberCount"
+      | "openRolesProposal"
       | "openRuleProposal"
       | "paidFrom"
       | "payFromBudget"
@@ -149,6 +154,7 @@ export interface TeamInterface extends Interface {
       | "profileHash"
       | "proposal"
       | "proposeBudget"
+      | "proposeRoles"
       | "proposeRule"
       | "proposeTransfer"
       | "release"
@@ -174,11 +180,13 @@ export interface TeamInterface extends Interface {
       | "Initialized"
       | "InviteRevoked"
       | "MemberJoined"
+      | "MemberLeft"
       | "MoneyMoved"
       | "Paid"
       | "ProposalDecided"
       | "ProposalOpened"
       | "Released"
+      | "RolesChanged"
       | "RuleChanged"
       | "TeamInitialized"
       | "VoteCast"
@@ -322,9 +330,14 @@ export interface TeamInterface extends Interface {
     functionFragment: "joinerRoles",
     values?: undefined
   ): string;
+  encodeFunctionData(functionFragment: "leave", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "memberCount",
     values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "openRolesProposal",
+    values: [AddressLike]
   ): string;
   encodeFunctionData(
     functionFragment: "openRuleProposal",
@@ -351,6 +364,10 @@ export interface TeamInterface extends Interface {
   encodeFunctionData(
     functionFragment: "proposeBudget",
     values: [BytesLike, BytesLike, BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "proposeRoles",
+    values: [BytesLike, AddressLike, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "proposeRule",
@@ -504,8 +521,13 @@ export interface TeamInterface extends Interface {
     functionFragment: "joinerRoles",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "leave", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "memberCount",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "openRolesProposal",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -529,6 +551,10 @@ export interface TeamInterface extends Interface {
   decodeFunctionResult(functionFragment: "proposal", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "proposeBudget",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "proposeRoles",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -715,6 +741,19 @@ export namespace MemberJoinedEvent {
   export type LogDescription = TypedLogDescription<Event>;
 }
 
+export namespace MemberLeftEvent {
+  export type InputTuple = [member: AddressLike, roles: BigNumberish];
+  export type OutputTuple = [member: string, roles: bigint];
+  export interface OutputObject {
+    member: string;
+    roles: bigint;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
 export namespace MoneyMovedEvent {
   export type InputTuple = [
     ref: BytesLike,
@@ -857,6 +896,31 @@ export namespace ReleasedEvent {
     deliverable: string;
     contentHash: string;
     by: string;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace RolesChangedEvent {
+  export type InputTuple = [
+    member: AddressLike,
+    from: BigNumberish,
+    to: BigNumberish,
+    ref: BytesLike
+  ];
+  export type OutputTuple = [
+    member: string,
+    from: bigint,
+    to: bigint,
+    ref: string
+  ];
+  export interface OutputObject {
+    member: string;
+    from: bigint;
+    to: bigint;
+    ref: string;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -1115,7 +1179,11 @@ export interface Team extends BaseContract {
 
   joinerRoles: TypedContractMethod<[], [bigint], "view">;
 
+  leave: TypedContractMethod<[], [void], "nonpayable">;
+
   memberCount: TypedContractMethod<[], [bigint], "view">;
+
+  openRolesProposal: TypedContractMethod<[arg0: AddressLike], [string], "view">;
 
   openRuleProposal: TypedContractMethod<[arg0: BigNumberish], [string], "view">;
 
@@ -1146,6 +1214,12 @@ export interface Team extends BaseContract {
 
   proposeBudget: TypedContractMethod<
     [ref: BytesLike, objective: BytesLike, newBudget: BigNumberish],
+    [void],
+    "nonpayable"
+  >;
+
+  proposeRoles: TypedContractMethod<
+    [ref: BytesLike, member: AddressLike, roles: BigNumberish],
     [void],
     "nonpayable"
   >;
@@ -1381,8 +1455,14 @@ export interface Team extends BaseContract {
     nameOrSignature: "joinerRoles"
   ): TypedContractMethod<[], [bigint], "view">;
   getFunction(
+    nameOrSignature: "leave"
+  ): TypedContractMethod<[], [void], "nonpayable">;
+  getFunction(
     nameOrSignature: "memberCount"
   ): TypedContractMethod<[], [bigint], "view">;
+  getFunction(
+    nameOrSignature: "openRolesProposal"
+  ): TypedContractMethod<[arg0: AddressLike], [string], "view">;
   getFunction(
     nameOrSignature: "openRuleProposal"
   ): TypedContractMethod<[arg0: BigNumberish], [string], "view">;
@@ -1417,6 +1497,13 @@ export interface Team extends BaseContract {
     nameOrSignature: "proposeBudget"
   ): TypedContractMethod<
     [ref: BytesLike, objective: BytesLike, newBudget: BigNumberish],
+    [void],
+    "nonpayable"
+  >;
+  getFunction(
+    nameOrSignature: "proposeRoles"
+  ): TypedContractMethod<
+    [ref: BytesLike, member: AddressLike, roles: BigNumberish],
     [void],
     "nonpayable"
   >;
@@ -1537,6 +1624,13 @@ export interface Team extends BaseContract {
     MemberJoinedEvent.OutputObject
   >;
   getEvent(
+    key: "MemberLeft"
+  ): TypedContractEvent<
+    MemberLeftEvent.InputTuple,
+    MemberLeftEvent.OutputTuple,
+    MemberLeftEvent.OutputObject
+  >;
+  getEvent(
     key: "MoneyMoved"
   ): TypedContractEvent<
     MoneyMovedEvent.InputTuple,
@@ -1570,6 +1664,13 @@ export interface Team extends BaseContract {
     ReleasedEvent.InputTuple,
     ReleasedEvent.OutputTuple,
     ReleasedEvent.OutputObject
+  >;
+  getEvent(
+    key: "RolesChanged"
+  ): TypedContractEvent<
+    RolesChangedEvent.InputTuple,
+    RolesChangedEvent.OutputTuple,
+    RolesChangedEvent.OutputObject
   >;
   getEvent(
     key: "RuleChanged"
@@ -1671,6 +1772,17 @@ export interface Team extends BaseContract {
       MemberJoinedEvent.OutputObject
     >;
 
+    "MemberLeft(address,uint16)": TypedContractEvent<
+      MemberLeftEvent.InputTuple,
+      MemberLeftEvent.OutputTuple,
+      MemberLeftEvent.OutputObject
+    >;
+    MemberLeft: TypedContractEvent<
+      MemberLeftEvent.InputTuple,
+      MemberLeftEvent.OutputTuple,
+      MemberLeftEvent.OutputObject
+    >;
+
     "MoneyMoved(bytes32,address,uint256,address)": TypedContractEvent<
       MoneyMovedEvent.InputTuple,
       MoneyMovedEvent.OutputTuple,
@@ -1724,6 +1836,17 @@ export interface Team extends BaseContract {
       ReleasedEvent.InputTuple,
       ReleasedEvent.OutputTuple,
       ReleasedEvent.OutputObject
+    >;
+
+    "RolesChanged(address,uint16,uint16,bytes32)": TypedContractEvent<
+      RolesChangedEvent.InputTuple,
+      RolesChangedEvent.OutputTuple,
+      RolesChangedEvent.OutputObject
+    >;
+    RolesChanged: TypedContractEvent<
+      RolesChangedEvent.InputTuple,
+      RolesChangedEvent.OutputTuple,
+      RolesChangedEvent.OutputObject
     >;
 
     "RuleChanged(uint8,uint256,uint256,uint32,bytes32)": TypedContractEvent<

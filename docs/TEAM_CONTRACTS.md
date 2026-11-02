@@ -10,10 +10,12 @@ The app's engine (`src/lib/team/engine.ts`) runs every workflow. The contracts h
 |---|---|---|
 | `team_created` | yes | `TeamFactory.createTeam` → `TeamCreated`, `TeamInitialized` |
 | `member_joined` | yes | `Team.join` (invite signed by a member who may admit) → `MemberJoined` |
-| `change_opened` (rule / money) | yes | `proposeRule`, `proposeTransfer`, `proposeBudget` → `ProposalOpened` |
+| `change_opened` (rule / role / money) | yes | `proposeRule`, `proposeRoles`, `proposeTransfer`, `proposeBudget` → `ProposalOpened` |
 | `vote_cast` | yes | `vote` → `VoteCast` |
 | `change_passed`, `change_failed` | yes | `closeVoting` / last vote / `approve` / `decline` → `ProposalDecided` |
 | `rule_changed` | yes | applied on pass → `RuleChanged` (with the new version number) |
+| `roles_changed` | yes | applied on pass → `RolesChanged` (to 0: removed from the team) |
+| `member_left` | yes | `leave` → `MemberLeft` |
 | `money_moved` (from the team account) | yes | applied on pass or approval → `MoneyMoved` |
 | `money_moved` (a member puts TMIM in) | yes | a plain TMIM `transfer` to the team's address |
 | `budget_set` | yes | applied → `BudgetSet` |
@@ -21,7 +23,7 @@ The app's engine (`src/lib/team/engine.ts`) runs every workflow. The contracts h
 | `scheduled_paid` | yes | `payFromBudget` → `Paid` + TMIM minted |
 | `released` | yes | `release` → `Released` (content hash) |
 | `anchor` | yes | `anchor` → `Anchored` (batch root) |
-| `objective_created`, `deliverable_created`, `assigned`, `version_saved`, `review_requested`, `commented`, `reviewed`, `changes_requested`, `task_*`, `message` | no: signed | included in the next anchored batch |
+| `objective_created`, `deliverable_created`, `assigned`, `version_saved`, `review_requested`, `commented`, `reviewed`, `changes_requested`, `task_*`, `objective_lead`, `message` | no: signed | included in the next anchored batch |
 
 App ids map to `bytes32` as `keccak256(utf8(id))`: objectives, deliverables, changes (the proposal `ref`), invites, schedule payments. A version hash is the hash of the accepted version's text; a release's content hash is the hash of the released text.
 
@@ -35,7 +37,9 @@ App ids map to `bytes32` as `keccak256(utf8(id))`: objectives, deliverables, cha
 **`Team`** (one clone per team)
 - **Charter.** Up to 16 roles, each a set of permissions (bit order = `Permission` in `types.ts`: take work, review, accept and pay, release, manage the plan, propose, vote, spend, admit). Members hold roles; the founder gets the founder roles, people who join get the joiner roles. Seven rules (`RULE_ORDER`) with a version counter each.
 - **Rules change only by vote:** one member, one vote (**assumed**); passes when turnout of eligible voters ≥ `quorum_pct` and *for* > `majority_pct` of *for + against*, decided when every voter has voted or at the deadline (`vote_hours`); the proposer may close early. Same tally as `engine.ts`. Bounds: quorum 0–100, majority 50–99, voting time 1–720 hours (a 100% majority would freeze the charter); the engine enforces the same.
-- **Money:** a transfer from the team account or a new budget for an objective. Within `spend_limit` (TMIM at stake), a member who may spend and isn't the requester approves or declines; above it, a vote. A transfer passed by vote fails if the account no longer holds it; a budget can never go below what has been paid from it.
+- **Roles change by the same vote:** `proposeRoles(ref, member, roles)` gives a member a new set of roles (role bits in charter order); the empty set removes them from the team. One open role proposal per member. It applies only if the member still holds the roles they held when it was proposed (they may have left, or left and rejoined, meanwhile). Voter and member counts follow.
+- **Leaving:** `leave()` by any member. What they were paid stays in their wallet; they can join again with a new invite. Neither leaving nor a role change may leave the team without a member who can vote (`LastVoter`): no decision could ever be taken again. Votes already cast by someone who leaves stay counted, as the app's tally counts them.
+- **Money:** a transfer from the team account or a new budget for an objective. Within `spend_limit` (TMIM at stake), a member who may spend and isn't the requester approves or declines; above it, a vote. A transfer fails if the account no longer holds it or its recipient has left the team; a budget can never go below what has been paid from it.
 - **Accept and pay:** `acceptAndPay(deliverable, objective, owner, reward, reviewer, versionHash)` by a member who may accept (not the owner) mints the reward to the owner and the charter's review reward to the reviewer, against the objective's budget and within `monthly_issuance_cap`; then the factory checks the platform allowance. Once per deliverable.
 - **Scheduled pay:** `payFromBudget(ref, objective, to, amount)` by a member who may spend, once per reference.
 - **Team account** = the team contract's TMIM balance. Members put TMIM in with a plain transfer.
@@ -55,6 +59,7 @@ App ids map to `bytes32` as `keccak256(utf8(id))`: objectives, deliverables, cha
 | Budget left (budget − paid), the team's monthly cap, the platform allowance | "Committed" rewards of work in progress (the app's budget meter is stricter) |
 | One acceptance per deliverable; one payment per schedule reference | That a review happened before acceptance; that a schedule is due |
 | Votes, quorum, majority, deadlines; rule values in range | Drafts, versions, comments, tasks (signed, then anchored) |
+| Who holds which roles; leaving; never without a voter | What happens to a leaver's work: their unfinished deliverables reopen, reviews and approvals fall back to the objective's lead, their scheduled pay stops; a lead who left is replaced by `takeLead` (signed) |
 
 The approver attests to the off-chain facts by signing the acceptance; the anchored batches make the off-chain record tamper-evident.
 
@@ -84,10 +89,10 @@ Needs `deployments/<network>.json` with `TMIMToken`, and the deployer holding TM
 
 ## 7. Tests
 
-`npx hardhat test test/Team.test.ts`: 31 tests. Starting a team (roles, re-initialization, invalid charters, UTC months); joining (invite uses, expiry, revocation, forged terms, members without admit); accept and pay (owner and reviewer paid, permissions, once only, budget, team cap and month rollover, platform allowance and cap, release, scheduled pay); rule votes (pass, quorum, majority, vote changes, one open per rule, bounds); money (role approval, vote above the limit, team account in and out, insufficient account, budget floor, decline); anchors; sponsored calls through the forwarder (team created and vote cast for the signer, who pays nothing).
+`npx hardhat test test/Team.test.ts`: 38 tests. Starting a team (roles, re-initialization, invalid charters, UTC months); joining (invite uses, expiry, revocation, forged terms, members without admit); accept and pay (owner and reviewer paid, permissions, once only, budget, team cap and month rollover, platform allowance and cap, release, scheduled pay); rule votes (pass, quorum, majority, vote changes, one open per rule, bounds); money (role approval, vote above the limit, team account in and out, insufficient account, budget floor, decline); roles by vote (new roles and counts, removal and rejoining, invalid changes, one open per member, leaving, never without a voter, a change overtaken by leaving, a transfer to someone who left); anchors; sponsored calls through the forwarder (team created and vote cast for the signer, who pays nothing).
 
 ## 8. Not yet
 
-- **Role changes** (granting or removing a role by vote) and **leaving a team**: neither the engine nor the contract has them yet.
+- **Changing the roles themselves** (a new role, or what a role may do) by vote: the charter's role definitions are fixed at founding. Who holds which role changes by vote (§2).
 - **AI members** stay off-chain: they propose through change cards that people accept (`UX_REDESIGN.md` §8).
 - **External audit** before mainnet.

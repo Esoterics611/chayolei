@@ -15,6 +15,7 @@
   import ChevronDown from '@lucide/svelte/icons/chevron-down';
   import Check from '@lucide/svelte/icons/check';
   import Scale from '@lucide/svelte/icons/scale';
+  import UserCog from '@lucide/svelte/icons/user-cog';
 
   const team = $derived(store.team);
   const amendments = $derived(team.charter.rules.reduce((n, r) => n + r.history.length - 1, 0));
@@ -78,7 +79,11 @@
 </section>
 
 <section aria-labelledby="roles-h">
-  <h3 id="roles-h" class="sec">{t('decide.charter.roles')}</h3>
+  <div class="sec-row">
+    <h3 id="roles-h" class="sec">{t('decide.charter.roles')}</h3>
+    {#if canPropose}<button type="button" class="btn btn-sm btn-ghost" onclick={() => ui.openDialog({ kind: 'proposeRoles' })}><UserCog size={14} />{t('decide.proposeRoles')}</button>{/if}
+  </div>
+  <p class="muted roles-note">{t('decide.charter.rolesByVote')}</p>
   <div class="roles">
     {#each team.charter.roles as role (role.id)}
       {@const holders = team.members.filter(m => m.roleIds.includes(role.id))}
@@ -123,6 +128,9 @@
   .hby { color: var(--ink-2); }
   .hby a { color: var(--accent-text); }
   .hdate { color: var(--ink-3); font-size: var(--fs-xs); }
+  .sec-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin: var(--s6) 0 var(--s3); }
+  .sec-row .sec { margin: 0; }
+  .roles-note { font-size: var(--fs-sm); margin-block: -6px var(--s3); }
   .roles { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: var(--s4); }
   .role { padding: var(--s4); }
   .role header { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-block-end: 10px; }

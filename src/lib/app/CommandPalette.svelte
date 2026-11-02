@@ -5,13 +5,14 @@
   import { ui } from '$lib/team/ui.svelte';
   import { lt, t } from '$lib/team/i18n';
   import { go } from '$lib/team/nav';
-  import { can } from '$lib/team/rules';
+  import { activeMembers, can } from '$lib/team/rules';
   import { changeTitle, rolesOf } from './format';
   import type { IconComponent } from './describe';
   import House from '@lucide/svelte/icons/house';
   import ListTree from '@lucide/svelte/icons/list-tree';
   import PenLine from '@lucide/svelte/icons/pen-line';
   import Scale from '@lucide/svelte/icons/scale';
+  import UserCog from '@lucide/svelte/icons/user-cog';
   import Landmark from '@lucide/svelte/icons/landmark';
   import BookOpen from '@lucide/svelte/icons/book-open';
   import Wallet from '@lucide/svelte/icons/wallet';
@@ -86,6 +87,7 @@
     if (can(team, me, 'propose')) {
       out.push(
         { id: 'a-rule', group: acts, label: t('decide.proposeRule'), icon: Scale, run: () => ui.openDialog({ kind: 'proposeRule' }) },
+        { id: 'a-roles', group: acts, label: t('decide.proposeRoles'), icon: UserCog, run: () => ui.openDialog({ kind: 'proposeRoles' }) },
         { id: 'a-money', group: acts, label: t('decide.requestMoney'), icon: Coins, run: () => ui.openDialog({ kind: 'requestMoney' }) },
       );
     }
@@ -100,7 +102,7 @@
     }
     if (!store.live) {
       out.push({ id: 'a-reset', group: acts, label: t('account.reset'), icon: RotateCcw, run: () => { ui.paletteOpen = false; store.reset(); go('/'); } });
-      for (const m of team.members) {
+      for (const m of activeMembers(team)) {
         if (m.id === me) continue;
         out.push({ id: `p-act-${m.id}`, group: acts, label: t('palette.actAs', { name: lt(m.name) }), hint: rolesOf(team, m.id), icon: UserRound, run: () => { store.actAs(m.id); ui.paletteOpen = false; } });
       }
@@ -113,7 +115,7 @@
     }
     for (const c of team.changes) {
       if (c.kind === 'work') continue;
-      out.push({ id: `c-${c.id}`, group: t('palette.changes'), label: changeTitle(team, c), hint: t(`change.status.${c.status}`), icon: c.kind === 'rule' ? Scale : Coins, run: nav(`/decide/p/${c.id}`) });
+      out.push({ id: `c-${c.id}`, group: t('palette.changes'), label: changeTitle(team, c), hint: t(`change.status.${c.status}`), icon: c.kind === 'rule' ? Scale : c.kind === 'role' ? UserCog : Coins, run: nav(`/decide/p/${c.id}`) });
     }
     for (const m of team.members) {
       out.push({ id: `m-${m.id}`, group: t('palette.people'), label: lt(m.name), hint: rolesOf(team, m.id), icon: UserRound, run: nav('/decide/members') });

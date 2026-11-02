@@ -25,6 +25,9 @@ interface ITeamHost {
  *  - Charter: roles as permission sets, members holding roles, seven rules.
  *  - Rules change only by a vote of the members, one member one vote, under
  *    the quorum and majority the charter sets.
+ *  - Who holds which roles changes by the same vote; a change to no roles
+ *    removes a member. Any member may leave. Neither may leave the team
+ *    without a member who can vote.
  *  - Money changes (a transfer from the team account, or an objective's
  *    budget) are approved by a member who may spend when the TMIM at stake is
  *    within the spend limit, and go to a vote above it.
@@ -68,7 +71,7 @@ contract Team is ERC2771Context, EIP712, Initializable {
     uint32 public constant MAX_MEMBERS = 500;
     uint256 public constant MAX_VOTE_HOURS = 24 * 30;
 
-    enum Kind { Rule, Transfer, Budget }
+    enum Kind { Rule, Transfer, Budget, Roles }
     enum Status { None, Open, Passed, Failed, Approved, Declined }
     enum Choice { None, For, Against, Abstain }
 
@@ -91,9 +94,10 @@ contract Team is ERC2771Context, EIP712, Initializable {
         uint64 openedAt;
         uint64 closesAt;      // byVote only
         address proposer;
-        address to;           // Kind.Transfer: the member paid
+        address to;           // Kind.Transfer: the member paid; Kind.Roles: the member
+        uint16 fromRoles;     // Kind.Roles: their roles when proposed; it applies only if unchanged
         bytes32 objective;    // Kind.Budget: the objective
-        uint256 value;        // new rule value, transfer amount, or new budget
+        uint256 value;        // new rule value, transfer amount, new budget, or new role bits
         uint256 stake;        // TMIM at stake: the transfer, or the budget change
     }
 
@@ -123,6 +127,7 @@ contract Team is ERC2771Context, EIP712, Initializable {
     mapping(bytes32 => Proposal) private _proposals;
     mapping(bytes32 => mapping(address => Choice)) public voteOf;
     mapping(uint8 => bytes32) public openRuleProposal;
+    mapping(address => bytes32) public openRolesProposal;
 
     mapping(bytes32 => uint32) public inviteUses;
     mapping(bytes32 => bool) public inviteRevoked;
@@ -132,6 +137,8 @@ contract Team is ERC2771Context, EIP712, Initializable {
     // ── Events ──────────────────────────────────────────────────────────
     event TeamInitialized(address indexed founder, bytes32 profileHash, uint16 founderRoles, uint16 joinerRoles);
     event MemberJoined(address indexed member, uint16 roles, bytes32 indexed inviteId, address indexed inviter);
+    event MemberLeft(address indexed member, uint16 roles);
+    event RolesChanged(address indexed member, uint16 from, uint16 to, bytes32 indexed ref);
     event InviteRevoked(bytes32 indexed inviteId, address indexed by);
     event ProposalOpened(
         bytes32 indexed ref, Kind kind, address indexed proposer, bool byVote, uint64 closesAt,
@@ -159,6 +166,8 @@ contract Team is ERC2771Context, EIP712, Initializable {
     error UnknownProposal();
     error ProposalExists();
     error RuleProposalOpen();
+    error RolesProposalOpen();
+    error LastVoter();
     error NotOpen();
     error VotingClosed();
     error NotByVote();
@@ -220,12 +229,8 @@ contract Team is ERC2771Context, EIP712, Initializable {
         return _rolePermissions;
     }
 
-    function permissionsOf(address account) public view returns (uint16 perms) {
-        uint16 roles = rolesOf[account];
-        for (uint256 i; roles != 0; ++i) {
-            if (roles & 1 != 0) perms |= _rolePermissions[i];
-            roles >>= 1;
-        }
+    function permissionsOf(address account) public view returns (uint16) {
+        return _permissionsFor(rolesOf[account]);
     }
 
     function can(address account, uint16 permission) public view returns (bool) {
@@ -277,6 +282,20 @@ contract Team is ERC2771Context, EIP712, Initializable {
         _require(ADMIT);
         inviteRevoked[id] = true;
         emit InviteRevoked(id, _msgSender());
+    }
+
+    /**
+     * @notice Leave the team. What you were paid stays yours; you can join
+     *         again with a new invite. The last member who can vote can't
+     *         leave: no decision could ever be taken again.
+     */
+    function leave() external {
+        address account = _msgSender();
+        uint16 roles = rolesOf[account];
+        if (roles == 0) revert NotMember(account);
+        if (_leavesNoVoter(account, 0)) revert LastVoter();
+        _setRoles(account, 0);
+        emit MemberLeft(account, roles);
     }
 
     // ── Work: accept and pay, release ───────────────────────────────────
@@ -353,6 +372,26 @@ contract Team is ERC2771Context, EIP712, Initializable {
         emit ProposalOpened(ref, Kind.Rule, proposer, true, p.closesAt, key, address(0), bytes32(0), value, 0);
     }
 
+    /**
+     * @notice Propose new roles for a member, decided by vote like a rule.
+     *         No roles (0) removes them from the team.
+     * @param roles  Role bits in charter order
+     */
+    function proposeRoles(bytes32 ref, address member, uint16 roles) external {
+        address proposer = _require(PROPOSE);
+        uint16 current = rolesOf[member];
+        if (current == 0) revert NotMember(member);
+        if (roles == current || roles & ~_roleMask() != 0) revert InvalidValue();
+        if (_proposals[openRolesProposal[member]].status == Status.Open) revert RolesProposalOpen();
+        if (_leavesNoVoter(member, roles)) revert LastVoter();
+        Proposal storage p = _open(ref, Kind.Roles, proposer, true);
+        p.to = member;
+        p.fromRoles = current;
+        p.value = roles;
+        openRolesProposal[member] = ref;
+        emit ProposalOpened(ref, Kind.Roles, proposer, true, p.closesAt, 0, member, bytes32(0), roles, 0);
+    }
+
     /// @notice Request a transfer from the team account to a member.
     function proposeTransfer(bytes32 ref, address to, uint256 amount) external {
         address proposer = _require(PROPOSE);
@@ -384,6 +423,7 @@ contract Team is ERC2771Context, EIP712, Initializable {
         Proposal storage p = _openProposal(ref);
         if (p.byVote) revert ByVote();
         if (p.proposer == approver) revert SelfApproval();
+        if (p.kind == Kind.Transfer && rolesOf[p.to] == 0) revert NotMember(p.to);
         if (p.kind == Kind.Transfer && p.value > teamAccount()) revert InsufficientAccount(teamAccount(), p.value);
         if (p.kind == Kind.Budget && p.value < paidFrom[p.objective]) revert InvalidValue();
         p.status = Status.Approved;
@@ -456,6 +496,32 @@ contract Team is ERC2771Context, EIP712, Initializable {
         if (can(account, VOTE)) voterCount++;
     }
 
+    /// Give a member new roles, keeping the member and voter counts; 0 removes them.
+    function _setRoles(address account, uint16 roles) private {
+        bool wasVoter = can(account, VOTE);
+        rolesOf[account] = roles;
+        bool isVoter = _permissionsFor(roles) & VOTE != 0;
+        if (wasVoter && !isVoter) voterCount--;
+        else if (!wasVoter && isVoter) voterCount++;
+        if (roles == 0) memberCount--;
+    }
+
+    /// Whether giving `account` these roles would leave no member who can vote.
+    function _leavesNoVoter(address account, uint16 roles) private view returns (bool) {
+        return voterCount == 1 && can(account, VOTE) && _permissionsFor(roles) & VOTE == 0;
+    }
+
+    function _permissionsFor(uint16 roles) private view returns (uint16 perms) {
+        for (uint256 i; roles != 0; ++i) {
+            if (roles & 1 != 0) perms |= _rolePermissions[i];
+            roles >>= 1;
+        }
+    }
+
+    function _roleMask() private view returns (uint16) {
+        return uint16((uint256(1) << _rolePermissions.length) - 1);
+    }
+
     function _validRule(uint8 key, uint256 value) private pure returns (bool) {
         if (key == QUORUM_PCT) return value <= 100;
         // A majority of 100% could never be exceeded, and would freeze the charter.
@@ -502,11 +568,16 @@ contract Team is ERC2771Context, EIP712, Initializable {
             && decisive != 0
             && uint256(p.forVotes) * 100 > _rules[MAJORITY_PCT] * decisive;
         // Passed by vote but no longer possible: more than the team account
-        // holds, or a budget below what has been paid from it since.
-        if (passing && p.kind == Kind.Transfer && p.value > teamAccount()) passing = false;
+        // holds or to someone who has left, a budget below what has been paid
+        // from it since, or roles for a member whose roles changed meanwhile
+        // (they left, or rejoined) or that would leave no one to vote.
+        if (passing && p.kind == Kind.Transfer && (p.value > teamAccount() || rolesOf[p.to] == 0)) passing = false;
         if (passing && p.kind == Kind.Budget && p.value < paidFrom[p.objective]) passing = false;
+        if (passing && p.kind == Kind.Roles
+            && (rolesOf[p.to] != p.fromRoles || _leavesNoVoter(p.to, uint16(p.value)))) passing = false;
         p.status = passing ? Status.Passed : Status.Failed;
         if (p.kind == Kind.Rule) delete openRuleProposal[p.rule];
+        if (p.kind == Kind.Roles) delete openRolesProposal[p.to];
         emit ProposalDecided(ref, p.status, p.forVotes, p.against, p.abstain, eligible);
         if (passing) _apply(ref, p, address(0));
     }
@@ -521,6 +592,10 @@ contract Team is ERC2771Context, EIP712, Initializable {
             uint256 from = budgetOf[p.objective];
             budgetOf[p.objective] = p.value;
             emit BudgetSet(p.objective, from, p.value, ref);
+        } else if (p.kind == Kind.Roles) {
+            uint16 to = uint16(p.value);
+            _setRoles(p.to, to);
+            emit RolesChanged(p.to, p.fromRoles, to, ref);  // to 0: removed from the team
         } else {
             emit MoneyMoved(ref, p.to, p.value, approver);
             if (!host.tmim().transfer(p.to, p.value)) revert InsufficientAccount(teamAccount(), p.value);

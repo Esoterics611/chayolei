@@ -1,9 +1,9 @@
 <script lang="ts">
-  // Open proposals: rule changes and money requests waiting for a decision.
-  import type { MoneyChange, RuleChange } from '$lib/team/types';
+  // Open proposals: rule and role changes and money requests waiting for a decision.
+  import type { CharterChange } from '$lib/team/types';
   import { store } from '$lib/team/store.svelte';
   import * as E from '$lib/team/engine';
-  import { can, ruleValue, voters } from '$lib/team/rules';
+  import { activeMembers, can, ruleValue, voters } from '$lib/team/rules';
   import { lt, t, fmtRelative, fmtTmim } from '$lib/team/i18n';
   import { href } from '$lib/team/nav';
   import ChangeCard from '$lib/ui/ChangeCard.svelte';
@@ -20,17 +20,17 @@
   const now = $derived(store.now);
   const canVote = $derived(voters(team).some(m => m.id === me));
   const canSpend = $derived(can(team, me, 'spend'));
-  const open = $derived(team.changes.filter((c): c is RuleChange | MoneyChange => c.kind !== 'work' && c.status === 'open').sort((a, b) => b.at.localeCompare(a.at)));
+  const open = $derived(team.changes.filter((c): c is CharterChange => c.kind !== 'work' && c.status === 'open').sort((a, b) => b.at.localeCompare(a.at)));
 </script>
 
 <svelte:head><title>{t('decide.title')} · {lt(team.name)}</title></svelte:head>
 
-<DecideHeader subtitle={t('decide.membersCount', { n: team.members.filter(m => !m.ai).length })} />
+<DecideHeader subtitle={t('decide.membersCount', { n: activeMembers(team).filter(m => !m.ai).length })} />
 
 {#if open.length}
   <div class="cards">
     {#each open as c (c.id)}
-      {@const byVote = c.kind === 'rule' || c.decidedBy === 'vote'}
+      {@const byVote = c.kind !== 'money' || c.decidedBy === 'vote'}
       {@const tl = byVote ? E.tally(team, c) : undefined}
       {@const myVote = c.votes.find(v => v.memberId === me)}
       <ChangeCard
