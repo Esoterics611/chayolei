@@ -78,8 +78,10 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm install -g playwright@1.63.0 && npx -y playwright@1.63.0 install --with-deps chromium
-      # The demo: a vote, an acceptance, the rule-range check, Hebrew, and
-      # the first screen's size against the budget.
+      # The demo: a vote, an acceptance, the AI helpers, a role change,
+      # leaving, the rule-range check, Hebrew, and the first screen's size.
       - run: NODE_PATH=$(npm root -g) bash scripts/e2e/run-demo.sh
       # axe-core on every screen, both languages, both themes, desktop and phone.
       - run: NODE_PATH=$(npm root -g) bash scripts/e2e/run-a11y.sh
+      # The push service worker shows a delivered message as a notification.
+      - run: NODE_PATH=$(npm root -g) bash scripts/e2e/run-push-sw.sh
