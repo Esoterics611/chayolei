@@ -816,6 +816,10 @@ const en: Dict = {
   'plan.leadTaken': 'You lead this objective now',
   'entry.chain_noted': 'Something done on the team’s contract outside the app couldn’t be matched to the team’s records ({event} from {from}…)',
   'ledger.viaChain': 'Done on the team’s contract outside the app; recorded from the chain.',
+  'err.limit.teams': 'You’ve started {n} teams today. Please try again tomorrow.',
+  'err.limit.teamsPlatform': 'Many teams were started today. Please try again tomorrow.',
+  'err.limit.invites': 'This team has made {n} invite links today. Please try again tomorrow, or share one you made.',
+  'err.limit.joins': 'This team has admitted {n} people today. Please try again tomorrow.',
 };
 
 const he: Dict = {
@@ -1605,6 +1609,10 @@ const he: Dict = {
   'plan.leadTaken': 'עכשיו את/ה מוביל/ה את היעד הזה',
   'entry.chain_noted': 'פעולה בחוזה של החבורה, מחוץ לאפליקציה, לא הותאמה לרישומי החבורה ({event} מ־{from}…)',
   'ledger.viaChain': 'נעשה בחוזה של החבורה מחוץ לאפליקציה; נרשם מהשרשרת.',
+  'err.limit.teams': 'פתחת היום {n} חבורות. אפשר לנסות שוב מחר.',
+  'err.limit.teamsPlatform': 'היום נפתחו הרבה חבורות. אפשר לנסות שוב מחר.',
+  'err.limit.invites': 'החבורה יצרה היום {n} קישורי הזמנה. אפשר לנסות שוב מחר, או לשתף קישור שכבר נוצר.',
+  'err.limit.joins': 'לחבורה הצטרפו היום {n} אנשים. אפשר לנסות שוב מחר.',
 };
 
 export const DICTS: Record<Locale, Dict> = { en, he };

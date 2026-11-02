@@ -31,6 +31,7 @@ import { anchorBatch, createdTeam, getChain, inviteSigner, prepareRequest, relay
 import type { Chain, Proof, Signed } from '$lib/server/team-chain';
 import { Contract } from 'ethers';
 import { isRecorded, reconcileTx } from '$lib/team/reconcile';
+import { checkLimit, spendLimit } from '$lib/server/rate-limit';
 import type { ChainTx } from '$lib/team/reconcile';
 
 const teams = () => adminDb.collection('teams');
@@ -211,6 +212,8 @@ const createCall = (c: Chain, v: ReturnType<typeof teamInput>) =>
 
 /** With a chain configured, a new team is created on-chain: the founder signs this first. */
 export async function prepareTeam(uid: string, input: { name?: unknown; purpose?: unknown; templateId?: unknown; you?: unknown }) {
+  await checkLimit('teams', uid);
+  await checkLimit('teamsPlatform', 'all');
   const c = await getChain();
   if (!c) return { onChain: false as const };
   return { onChain: true as const, ...(await prepareRequest(c, walletOf(uid), createCall(c, teamInput(input)))) };
@@ -223,6 +226,9 @@ export async function createTeamFor(
   signed?: Signed,
 ): Promise<Team> {
   const v = teamInput(input);
+  // Each new team costs the platform a transaction: a few a day per account, and a cap for everyone.
+  await spendLimit('teams', uid);
+  await spendLimit('teamsPlatform', 'all');
   const c = await getChain();
   let chain: Team['chain'];
   let proof: Proof | undefined;
@@ -344,6 +350,7 @@ async function admitter(teamId: string, uid: string): Promise<Team> {
 /** For an on-chain team, the inviter signs the invite: Team.join checks it. */
 export async function prepareInvite(teamId: string, uid: string) {
   const team = await admitter(teamId, uid);
+  await checkLimit('invites', teamId);
   if (!team.chain) return { onChain: false as const };
   const c = await chainFor(team);
   const token = randomBytes(18).toString('base64url');
@@ -357,6 +364,7 @@ export async function createInvite(
   body: { token?: unknown; invite?: { id?: unknown; maxUses?: unknown; expiresAt?: unknown }; signature?: unknown } = {},
 ): Promise<{ token: string; expiresAt: string }> {
   const team = await admitter(teamId, uid);
+  await spendLimit('invites', teamId);
   const now = new Date();
   let token = randomBytes(18).toString('base64url');
   let expiresAt = new Date(now.getTime() + INVITE_DAYS * 86_400_000);
@@ -428,6 +436,7 @@ export async function prepareJoin(token: string, uid: string) {
   const team = await loadTeam(inv.teamId);
   if (!team.chain || activeMember(team, uid)) return { onChain: false as const };
   if (!usable(inv, new Date().toISOString())) throw new DomainError('err.invite_invalid');
+  await checkLimit('joins', inv.teamId);
   const c = await chainFor(team);
   return { onChain: true as const, ...(await prepareRequest(c, walletOf(uid), joinCall(team, inv))) };
 }
@@ -451,7 +460,10 @@ export async function acceptInvite(token: string, uid: string, input: unknown, s
     return viewFor(team, uid);
   };
   const core = await teams().doc(first.teamId).get();
-  if (!(core.data() as TeamCore | undefined)?.chain) return join();
+  const coreData = core.data() as TeamCore | undefined;
+  // Joining is counted per team per day: someone already in just opens the team.
+  if (coreData && !coreData.memberUids.includes(uid) && usable(first, new Date().toISOString())) await spendLimit('joins', first.teamId);
+  if (!coreData?.chain) return join();
   return withTeamLock(first.teamId, async () => {
     const team = await loadTeam(first.teamId);
     if (activeMember(team, uid)) return viewFor(team, uid);

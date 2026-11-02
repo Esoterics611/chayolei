@@ -37,6 +37,7 @@ A member's id **is** their sign-in uid (`wallet_<address>`), so the access rules
 - **Refusals** come back as `422 { error: { key, vars } }` (403 for non-members, 404 for unknown teams and dead invites); the browser shows the message key in the member's language.
 - **What a member receives:** the team with other members' drafts removed (`viewFor`).
 - **Only people on the team act:** `requireMember` refuses someone who has left (403), whatever their old roles.
+- **Rate limits** (`rate-limit.ts`) on what costs the platform, per UTC day: teams started per account (3) and for the whole platform (200), invite links per team (20), people admitted per team (50; opening a link again doesn't count). Checked when preparing, so nobody signs only to be refused, and counted when acting; refused with 429 and a message saying when to try again. Set with `TEAM_STARTS_PER_ACCOUNT_DAY`, `TEAM_STARTS_PLATFORM_DAY`, `TEAM_INVITES_PER_TEAM_DAY`, `TEAM_JOINS_PER_TEAM_DAY`.
 
 | Endpoint | Does |
 |---|---|
@@ -124,4 +125,4 @@ Local live app: start the emulators (`npx firebase emulators:start --only firest
 - **Size:** each action reads the whole team. Comfortable for a small team's first years (thousands of entries); later, keep running balances on the core and read only recent entries. The core document (changes with their comments) stays far below Firestore's 1 MB for small teams; very long comment threads would move to a subcollection.
 - **One relayer per server instance:** the relayer counts its own nonces in memory, so run one instance per relayer key (or one relayer service).
 - **Reconciliation** (§6b) needs a long-running server instance, as the classic governance listener does; on a serverless deploy, call `reconcileTeams()` from a scheduled job instead.
-- **Not yet:** passkey sign-in and sponsored fees for contributions (members' own transfers pay their fee), push notifications, rate limits on starting teams and on invites, and moving the classic app's campaigns and assignments into teams (new teams start fresh).
+- **Not yet:** passkey sign-in and sponsored fees for contributions (members' own transfers pay their fee), push notifications, and moving the classic app's campaigns and assignments into teams (new teams start fresh).

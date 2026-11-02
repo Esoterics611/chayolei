@@ -1,7 +1,8 @@
 // Runs against the Firestore emulator: `npm test` starts it, runs vitest, stops it.
 import { beforeEach, describe, expect, it } from 'vitest';
 import { adminDb } from '$lib/server/firebase-admin';
-import { acceptInvite, createInvite, createTeamFor, inviteInfo, runTeamCommand } from './teams';
+import { acceptInvite, createInvite, createTeamFor, inviteInfo, prepareTeam, runTeamCommand } from './teams';
+import { RATE } from './rate-limit';
 import type { Command } from '$lib/team/commands';
 import { DomainError } from '$lib/team/types';
 import type { Team } from '$lib/team/types';
@@ -155,6 +156,34 @@ describe('teams in Firestore', () => {
     core = (await adminDb.collection('teams').doc(team.id).get()).data()!;
     expect(core.memberUids).toContain(LEVI);
     expect(back.ledger.slice(-1)[0]).toMatchObject({ kind: 'member_joined', actorId: LEVI });
+  });
+
+  it('limits new teams per account and for the platform, invite links and joins per team, per day', async () => {
+    const saved = { ...RATE };
+    try {
+      Object.assign(RATE, { teamsPerAccount: 2, teamsPlatform: 3, invitesPerTeam: 2, joinsPerTeam: 1 });
+      const start = (uid: string) => createTeamFor(uid, { name: 'T', purpose: '', templateId: 'blank', you: { name: 'A' } });
+      const team = await start(LEAD);
+      await start(LEAD);
+      expect(await errKey(prepareTeam(LEAD, {}))).toBe('err.limit.teams');
+      expect(await errKey(start(LEAD))).toBe('err.limit.teams');
+      await start(LEVI);
+      expect(await errKey(start(SHMUEL))).toBe('err.limit.teamsPlatform');
+
+      const { token } = await createInvite(team.id, LEAD);
+      await createInvite(team.id, LEAD);
+      expect(await errKey(createInvite(team.id, LEAD))).toBe('err.limit.invites');
+      await acceptInvite(token, SHMUEL, { name: 'Shmuel' });
+      // Opening the link again is free; someone new is over today's joins.
+      await acceptInvite(token, SHMUEL, { name: 'Shmuel' });
+      expect(await errKey(acceptInvite(token, STRANGER, { name: 'S' }))).toBe('err.limit.joins');
+      // Tomorrow is a new day.
+      const day = adminDb.collection('rateLimits').doc(`joins:${team.id}`);
+      await day.update({ day: '2000-01-01' });
+      await acceptInvite(token, STRANGER, { name: 'S' });
+    } finally {
+      Object.assign(RATE, saved);
+    }
   });
 
   it('admits people through an invite link made by a member who may admit', async () => {
