@@ -90,6 +90,18 @@ The planner suggests how to break an objective into deliverables and tasks (`UX_
 
 **Configuration:** `ANTHROPIC_API_KEY` (a secret; without it the planner answers *isn't set up on this server*, 503) and optionally `TEAM_AI_MODEL`. Refusals map to keys the UI explains: `err.ai.unavailable` (503), `err.ai.busy` and `err.ai.limit` (429), `err.ai.failed` (502), `err.ai.declined` (422). The demo calls no AI: it shows a fixed sample breakdown, labelled as one.
 
+## 6b. Reconciliation: actions taken on the contract directly
+
+Members can call their team's contract without the app: a block explorer, their own wallet. The chain is authoritative for the settled tier, so a poller in the server process (`src/lib/server/team-reconciler.ts`, started in `hooks.server.ts` like the classic governance listener) reads every on-chain team's events, and TMIM transfers into teams, from a checkpoint (`system/teamReconciler.lastBlock`; first start: `TEAM_START_BLOCK`), and records each transaction the team's ledger doesn't hold yet (`src/lib/team/reconcile.ts`):
+
+- **Already recorded** (its hash is a ledger proof): skipped, so replaying a range is harmless. The app's own actions are recorded by the app, with what it knows about them: the poller waits `TEAM_RECONCILE_DELAY_SECONDS` (120) after a block, and works under the team's lock.
+- **Through the engine** as the member who sent it (through the forwarder too): votes, closes, approvals and declines, leaving, joining (the app then knows only the address), releases, acceptances.
+- **As the contract recorded it** where the engine disagrees: the decision the contract took (`settleDecision`, without tallying again), an acceptance the app thought premature (paid as the event says), scheduled pay, a proposal opened on the contract (added under a new id that keeps its contract ref, so later votes through the app reach the same proposal).
+- **TMIM sent to the team's address** by anyone: into the team account; a member's counts as their contribution. If the member then records the same transfer in the app, it counts once.
+- **Anything it can't match** gets a `chain_noted` entry, so the team sees it.
+
+Entries recorded this way carry `data.via = 'chain'`; the ledger says *Done on the team's contract outside the app*. Tested in `reconcile.test.ts` and on a local chain (`team-chain.test.ts`: a vote and a transfer sent straight to the contract).
+
 ## 7. Running it
 
 ```bash
@@ -111,5 +123,5 @@ Local live app: start the emulators (`npx firebase emulators:start --only firest
 
 - **Size:** each action reads the whole team. Comfortable for a small team's first years (thousands of entries); later, keep running balances on the core and read only recent entries. The core document (changes with their comments) stays far below Firestore's 1 MB for small teams; very long comment threads would move to a subcollection.
 - **One relayer per server instance:** the relayer counts its own nonces in memory, so run one instance per relayer key (or one relayer service).
-- **Reconciliation:** the app records what happens through it. A call made straight to a team's contract (not through the app) lands on-chain but not in the ledger; a listener that reconciles the two is still to come.
+- **Reconciliation** (§6b) needs a long-running server instance, as the classic governance listener does; on a serverless deploy, call `reconcileTeams()` from a scheduled job instead.
 - **Not yet:** passkey sign-in and sponsored fees for contributions (members' own transfers pay their fee), push notifications, rate limits on starting teams and on invites, and moving the classic app's campaigns and assignments into teams (new teams start fresh).

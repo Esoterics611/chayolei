@@ -620,9 +620,10 @@ function roleChangeImpossible(team: Team, c: RoleChange): string | undefined {
 
 function apply(team: Team, c: CharterChange, now: string): void {
   if (c.kind === 'role') {
-    const m = activeMember(team, c.memberId)!;
-    if (c.to.length) m.roleIds = [...c.to];
-    else depart(team, m, now);
+    const m = member(team, c.memberId);
+    if (!m) return;
+    if (c.to.length) { m.roleIds = [...c.to]; delete m.leftAt; }
+    else if (!m.leftAt) depart(team, m, now);
     appendEntry(team, {
       kind: 'roles_changed', at: now, actorId: c.proposerId, refs: { changeId: c.id, memberId: m.id },
       data: { from: c.from.join(','), to: c.to.join(',') },
@@ -649,6 +650,39 @@ function apply(team: Team, c: CharterChange, now: string): void {
     o.budget = a.to;
     appendEntry(team, { kind: 'budget_set', at: now, actorId: c.approvedBy ?? c.proposerId, refs: { changeId: c.id, objectiveId: o.id }, data: { from, to: a.to } });
   }
+}
+
+/**
+ * Record a decision the team's contract took that the app didn't see happen
+ * (someone called the contract directly; reconcile.ts). The chain is
+ * authoritative for settled outcomes, so this applies the outcome and its
+ * consequences without tallying again.
+ */
+export function settleDecision(
+  team: Team, changeId: string, outcome: 'passed' | 'failed' | 'approved' | 'declined',
+  actorId: string | undefined, counts: { forPct?: number; turnout?: number }, now: string,
+): void {
+  const c = change(team, changeId);
+  if (c.kind === 'work' || c.status !== 'open') return;
+  c.decidedAt = now;
+  const data = { ...(counts.forPct !== undefined ? { forPct: counts.forPct } : {}), ...(counts.turnout !== undefined ? { turnout: counts.turnout } : {}) };
+  if (outcome === 'failed' || outcome === 'declined') {
+    c.status = 'failed';
+    if (outcome === 'declined' && c.kind === 'money') c.approvedBy = actorId;
+    appendEntry(team, {
+      kind: 'change_failed', at: now, actorId: outcome === 'declined' && actorId ? actorId : c.proposerId, refs: { changeId: c.id },
+      data: outcome === 'declined' ? { reason: 'declined' } : data,
+    });
+    return;
+  }
+  if (outcome === 'approved' && c.kind === 'money') {
+    c.status = 'accepted';
+    c.approvedBy = actorId;
+  } else {
+    c.status = 'passed';
+    appendEntry(team, { kind: 'change_passed', at: now, actorId: c.proposerId, refs: { changeId: c.id }, data });
+  }
+  apply(team, c, now);
 }
 
 /** A money change within the spend limit, approved by a member who may spend (not the requester). */

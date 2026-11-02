@@ -814,6 +814,8 @@ const en: Dict = {
   'plan.takeLeadLine': 'You become the lead of “{objective}”',
   'plan.takeLeadApprove': 'You approve its deliverables that name no other approver',
   'plan.leadTaken': 'You lead this objective now',
+  'entry.chain_noted': 'Something done on the team’s contract outside the app couldn’t be matched to the team’s records ({event} from {from}…)',
+  'ledger.viaChain': 'Done on the team’s contract outside the app; recorded from the chain.',
 };
 
 const he: Dict = {
@@ -1601,6 +1603,8 @@ const he: Dict = {
   'plan.takeLeadLine': 'את/ה נעשה/ית המוביל/ה של „{objective}”',
   'plan.takeLeadApprove': 'את/ה מאשר/ת את התוצרים בו שלא נקבע להם מאשר/ת אחר/ת',
   'plan.leadTaken': 'עכשיו את/ה מוביל/ה את היעד הזה',
+  'entry.chain_noted': 'פעולה בחוזה של החבורה, מחוץ לאפליקציה, לא הותאמה לרישומי החבורה ({event} מ־{from}…)',
+  'ledger.viaChain': 'נעשה בחוזה של החבורה מחוץ לאפליקציה; נרשם מהשרשרת.',
 };
 
 export const DICTS: Record<Locale, Dict> = { en, he };

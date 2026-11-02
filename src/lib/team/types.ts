@@ -191,6 +191,8 @@ export interface RuleChange {
   at: string;
   closesAt: string;
   decidedAt?: string;
+  /** Opened on the team's contract directly, not through the app: its ref there. */
+  chainRef?: string;
 }
 
 export type MoneyAction =
@@ -214,6 +216,8 @@ export interface MoneyChange {
   closesAt?: string;
   decidedAt?: string;
   approvedBy?: string;
+  /** Opened on the team's contract directly, not through the app: its ref there. */
+  chainRef?: string;
 }
 
 /** New roles for a member, decided by vote like a rule. No roles: they are removed from the team. */
@@ -232,6 +236,8 @@ export interface RoleChange {
   at: string;
   closesAt: string;
   decidedAt?: string;
+  /** Opened on the team's contract directly, not through the app: its ref there. */
+  chainRef?: string;
 }
 
 export type Change = WorkChange | RuleChange | MoneyChange | RoleChange;
@@ -274,6 +280,7 @@ export type EntryKind =
   | 'roles_changed'
   | 'member_left'
   | 'objective_lead'
+  | 'chain_noted'
   | 'anchor';
 
 export type Tier = 'settled' | 'signed';

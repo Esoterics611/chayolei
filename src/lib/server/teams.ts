@@ -30,6 +30,8 @@ import { FACTORY, SETTLED_COMMANDS, TEAM, batchRoot, callFor, charterConfig, idH
 import { anchorBatch, createdTeam, getChain, inviteSigner, prepareRequest, relay, verifyTransfer } from '$lib/server/team-chain';
 import type { Chain, Proof, Signed } from '$lib/server/team-chain';
 import { Contract } from 'ethers';
+import { isRecorded, reconcileTx } from '$lib/team/reconcile';
+import type { ChainTx } from '$lib/team/reconcile';
 
 const teams = () => adminDb.collection('teams');
 const invites = () => adminDb.collection('teamInvites');
@@ -263,6 +265,11 @@ export async function runTeamCommand(teamId: string, uid: string, cmd: Command, 
       proof = (await relay(c, signed, { from: walletOf(uid), ...callFor(team, cmd) })).proof;
     } else if (cmd.type === 'contribute') {
       const c = await chainFor(team);
+      // Already recorded from the chain (the reconciler saw the transfer first): nothing more to do.
+      if (cmd.txHash && isRecorded(team, cmd.txHash)
+        && team.ledger.some(e => e.actorId === uid && e.data?.via === 'chain' && e.proof.tx?.toLowerCase() === cmd.txHash!.toLowerCase())) {
+        return { result: {}, team: viewFor(team, uid) };
+      }
       dryRun(team, uid, cmd);
       if (!cmd.txHash) throw new DomainError('err.chain.transfer');
       proof = await verifyTransfer(c, cmd.txHash, walletOf(uid), team.chain!.address, cmd.amount);
@@ -282,6 +289,30 @@ export async function runTeamCommand(teamId: string, uid: string, cmd: Command, 
     });
     await anchorPending(teamId).catch(e => console.error('[teams] anchoring failed; will retry', e));
     return { result: value, team: viewFor(after, uid) };
+  });
+}
+
+/**
+ * Record transactions from a team's contract that its ledger doesn't hold
+ * (team-reconciler.ts), under the team's lock: an action the app is relaying
+ * right now is recorded by the app, with its proof, before this looks.
+ */
+export async function recordFromChain(teamId: string, txs: ChainTx[]): Promise<{ recorded: number; noted: number }> {
+  return withTeamLock(teamId, async () => {
+    const { value } = await mutate(teamId, async (team, _now, tx) => {
+      let recorded = 0, noted = 0;
+      for (const t of txs) {
+        const outcome = reconcileTx(team, t);
+        if (outcome === 'recorded') recorded++;
+        if (outcome === 'noted') noted++;
+        // A transfer recorded here counts once, as the app's own contributions do.
+        if (outcome !== 'known' && t.events.some(e => e.name === 'Transfer')) {
+          tx.set(teams().doc(teamId).collection('chainTxs').doc(t.hash.toLowerCase()), { by: 'chain', at: t.at });
+        }
+      }
+      return { recorded, noted };
+    });
+    return value;
   });
 }
 

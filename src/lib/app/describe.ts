@@ -38,6 +38,7 @@ import UserCog from '@lucide/svelte/icons/user-cog';
 import UserMinus from '@lucide/svelte/icons/user-minus';
 import LogOut from '@lucide/svelte/icons/log-out';
 import Flag from '@lucide/svelte/icons/flag';
+import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
 
 export type LedgerFilter = 'all' | 'money' | 'decisions' | 'work' | 'rules' | 'people';
 export const LEDGER_FILTERS: LedgerFilter[] = ['all', 'money', 'decisions', 'work', 'rules', 'people'];
@@ -158,6 +159,8 @@ export function describe(team: Team, e: LedgerEntry): Described {
       return { text: t('entry.member_left', { actor }), icon: LogOut, groups: group('people'), href: href('/decide/members') };
     case 'objective_lead':
       return { text: t('entry.objective_lead', { actor, objective }), icon: Flag, groups: group('work', 'people'), href: href(`/plan/${e.refs.objectiveId}`) };
+    case 'chain_noted':
+      return { text: t('entry.chain_noted', { event: String(d.event ?? ''), from: String(d.from ?? '').slice(0, 10) }), icon: TriangleAlert, groups: group('decisions') };
     case 'anchor':
       return { text: t('entry.anchor', { batch: d.batch }), icon: Anchor, groups: group() };
   }

@@ -2,11 +2,12 @@
 // Hardhat node, deploys the contracts and sets the environment) and the
 // Firestore emulator. Skipped when no chain is configured.
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { Contract, JsonRpcProvider, Wallet } from 'ethers';
+import { Contract, JsonRpcProvider, NonceManager, Wallet } from 'ethers';
 import {
-  acceptInvite, createInvite, createTeamFor, prepareCommand, prepareInvite, prepareJoin, prepareTeam, runTeamCommand,
+  acceptInvite, createInvite, createTeamFor, loadTeam, prepareCommand, prepareInvite, prepareJoin, prepareTeam, runTeamCommand,
 } from './teams';
 import { resetChain } from './team-chain';
+import { reconcileTeams } from './team-reconciler';
 import type { Signed } from './team-chain';
 import { TEAM, TMIM, idHash } from '$lib/team/chain';
 import type { Command } from '$lib/team/commands';
@@ -20,6 +21,8 @@ const enabled = !!(RPC && process.env.TEAM_FACTORY_ADDRESS && process.env.FIREST
 // Hardhat's well-known development accounts #2 and #3.
 const founder = new Wallet('0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a');
 const levi = new Wallet('0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6');
+// Account #0 deploys TMIM locally and may mint it.
+const deployer = new Wallet('0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80');
 const uid = (w: Wallet) => `wallet_${w.address.toLowerCase()}`;
 
 type Prep = { onChain: boolean; domain?: Record<string, unknown>; types?: Record<string, { name: string; type: string }[]>; request?: Signed['request'] };
@@ -172,6 +175,41 @@ describe.skipIf(!enabled)('chain bridge (local chain)', () => {
     expect(after.ledger.findLast(e => e.kind === 'member_left')!.proof.tx).toMatch(/^0x[0-9a-f]{64}$/);
     // The founder is now the only one who can vote: the contract and the server both refuse.
     expect(await errKey(prepareCommand(team.id, uid(founder), { type: 'leave' }))).toBe('err.last_voter');
+  }, 120_000);
+
+  it('records what members do on the contract directly, once', async () => {
+    const team = await onChainTeam();
+    const id = team.id;
+    const { result: { id: objectiveId } } = await runTeamCommand(id, uid(founder), { type: 'addObjective', title: 'Vol', description: '' });
+    const { result: { id: budgetId } } = await act(id, founder, { type: 'requestMoney', action: { type: 'budget', objectiveId: objectiveId!, to: 3000 }, title: 'B', why: 'W' });
+    await act(id, founder, { type: 'vote', changeId: budgetId!, choice: 'for' });
+    // Levi votes from his own wallet, straight on the contract: the last vote passes it.
+    // One signer that counts its own nonces (the provider briefly caches identical calls).
+    const leviSigner = new NonceManager(levi.connect(provider));
+    const onContract = new Contract(team.chain!.address, TEAM, leviSigner);
+    await (await onContract.vote(idHash(budgetId!), 1)).wait(1);
+    // He also sends TMIM to the team's address himself.
+    const minter = new Contract(await tmim.getAddress(), ['function mint(address to, uint256 amount, string reason)'], deployer.connect(provider));
+    await (await minter.mint(levi.address, 500n, 'test')).wait(1);
+    const send = await leviSigner.sendTransaction({ to: await tmim.getAddress(), data: TMIM.encodeFunctionData('transfer', [team.chain!.address, 120n]) });
+    await send.wait(1);
+
+    const first = await reconcileTeams({ delaySeconds: 0 });
+    expect(first.recorded).toBe(2);
+    expect(first.noted).toBe(0);
+    const after = await loadTeam(id);
+    const budget = after.changes.find(c => c.id === budgetId)!;
+    expect(budget.status).toBe('passed');
+    expect(after.objectives[0].budget).toBe(3000);
+    const vote = after.ledger.findLast(e => e.kind === 'vote_cast')!;
+    expect(vote).toMatchObject({ actorId: uid(levi), data: { via: 'chain' } });
+    expect(vote.proof.tx).toMatch(/^0x[0-9a-f]{64}$/);
+    expect(after.treasury.teamAccount).toBe(120);
+    expect(after.ledger.findLast(e => e.kind === 'money_moved')).toMatchObject({ actorId: uid(levi), proof: { tx: send.hash } });
+    // Again: nothing new. And the app recording the same transfer later counts it once.
+    expect((await reconcileTeams({ delaySeconds: 0 })).recorded).toBe(0);
+    const { team: same } = await runTeamCommand(id, uid(levi), { type: 'contribute', amount: 120, txHash: send.hash });
+    expect(same.treasury.teamAccount).toBe(120);
   }, 120_000);
 
   it('anchors each full batch of signed entries on-chain', async () => {

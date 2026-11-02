@@ -26,6 +26,25 @@ const ERRORS = [
 
 const CONFIG = 'tuple(bytes32 profileHash, uint16[] rolePermissions, uint16 founderRoles, uint16 joinerRoles, uint256[7] rules)';
 
+/** Team.sol's events, for reconciling what happened on a team's contract outside the app. */
+export const TEAM_EVENTS = [
+  'event TeamInitialized(address indexed founder, bytes32 profileHash, uint16 founderRoles, uint16 joinerRoles)',
+  'event MemberJoined(address indexed member, uint16 roles, bytes32 indexed inviteId, address indexed inviter)',
+  'event MemberLeft(address indexed member, uint16 roles)',
+  'event RolesChanged(address indexed member, uint16 from, uint16 to, bytes32 indexed ref)',
+  'event InviteRevoked(bytes32 indexed inviteId, address indexed by)',
+  'event ProposalOpened(bytes32 indexed ref, uint8 kind, address indexed proposer, bool byVote, uint64 closesAt, uint8 rule, address to, bytes32 objective, uint256 value, uint256 stake)',
+  'event VoteCast(bytes32 indexed ref, address indexed voter, uint8 choice)',
+  'event ProposalDecided(bytes32 indexed ref, uint8 status, uint32 forVotes, uint32 against, uint32 abstain, uint32 eligible)',
+  'event RuleChanged(uint8 indexed rule, uint256 from, uint256 to, uint32 version, bytes32 indexed ref)',
+  'event MoneyMoved(bytes32 indexed ref, address indexed to, uint256 amount, address indexed approver)',
+  'event BudgetSet(bytes32 indexed objective, uint256 from, uint256 to, bytes32 indexed ref)',
+  'event Accepted(bytes32 indexed deliverable, bytes32 indexed objective, address indexed owner, uint256 reward, address reviewer, uint256 reviewReward, bytes32 versionHash, address approver)',
+  'event Released(bytes32 indexed deliverable, bytes32 contentHash, address indexed by)',
+  'event Paid(bytes32 indexed ref, bytes32 indexed objective, address indexed to, uint256 amount, address by)',
+  'event Anchored(uint64 indexed batch, bytes32 root, uint64 entries, address indexed by)',
+];
+
 export const TEAM = new Interface([
   'function proposeRule(bytes32 ref, uint8 key, uint256 value)',
   'function proposeTransfer(bytes32 ref, address to, uint256 amount)',
@@ -50,6 +69,7 @@ export const TEAM = new Interface([
   'function memberCount() view returns (uint32)',
   'function voterCount() view returns (uint32)',
   ...ERRORS,
+  ...TEAM_EVENTS,
 ]);
 
 export const FACTORY = new Interface([
@@ -105,6 +125,13 @@ export interface ForwardRequest {
 /** App ids on-chain: keccak256 of the id. */
 export const idHash = (id: string) => keccak256(toUtf8Bytes(id));
 
+/** A change's ref on the contract: the hash of its id, or the ref it was opened
+ *  with when someone opened it on the contract directly (`chainRef`). */
+export function refOf(team: Pick<Team, 'changes'>, changeId: string): string {
+  const c = team.changes.find(x => x.id === changeId);
+  return c && c.kind !== 'work' && c.chainRef ? c.chainRef : idHash(changeId);
+}
+
 /** A version's text, as the contract records it at acceptance and release. */
 export const contentHash = (paragraphs: string[]) => keccak256(toUtf8Bytes(paragraphs.join('\n\n')));
 
@@ -158,7 +185,7 @@ export function callFor(team: Team, cmd: Command): { to: string; data: string } 
   const to = team.chain.address;
   const ref = (id: string | undefined) => {
     if (!id) throw new DomainError('err.invalid_input');
-    return idHash(id);
+    return refOf(team, id);
   };
   const enc = (fn: string, args: unknown[]) => ({ to, data: TEAM.encodeFunctionData(fn, args) });
   switch (cmd.type) {

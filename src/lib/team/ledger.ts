@@ -33,7 +33,7 @@ export type NewEntry = Omit<LedgerEntry, 'id' | 'seq' | 'tier' | 'proof'> & { ti
 const SETTLED: EntryKind[] = [
   'team_created', 'member_joined', 'accepted_paid', 'released', 'change_opened', 'vote_cast',
   'change_passed', 'change_failed', 'rule_changed', 'money_moved', 'budget_set', 'scheduled_paid', 'anchor',
-  'roles_changed', 'member_left',
+  'roles_changed', 'member_left', 'chain_noted',
 ];
 
 export function tierOf(kind: EntryKind): Tier {

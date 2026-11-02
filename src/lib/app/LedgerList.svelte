@@ -82,6 +82,7 @@
                   {#if e.proof.sig}<dt>{t('ledger.sig')}</dt><dd><code>{e.proof.sig}</code></dd>{/if}
                   <dt>{t('ledger.batch', { n: e.proof.batch ?? 0 })}</dt><dd></dd>
                 {/if}
+                {#if e.data?.via === 'chain'}<dd class="demo">{t('ledger.viaChain')}</dd>{/if}
                 {#if !store.live}<dd class="demo">{t('ledger.demoProof')}</dd>{/if}
               </dl>
             {/if}
