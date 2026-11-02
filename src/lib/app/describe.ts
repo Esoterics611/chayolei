@@ -96,7 +96,7 @@ export function describe(team: Team, e: LedgerEntry): Described {
     case 'review_requested':
       return { text: t('entry.review_requested', { actor, deliverable, to: d.to }), icon: GitPullRequest, groups: group('work'), href: reviewLink() };
     case 'commented':
-      return { text: t('entry.commented', { actor, deliverable }) + (d.paragraph ? ` ¶${d.paragraph}` : ''), icon: MessageSquare, groups: group('work'), href: reviewLink() };
+      return { text: t(d.assist ? 'entry.commented_ai' : 'entry.commented', { actor, deliverable }) + (d.paragraph ? ` ¶${d.paragraph}` : ''), icon: MessageSquare, groups: group('work'), href: reviewLink() };
     case 'reviewed':
       return { text: t('entry.reviewed', { actor, deliverable }), icon: CircleCheck, groups: group('work'), href: reviewLink() };
     case 'changes_requested':
@@ -149,7 +149,8 @@ export function describe(team: Team, e: LedgerEntry): Described {
       return { text: t('entry.scheduled_paid', { actor, payees: payees(team, e) }), icon: CalendarClock, groups: group('money'), href: href('/treasury'), amount: moved(e) };
     case 'message': {
       const target = e.refs.deliverableId ? deliverable : change;
-      return { text: t('entry.message', { actor, target }), icon: MessageSquareText, groups: group('work'), href: e.refs.deliverableId ? dLink('/thread') : cLink() };
+      const text = d.assist ? t('entry.message_ai', { actor, target, helper: t(`ai.${d.assist}`) }) : t('entry.message', { actor, target });
+      return { text, icon: MessageSquareText, groups: group('work'), href: e.refs.deliverableId ? dLink('/thread') : cLink() };
     }
     case 'roles_changed':
       return ids(d.to).length

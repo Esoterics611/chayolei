@@ -25,6 +25,9 @@
   import ArrowLeft from '@lucide/svelte/icons/arrow-left';
   import Info from '@lucide/svelte/icons/info';
   import Quote from '@lucide/svelte/icons/quote';
+  import Sparkles from '@lucide/svelte/icons/sparkles';
+  import AiMark from '$lib/ui/AiMark.svelte';
+  import RichText from '$lib/ui/RichText.svelte';
 
   const team = $derived(store.team);
   const me = $derived(store.me);
@@ -128,8 +131,8 @@
             {#each anchored(i) as cm (cm.id)}
               <div class="cm">
                 <Person {team} id={cm.authorId} first />
-                <span class="when">{fmtRelative(cm.at, now)}</span>
-                <p dir="auto">{lt(cm.body)}</p>
+                <span class="when">{#if cm.assist}<AiMark compact helper={cm.assist} /> {/if}{fmtRelative(cm.at, now)}</span>
+                <p dir="auto"><RichText text={lt(cm.body)} /></p>
               </div>
             {/each}
             {#if composing === i}
@@ -150,6 +153,9 @@
         </TextDiff>
 
         {#snippet actions()}
+          {#if (c.status === 'open' && isReviewer) || (c.status === 'reviewed' && isApprover)}
+            <button type="button" class="btn btn-ghost helper" onclick={() => ui.openDialog({ kind: 'aiReview', changeId: c.id })}><Sparkles size={15} />{t('helper.ask.review')}</button>
+          {/if}
           {#if c.status === 'open' && isReviewer}
             <button type="button" class="btn" onclick={() => ui.openDialog({ kind: 'requestChanges', changeId: c.id })}><RotateCcw size={15} />{t('review.requestChanges')}</button>
             <button type="button" class="btn btn-primary" onclick={markReviewed}><CircleCheck size={15} />{t('review.markReviewed')}</button>
@@ -197,8 +203,8 @@
         {#each general as cm (cm.id)}
           <div class="cm">
             <Person {team} id={cm.authorId} first />
-            <span class="when">{fmtRelative(cm.at, now)}</span>
-            <p dir="auto">{lt(cm.body)}</p>
+            <span class="when">{#if cm.assist}<AiMark compact helper={cm.assist} /> {/if}{fmtRelative(cm.at, now)}</span>
+            <p dir="auto"><RichText text={lt(cm.body)} /></p>
           </div>
         {:else}
           <p class="muted small">—</p>
@@ -213,6 +219,7 @@
 {/if}
 
 <style>
+  .helper { margin-inline-end: auto; }
   .back { display: inline-flex; align-items: center; gap: 6px; margin-block-end: var(--s4); font-size: var(--fs-sm); color: var(--ink-3); }
   .back:hover { color: var(--accent-text); }
   .banner { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-block-end: var(--s4); padding: 10px 14px; border-radius: var(--r-sm); background: var(--surface-2); font-size: var(--fs-sm); }

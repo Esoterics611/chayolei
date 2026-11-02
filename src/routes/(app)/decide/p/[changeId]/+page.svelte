@@ -27,6 +27,10 @@
   import Timer from '@lucide/svelte/icons/timer';
   import Send from '@lucide/svelte/icons/send';
   import ArrowLeft from '@lucide/svelte/icons/arrow-left';
+  import Sparkles from '@lucide/svelte/icons/sparkles';
+  import AiMark from '$lib/ui/AiMark.svelte';
+  import RichText from '$lib/ui/RichText.svelte';
+  import { SUMMARY_MIN_MESSAGES } from '$lib/team/helpers';
 
   const team = $derived(store.team);
   const me = $derived(store.me);
@@ -184,12 +188,15 @@
       </ChangeCard>
 
       <section class="thread" aria-labelledby="th-h">
-        <h2 id="th-h" class="h">{t('decide.thread')}</h2>
+        <div class="th-head">
+          <h2 id="th-h" class="h">{t('decide.thread')}</h2>
+          {#if thread.length >= SUMMARY_MIN_MESSAGES}<button type="button" class="btn btn-sm btn-ghost" onclick={() => ui.openDialog({ kind: 'aiSummary', ref: { type: 'change', id: c.id } })}><Sparkles size={14} />{t('helper.ask.summary')}</button>{/if}
+        </div>
         {#each thread as m (m.id)}
           <div class="msg">
             <Person {team} id={m.authorId} size="sm" />
-            <span class="when">{fmtRelative(m.at, now)}</span>
-            <p dir="auto">{lt(m.body)}</p>
+            <span class="when">{#if m.assist}<AiMark compact helper={m.assist} /> {/if}{fmtRelative(m.at, now)}</span>
+            <p dir="auto"><RichText text={lt(m.body)} /></p>
           </div>
         {/each}
         <form class="composer" onsubmit={send}>
@@ -255,7 +262,9 @@
   .thread { display: flex; flex-direction: column; gap: var(--s3); }
   .msg { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; align-items: center; }
   .msg .when { justify-self: end; font-size: var(--fs-xs); color: var(--ink-3); }
-  .msg p { grid-column: 1 / -1; padding: 10px 14px; border-radius: var(--r-md); background: var(--surface-raised); border: 1px solid var(--rule); }
+  .msg p { grid-column: 1 / -1; padding: 10px 14px; border-radius: var(--r-md); background: var(--surface-raised); border: 1px solid var(--rule); white-space: pre-line; overflow-wrap: anywhere; }
+  .th-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .th-head .h { margin: 0; }
   .composer { display: flex; gap: 8px; align-items: flex-end; }
   .composer .input { flex: 1; }
   @media (max-width: 1099px) {

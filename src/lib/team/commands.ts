@@ -25,7 +25,7 @@ export type Command =
   | { type: 'saveDraft'; deliverableId: string; paragraphs: string[] }
   | { type: 'saveVersion'; deliverableId: string; paragraphs: string[]; note: string }
   | { type: 'requestReview'; deliverableId: string }
-  | { type: 'comment'; changeId: string; body: string; paragraph?: number }
+  | { type: 'comment'; changeId: string; body: string; paragraph?: number; assist?: 'reviewer' }
   | { type: 'markReviewed'; changeId: string }
   | { type: 'requestChanges'; changeId: string; note: string }
   | { type: 'acceptAndPay'; changeId: string }
@@ -41,7 +41,7 @@ export type Command =
   | { type: 'declineMoney'; changeId: string }
   | { type: 'contribute'; amount: number; txHash?: string }
   | { type: 'paySchedule'; scheduleId: string }
-  | { type: 'postMessage'; ref: { type: 'deliverable' | 'change'; id: string }; body: string };
+  | { type: 'postMessage'; ref: { type: 'deliverable' | 'change'; id: string }; body: string; assist?: 'summarizer' | 'sources' };
 
 export type CommandType = Command['type'];
 
@@ -93,7 +93,7 @@ export function applyCommand(team: Team, me: string, cmd: Command, now: string):
     case 'requestReview':
       return { id: E.requestReview(team, me, cmd.deliverableId, now).id };
     case 'comment':
-      E.comment(team, me, cmd.changeId, String(cmd.body ?? ''), cmd.paragraph, now);
+      E.comment(team, me, cmd.changeId, String(cmd.body ?? ''), cmd.paragraph, now, cmd.assist);
       return {};
     case 'markReviewed':
       E.markReviewed(team, me, cmd.changeId, now);
@@ -138,7 +138,7 @@ export function applyCommand(team: Team, me: string, cmd: Command, now: string):
       E.paySchedule(team, me, cmd.scheduleId, now);
       return {};
     case 'postMessage':
-      E.postMessage(team, me, cmd.ref, String(cmd.body ?? ''), now);
+      E.postMessage(team, me, cmd.ref, String(cmd.body ?? ''), now, cmd.assist);
       return {};
   }
 }
@@ -204,6 +204,7 @@ function checkInput(team: Team, cmd: Command): void {
     case 'saveDraft': doc(cmd.paragraphs); break;
     case 'saveVersion': doc(cmd.paragraphs); str(cmd.note, LIMITS.title); break;
     case 'comment':
+      if (cmd.assist !== undefined && cmd.assist !== 'reviewer') bad();
       str(cmd.body, LIMITS.body);
       if (cmd.paragraph !== undefined && (!Number.isInteger(cmd.paragraph) || cmd.paragraph < 0)) bad();
       break;
@@ -232,6 +233,7 @@ function checkInput(team: Team, cmd: Command): void {
       if (cmd.txHash !== undefined && (typeof cmd.txHash !== 'string' || !/^0x[0-9a-fA-F]{64}$/.test(cmd.txHash))) bad();
       break;
     case 'postMessage':
+      if (cmd.assist !== undefined && cmd.assist !== 'summarizer' && cmd.assist !== 'sources') bad();
       if (!cmd.ref || (cmd.ref.type !== 'deliverable' && cmd.ref.type !== 'change')) bad();
       id(cmd.ref.id); str(cmd.body, LIMITS.body);
       break;

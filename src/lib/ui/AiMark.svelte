@@ -5,10 +5,12 @@
   import Sparkles from '@lucide/svelte/icons/sparkles';
   import { t } from '$lib/team/i18n';
 
-  let { compact = false }: { compact?: boolean } = $props();
+  import type { Assist } from '$lib/team/types';
+
+  let { compact = false, helper = 'planner' }: { compact?: boolean; helper?: Assist } = $props();
 </script>
 
-<span class="ai" class:compact title={t('ai.assistedHint')}>
+<span class="ai" class:compact title={helper === 'planner' ? t('ai.assistedHint') : t(`ai.hint.${helper}`)}>
   <Sparkles size={compact ? 13 : 12} aria-hidden="true" />
   {#if compact}<span class="visually-hidden">{t('ai.assisted')}</span>{:else}{t('ai.assisted')}{/if}
 </span>

@@ -13,10 +13,11 @@ import * as E from './engine';
 import { applyCommand, SETTLED_COMMANDS } from './commands';
 import type { Command, CommandResult } from './commands';
 import { activeMember, member } from './rules';
-import { t } from './i18n';
+import { lt, t } from './i18n';
 import { ui } from './ui.svelte';
 import type { ChainInfo, InviteInfo, LiveClient, Refusal, Signed } from './live';
 import type { PlanSuggestion } from './planner';
+import type { ReviewSuggestion, Sources, Summary, ThreadRef } from './helpers';
 
 /** The live app, on Firestore; otherwise the demo. */
 export const LIVE = import.meta.env.VITE_TEAM_BACKEND === 'firestore';
@@ -252,6 +253,37 @@ class TeamStore {
       }
     }
     const r = await (await this.liveClient()).suggestPlan(team.id, objectiveId, ui.locale);
+    if (!r.ok) { this.explain(r.error); return undefined; }
+    return r.value;
+  }
+
+  /** An AI helper's suggestion, to keep or leave: first-pass notes on a review
+   *  round, a thread's summary, or sources for a deliverable. The demo calls no
+   *  AI: it shows samples, labelled so. */
+  askHelper(helper: 'review', input: { changeId: string }): Promise<ReviewSuggestion | undefined>;
+  askHelper(helper: 'summary', input: { ref: ThreadRef }): Promise<Summary | undefined>;
+  askHelper(helper: 'sources', input: { deliverableId: string }): Promise<Sources | undefined>;
+  async askHelper(helper: 'review' | 'summary' | 'sources', input: Record<string, unknown>): Promise<unknown> {
+    const team = this.team;
+    if (!team) return undefined;
+    if (!LIVE) {
+      const H = await import('./helpers');
+      try {
+        if (helper === 'review') {
+          H.requireReviewHelper(team, this.me, input.changeId as string);
+          return H.sampleReview(team, input.changeId as string, ui.locale);
+        }
+        if (helper === 'summary') {
+          return H.sampleSummary(team, input.ref as ThreadRef, ui.locale, id => lt(member(team, id)?.name).split(' ')[0]);
+        }
+        H.requireSourcesHelper(team, this.me, input.deliverableId as string);
+        return H.sampleSources(team, input.deliverableId as string, ui.locale);
+      } catch (e) {
+        if (e instanceof DomainError) { this.explain(e); return undefined; }
+        throw e;
+      }
+    }
+    const r = await (await this.liveClient()).helper(team.id, { helper, ...input, locale: ui.locale });
     if (!r.ok) { this.explain(r.error); return undefined; }
     return r.value;
   }

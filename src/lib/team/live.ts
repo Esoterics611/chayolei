@@ -153,6 +153,12 @@ export class LiveClient {
     return r.ok ? { ok: true, value: r.value.suggestion } : r;
   }
 
+  /** An AI helper's suggestion (first-pass review, summary, sources); nothing is written. */
+  async helper<T>(teamId: string, input: Record<string, unknown>): Promise<Reply<T>> {
+    const r = await this.call<{ suggestion: T }>(`/api/teams/${encodeURIComponent(teamId)}/helpers`, input);
+    return r.ok ? { ok: true, value: r.value.suggestion } : r;
+  }
+
   prepareTeam(input: TeamInput): Promise<Reply<Prepare<{ request: ForwardRequest }>>> {
     return this.call('/api/teams/prepare', input);
   }

@@ -68,7 +68,7 @@ export interface Charter {
 }
 
 /** An AI helper whose suggestion a member accepted (UX_REDESIGN.md §8). */
-export type Assist = 'planner';
+export type Assist = 'planner' | 'reviewer' | 'summarizer' | 'sources';
 
 export interface Objective {
   id: string;
@@ -149,6 +149,8 @@ export interface Comment {
   at: string;
   /** Index of the paragraph in the proposed version the comment is about. */
   paragraph?: number;
+  /** Posted from the first-pass reviewer's notes. */
+  assist?: Assist;
 }
 
 export type ChangeStatus =
@@ -251,6 +253,8 @@ export interface Message {
   authorId: string;
   body: Text;
   at: string;
+  /** Posted from an AI helper's answer (a summary, sources). */
+  assist?: Assist;
 }
 
 export type EntryKind =

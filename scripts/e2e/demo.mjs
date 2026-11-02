@@ -1,6 +1,6 @@
 // Smoke test of the static demo build (scripts/build-demo.sh): a vote, an
-// acceptance, the AI planner's flow, a role change, leaving the team, the
-// rule-range check and Hebrew.
+// acceptance, the AI helpers (first-pass review, summary, sources, planner),
+// a role change, leaving the team, the rule-range check and Hebrew.
 // Run with scripts/e2e/run-demo.sh.
 import { createRequire } from 'node:module';
 import { mkdirSync } from 'node:fs';
@@ -52,6 +52,18 @@ try {
   await page.getByText('Vote recorded').first().waitFor({ timeout: 10000 }).catch(() => {});
   await shot(page, 'demo-02-voted');
 
+  // A first pass by the AI reviewer (a labelled sample in the demo), kept as comments.
+  await page.goto(FILE + '#/');
+  await page.locator('a[href*="/review/"]').first().click();
+  await page.getByRole('button', { name: 'First-pass review' }).click();
+  const helper = page.locator('dialog[open]');
+  await helper.getByRole('button', { name: 'Read this version' }).click();
+  await helper.getByText('A sample, not from an AI.').waitFor({ timeout: 5000 });
+  await page.waitForTimeout(300);
+  await shot(page, 'demo-08-first-pass');
+  await helper.getByRole('button', { name: /^Add \d+ as comments$/ }).click();
+  await page.getByText(/^Added \d+ comments, marked AI-assisted$/).first().waitFor({ timeout: 10000 });
+
   // Mendel accepts the reviewed chapter.
   await page.goto(FILE + '#/');
   await page.locator('a[href*="/review/"]').first().click();
@@ -59,6 +71,29 @@ try {
   await confirm();
   await page.getByText('Accepted and paid').first().waitFor({ timeout: 10000 });
   await shot(page, 'demo-03-accepted');
+
+  // The summarizer on a thread, and the source finder on a deliverable.
+  await page.goto(FILE + '#/plan');
+  const ch3 = await page.getByRole('link', { name: /^Chapter 3/ }).first().getAttribute('href');
+  await page.goto(FILE + ch3 + '/thread');
+  await page.getByLabel('Write a message…').fill('Agreed: cite Rashi by his opening words everywhere.');
+  await page.getByRole('button', { name: 'Send' }).click();
+  await page.getByRole('button', { name: 'Summarize' }).click();
+  await page.locator('dialog[open]').getByRole('button', { name: 'Summarize', exact: true }).click();
+  await page.locator('dialog[open]').getByRole('button', { name: 'Post to the thread' }).click();
+  await page.getByText('Summary posted, marked AI-assisted').first().waitFor({ timeout: 10000 });
+  await page.goto(FILE + '#/plan');
+  const ch4 = await page.getByRole('link', { name: /^Chapter 4/ }).first().getAttribute('href');
+  await page.goto(FILE + ch4 + '/thread');
+  await page.getByRole('button', { name: 'Find sources' }).click();
+  await page.locator('dialog[open]').getByRole('button', { name: 'Search', exact: true }).click();
+  await page.locator('dialog[open]').getByRole('link', { name: /WorldCat/ }).waitFor({ timeout: 5000 });
+  await page.waitForTimeout(300);
+  await shot(page, 'demo-09-sources');
+  await page.locator('dialog[open]').getByRole('button', { name: /^Post 3 to the thread$/ }).click();
+  await page.getByText('Sources posted to the thread, marked AI-assisted').first().waitFor({ timeout: 10000 });
+  await page.locator('ol.thread a[href^="https://scholar.google.com/"]').first().waitFor({ timeout: 5000 });
+  await shot(page, 'demo-10-thread-sources');
 
   // The AI planner (a labelled sample in the demo): suggest, edit, add; the
   // added deliverables show as AI-assisted in the plan and the ledger.

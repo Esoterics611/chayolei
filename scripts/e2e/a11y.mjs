@@ -78,6 +78,22 @@ try {
           await p.waitForTimeout(250);
           await audit(p, `planner dialog ${locale} ${theme} ${size}`);
         }
+        // The first-pass reviewer's notes and the source finder's results (samples in the demo),
+        // on the round waiting for the acting lead's acceptance.
+        await p.goto(BASE + '#/');
+        const round = await p.locator('main a[href*="/review/"]').first().getAttribute('href');
+        await p.goto(BASE + round);
+        await p.locator('main .actions .helper').click();
+        await p.locator('dialog[open] .form-actions .btn-primary').click();
+        await p.locator('dialog[open] .items').waitFor();
+        await p.waitForTimeout(250);
+        await audit(p, `first-pass dialog ${locale} ${theme} ${size}`);
+        await p.goto(BASE + round.replace(/\/review\/.*$/, '/thread'));
+        await p.locator('main .helpers .btn').first().click();
+        await p.locator('dialog[open] .form-actions .btn-primary').click();
+        await p.locator('dialog[open] .items').waitFor();
+        await p.waitForTimeout(250);
+        await audit(p, `sources dialog ${locale} ${theme} ${size}`);
         // The role-change dialog, with a member picked and a role added.
         await p.goto(BASE + '#/decide/members');
         await p.getByRole('button', { name: /^(Change roles|שינוי תפקידים)$/ }).nth(1).click();

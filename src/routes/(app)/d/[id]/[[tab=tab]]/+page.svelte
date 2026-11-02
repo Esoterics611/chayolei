@@ -36,6 +36,10 @@
   import FingerprintPattern from '@lucide/svelte/icons/fingerprint-pattern';
   import ArrowRight from '@lucide/svelte/icons/arrow-right';
   import Sparkles from '@lucide/svelte/icons/sparkles';
+  import RichText from '$lib/ui/RichText.svelte';
+  import AiMark from '$lib/ui/AiMark.svelte';
+  import { ui } from '$lib/team/ui.svelte';
+  import { SUMMARY_MIN_MESSAGES } from '$lib/team/helpers';
 
   const team = $derived(store.team);
   const me = $derived(store.me);
@@ -50,6 +54,7 @@
   const history = $derived(d ? team.ledger.filter(e => e.refs.deliverableId === d.id) : []);
   const isOwner = $derived(d?.ownerId === me);
   const canPlan = $derived(can(team, me, 'manage_plan'));
+  const mayFindSources = $derived(!!d && (isOwner || canPlan) && d.stage !== 'accepted' && d.stage !== 'released');
 
   // Work tab: which version is shown, and whether it is compared with the one before.
   let selectedId = $state<string | undefined>();
@@ -258,13 +263,19 @@
     </section>
   {:else if tab === 'thread'}
     <section class="narrow">
+      {#if thread.length >= SUMMARY_MIN_MESSAGES || mayFindSources}
+        <p class="helpers">
+          {#if mayFindSources}<button type="button" class="btn btn-sm btn-ghost" onclick={() => ui.openDialog({ kind: 'aiSources', deliverableId: d.id })}><Sparkles size={14} />{t('helper.ask.sources')}</button>{/if}
+          {#if thread.length >= SUMMARY_MIN_MESSAGES}<button type="button" class="btn btn-sm btn-ghost" onclick={() => ui.openDialog({ kind: 'aiSummary', ref: { type: 'deliverable', id: d.id } })}><Sparkles size={14} />{t('helper.ask.summary')}</button>{/if}
+        </p>
+      {/if}
       {#if thread.length}
         <ol class="thread">
           {#each thread as m (m.id)}
             <li>
               <Person {team} id={m.authorId} size="sm" />
-              <span class="when">{fmtRelative(m.at, now)}</span>
-              <p dir="auto">{lt(m.body)}</p>
+              <span class="when">{#if m.assist}<AiMark compact helper={m.assist} /> {/if}{fmtRelative(m.at, now)}</span>
+              <p dir="auto"><RichText text={lt(m.body)} /></p>
             </li>
           {/each}
         </ol>
@@ -342,7 +353,9 @@
   .thread { display: flex; flex-direction: column; gap: var(--s4); }
   .thread li { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; align-items: center; }
   .thread .when { font-size: var(--fs-xs); color: var(--ink-3); justify-self: end; }
-  .thread p { grid-column: 1 / -1; padding: 10px 14px; border-radius: var(--r-md); background: var(--surface-raised); border: 1px solid var(--rule); margin-inline-start: 34px; }
+  .thread p { grid-column: 1 / -1; padding: 10px 14px; border-radius: var(--r-md); background: var(--surface-raised); border: 1px solid var(--rule); margin-inline-start: 34px; white-space: pre-line; overflow-wrap: anywhere; }
+  .thread .when { display: inline-flex; align-items: center; gap: 4px; }
+  .helpers { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; margin-block-end: var(--s3); }
   .composer { display: flex; gap: 8px; align-items: flex-end; }
   .composer .input { flex: 1; }
 

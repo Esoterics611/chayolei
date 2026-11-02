@@ -78,7 +78,7 @@ With `TEAM_FACTORY_ADDRESS`, `TEAM_FORWARDER_ADDRESS`, `VITE_TMIM_TOKEN_ADDRESS`
 
 **Trust.** The relayer can't act for a member: the contract sees only what the member signed, and the server checks each request against the action. It can refuse to relay, and it anchors signed entries, which the server records under the signed-in member (not yet signed by them one by one). The platform can stop a team's minting (`TeamFactory` allowance), nothing else.
 
-## 6a. The AI planner (`src/lib/server/planner.ts`)
+## 6a. The AI helpers: the planner (`src/lib/server/planner.ts`) and the others
 
 The planner suggests how to break an objective into deliverables and tasks (`UX_REDESIGN.md` §8, phase 9). It only suggests:
 
@@ -90,6 +90,16 @@ The planner suggests how to break an objective into deliverables and tasks (`UX_
 **What Claude is shown** (`plannerPrompt`): the team's name and purpose; the objective's title, description, due date and budget left; the team's standard deliverable reward; the objective's existing deliverables (title, scope, reward, stage). Never members, wallets, documents, comments or threads. The team's texts are framed as material to plan, not as instructions.
 
 **Configuration:** `ANTHROPIC_API_KEY` (a secret; without it the planner answers *isn't set up on this server*, 503) and optionally `TEAM_AI_MODEL`. Refusals map to keys the UI explains: `err.ai.unavailable` (503), `err.ai.busy` and `err.ai.limit` (429), `err.ai.failed` (502), `err.ai.declined` (422). The demo calls no AI: it shows a fixed sample breakdown, labelled as one.
+
+**The other helpers** (`src/lib/team/helpers.ts`, `src/lib/server/helpers.ts`, `POST /api/teams/[id]/helpers` `{ helper, …, locale }`) work the same way: only when a member asks, the dialog says what will be sent first, nothing is written, the team's daily allowance is shared by all four, and what a member keeps is posted with an ordinary command, marked AI-assisted (`assist` on the comment or message and on its ledger entry). All share one client, request shape and error mapping (`src/lib/server/ai.ts`).
+
+| Helper | Who may ask | What Claude is shown | What the member keeps |
+|---|---|---|---|
+| **First-pass reviewer** (a review round) | the round's reviewer or approver, while it is open or reviewed | the deliverable's title and scope, its objective's title, the version up for review and the one before it. No names, comments, threads or wallets | notes anchored to paragraphs (`readReview`: at most 8), edited, added as comments (`assist: 'reviewer'`). The review and the decision stay theirs |
+| **Summarizer** (a deliverable's or a proposal's thread, 3 messages or more) | any member | the thread's subject and messages, people as labels P1, P2… in order of appearance (`summaryPrompt`); the server turns labels back into first names after the answer. No wallets, documents or other threads | a summary, what was decided, what is open; posted to the thread if they choose (`assist: 'summarizer'`) |
+| **Source finder** (a deliverable not yet accepted) | its owner, or a member who may change the plan | the team's purpose, the objective's title, the deliverable's title and scope; Claude searches the web with them (`web_search_20260209`, up to 5 searches) | sources (`askCited`: only results the search returned and the answer cites, at most 6, web links only), posted to the thread (`assist: 'sources'`); thread links are clickable |
+
+Structured output can't be combined with citations, so the source finder reads its sources from the answer's citations instead of a JSON schema; a paused search is sent back to finish. Tested with stand-ins for Claude (`helpers.test.ts`, `src/lib/server/helpers.test.ts`).
 
 ## 6b. Reconciliation: actions taken on the contract directly
 

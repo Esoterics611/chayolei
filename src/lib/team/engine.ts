@@ -329,15 +329,18 @@ export function requestReview(team: Team, me: string, deliverableId: string, now
   return c;
 }
 
-export function comment(team: Team, me: string, changeId: string, body: string, paragraph: number | undefined, now: string): void {
+export function comment(team: Team, me: string, changeId: string, body: string, paragraph: number | undefined, now: string, assist?: Assist): void {
   const c = change(team, changeId);
   if (!activeMember(team, me)) throw new DomainError('err.not_member');
   if (!body.trim()) throw new DomainError('err.empty');
   if (c.kind !== 'work') throw new DomainError('err.stage');
-  c.comments.push({ id: newId('m'), authorId: me, body: body.trim(), at: now, paragraph });
+  c.comments.push({ id: newId('m'), authorId: me, body: body.trim(), at: now, paragraph, ...(assist ? { assist } : {}) });
   const d = deliverable(team, c.deliverableId);
   touch(d, now);
-  appendEntry(team, { kind: 'commented', at: now, actorId: me, refs: { deliverableId: d.id, changeId: c.id, objectiveId: d.objectiveId }, data: paragraph !== undefined ? { paragraph: paragraph + 1 } : {} });
+  appendEntry(team, {
+    kind: 'commented', at: now, actorId: me, refs: { deliverableId: d.id, changeId: c.id, objectiveId: d.objectiveId },
+    data: { ...(paragraph !== undefined ? { paragraph: paragraph + 1 } : {}), ...(assist ? { assist } : {}) },
+  });
 }
 
 function workChange(team: Team, changeId: string): { c: WorkChange; d: Deliverable } {
@@ -750,13 +753,14 @@ export function paySchedule(team: Team, me: string, scheduleId: string, now: str
 
 // ── Threads ──────────────────────────────────────────────────────
 
-export function postMessage(team: Team, me: string, ref: { type: 'deliverable' | 'change'; id: string }, body: string, now: string): void {
+export function postMessage(team: Team, me: string, ref: { type: 'deliverable' | 'change'; id: string }, body: string, now: string, assist?: Assist): void {
   if (!activeMember(team, me)) throw new DomainError('err.not_member');
   if (!body.trim()) throw new DomainError('err.empty');
-  team.messages.push({ id: newId('m'), ref, authorId: me, body: body.trim(), at: now });
+  if (ref.type === 'deliverable') deliverable(team, ref.id); else change(team, ref.id);
+  team.messages.push({ id: newId('m'), ref, authorId: me, body: body.trim(), at: now, ...(assist ? { assist } : {}) });
   const refs = ref.type === 'deliverable' ? { deliverableId: ref.id } : { changeId: ref.id };
   if (ref.type === 'deliverable') touch(deliverable(team, ref.id), now);
-  appendEntry(team, { kind: 'message', at: now, actorId: me, refs });
+  appendEntry(team, { kind: 'message', at: now, actorId: me, refs, ...(assist ? { data: { assist } } : {}) });
 }
 
 export const messagesFor = (team: Team, ref: { type: 'deliverable' | 'change'; id: string }) =>

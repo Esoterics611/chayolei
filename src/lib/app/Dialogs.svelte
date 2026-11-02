@@ -13,6 +13,9 @@
   // Loaded when first opened: the first screen doesn't need them.
   const planSuggestForm = () => import('./forms/PlanSuggestForm.svelte');
   const proposeRolesForm = () => import('./forms/ProposeRolesForm.svelte');
+  const reviewHelperForm = () => import('./forms/ReviewHelperForm.svelte');
+  const summaryForm = () => import('./forms/SummaryForm.svelte');
+  const sourcesForm = () => import('./forms/SourcesForm.svelte');
 
   let open = $state(false);
   $effect(() => { open = !!ui.dialog; });
@@ -22,6 +25,9 @@
     newObjective: 'plan.newObjective',
     newDeliverable: 'plan.newDeliverable',
     suggestPlan: 'planner.title',
+    aiReview: 'helper.review.title',
+    aiSummary: 'helper.summary.title',
+    aiSources: 'helper.sources.title',
     proposeRule: 'decide.proposeRule',
     proposeRoles: 'decide.proposeRoles',
     requestMoney: 'decide.requestMoney',
@@ -32,6 +38,9 @@
   const DESCRIPTIONS: Partial<Record<keyof typeof TITLES, string>> = {
     newObjective: 'plan.objectiveDesc',
     suggestPlan: 'planner.desc',
+    aiReview: 'helper.review.desc',
+    aiSummary: 'helper.summary.desc',
+    aiSources: 'helper.sources.desc',
     proposeRule: 'decide.proposeDesc',
     proposeRoles: 'decide.proposeRolesDesc',
     requestMoney: 'decide.requestDesc',
@@ -40,13 +49,19 @@
 
 {#if ui.dialog}
   {@const req = ui.dialog}
-  <Dialog bind:open title={t(TITLES[req.kind])} description={DESCRIPTIONS[req.kind] ? t(DESCRIPTIONS[req.kind]!) : undefined} width={req.kind === 'suggestPlan' ? 'lg' : 'md'} onclose={() => (ui.dialog = null)}>
+  <Dialog bind:open title={t(TITLES[req.kind])} description={DESCRIPTIONS[req.kind] ? t(DESCRIPTIONS[req.kind]!) : undefined} width={req.kind === 'suggestPlan' || req.kind === 'aiReview' ? 'lg' : 'md'} onclose={() => (ui.dialog = null)}>
     {#if req.kind === 'newObjective'}
       <NewObjectiveForm done={close} />
     {:else if req.kind === 'newDeliverable'}
       <NewDeliverableForm done={close} objectiveId={req.objectiveId} />
     {:else if req.kind === 'suggestPlan'}
       {#await planSuggestForm() then { default: PlanSuggestForm }}<PlanSuggestForm done={close} objectiveId={req.objectiveId} />{/await}
+    {:else if req.kind === 'aiReview'}
+      {#await reviewHelperForm() then { default: ReviewHelperForm }}<ReviewHelperForm done={close} changeId={req.changeId} />{/await}
+    {:else if req.kind === 'aiSummary'}
+      {#await summaryForm() then { default: SummaryForm }}<SummaryForm done={close} threadRef={req.ref} />{/await}
+    {:else if req.kind === 'aiSources'}
+      {#await sourcesForm() then { default: SourcesForm }}<SourcesForm done={close} deliverableId={req.deliverableId} />{/await}
     {:else if req.kind === 'proposeRule'}
       <ProposeRuleForm done={close} ruleKey={req.ruleKey} />
     {:else if req.kind === 'proposeRoles'}
