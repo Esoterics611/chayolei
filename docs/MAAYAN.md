@@ -67,12 +67,11 @@ Firebase sends the sign-in links itself (template language: Hebrew, set by `auth
 
 ## 8. Open items (student pass, 2026-11-25)
 
-A walk through the wellspring as a student arriving from the booklet found what was missing; most of it is done (§3). Still open:
+A walk through the wellspring as a student arriving from the booklet found what was missing; most of it is done (§3). The פדה בשלום booklet and שער היחוד chapter 1 are on the site and linked from their wellsprings (owner's word, 2026-11-25). Still open:
 
 | Item | Waits for |
 |---|---|
 | The Sefer Forge home page sends booklet readers here ("join the discussion") | The live app: the demo keeps questions in one browser, so a real reader would be asking no one |
-| The פדה בשלום booklet itself online, linked from its wellspring | The owner's word: a ביאור is published only in a form he names (sefer-forge CLAUDE.md); until then the link says "the books, lessons and glossary" |
 | Answers recorded as voice notes, transcribed and posted | sefer-forge's Whisper pipeline (task "Connect wellsprings to the sefer-forge pipeline") |
 | A discourse's own editorial team for the ladder's "contributor" step | The ladder task; the demo shows a sample team |
 | Terms in answers linked to the glossary (מילון) | The glossary published on the site |

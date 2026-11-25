@@ -21,10 +21,10 @@
     },
     "link": {
       "label": {
-        "he": "הספרים, השיעורים והמילון",
-        "en": "The books, lessons and glossary"
+        "he": "החוברת והביאור",
+        "en": "The booklet and its explanation"
       },
-      "url": "https://esoterics611.github.io/he/library.html"
+      "url": "https://esoterics611.github.io/he/library.html#padah"
     },
     "dedicate": "https://esoterics611.github.io/he/dedicate.html#padah-beshalom"
   },
@@ -50,10 +50,10 @@
     },
     "link": {
       "label": {
-        "he": "השיעורים והביאור",
-        "en": "The lessons and the explanation"
+        "he": "פרק א עם ביאור, והשיעורים",
+        "en": "Chapter 1 explained, and the lessons"
       },
-      "url": "https://esoterics611.github.io/he/library.html"
+      "url": "https://esoterics611.github.io/he/library.html#shaar-hayichud"
     },
     "dedicate": "https://esoterics611.github.io/he/dedicate.html#shaar-hayichud"
   },
