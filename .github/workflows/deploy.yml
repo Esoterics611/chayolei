@@ -1,0 +1,50 @@
+name: Deploy
+
+# Builds the app with Cloud Build, deploys it to Cloud Run, then Firebase
+# Hosting (the domain), the Firestore rules and indexes, and the wellsprings.
+# Runs on a push to main, or on any branch when the commit message says [deploy].
+# Signs in to Google with no stored key (Workload Identity Federation, set up
+# once by scripts/gcp-bootstrap.sh); the values it needs are in deploy.env.
+
+on:
+  push:
+  workflow_dispatch:
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main' || contains(github.event.head_commit.message, '[deploy]')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read deploy.env
+        run: |
+          grep -E '^[A-Z0-9_]+=' deploy.env >> "$GITHUB_ENV"
+          . ./deploy.env
+          if [ -z "$FIREBASE_PROJECT_ID" ] || [ -z "$GCP_WORKLOAD_IDENTITY_PROVIDER" ]; then
+            echo "::error::deploy.env is not filled in yet (docs/DEPLOY.md, From GitHub)"; exit 1
+          fi
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ env.GCP_DEPLOYER_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Build and deploy to Cloud Run
+        run: bash scripts/deploy.sh
+      - name: Hosting, Firestore rules and indexes
+        run: npx firebase deploy --only hosting,firestore --project "$FIREBASE_PROJECT_ID" --non-interactive --force
+      - name: The wellsprings
+        run: node scripts/maayan-setup.mjs wellsprings
+        env:
+          GCLOUD_PROJECT: ${{ env.FIREBASE_PROJECT_ID }}

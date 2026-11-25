@@ -13,6 +13,19 @@ The app is a SvelteKit server (`@sveltejs/adapter-node`): 37 API routes plus the
 | `DEPLOYER_PRIVATE_KEY`, `ATTESTATION_SIGNER_PRIVATE_KEY`, `TEAM_RELAYER_PRIVATE_KEY`, `ANTHROPIC_API_KEY` | **Secret Manager** → Cloud Run secrets | Never in the image, never in `.env` on the deploy machine's command line. The relayer's secret is needed only when `TEAM_FACTORY_ADDRESS` is set; the Claude API key only with `TEAM_AI=1` |
 | Firebase Admin credentials | Cloud Run's runtime service account | `FIREBASE_CLIENT_EMAIL` / `FIREBASE_PRIVATE_KEY` are for local development only |
 
+## From GitHub (the way it is deployed now, 2026-11-25)
+
+The live project belongs to the project's own Google account (esoterics611@gmail.com), never to a personal one, and no key to it is stored anywhere: GitHub Actions signs in with Workload Identity Federation, allowed only for `Esoterics611/chayolei`.
+
+1. **Firebase console** (signed in as esoterics611@gmail.com): the project on the Blaze plan; a Web app registered; Authentication → Sign-in method → Email/Password enabled with *Email link (passwordless sign-in)*. Phone sign-in stays off.
+2. **Cloud Shell** (console.cloud.google.com, the `>_` button), once:
+   `git clone -b claude/nifty-darwin-0h2ew6 https://github.com/Esoterics611/chayolei && bash chayolei/scripts/gcp-bootstrap.sh <project-id>`
+   It enables the services, makes the registry and Firestore, the `deployer` account and the keyless GitHub sign-in, and prints two values.
+3. **`deploy.env`** (committed; public values only): the project ID, the Web app's config, those two values, `PUBLIC_ORIGIN` (`https://<project-id>.web.app`).
+4. **Deploy:** a push to `main`, or a commit on any branch whose message contains `[deploy]` (`.github/workflows/deploy.yml`): Cloud Build → Cloud Run (`scripts/deploy.sh`) → Hosting, Firestore rules and indexes → the wellsprings. With no chain configured the service sleeps when idle and needs no chain keys.
+
+The sections below are the older, by-hand way, for the chain's set-up.
+
 ## One-time setup
 
 ```bash
