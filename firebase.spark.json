@@ -15,6 +15,11 @@
         "source": "/",
         "destination": "/maayan",
         "type": 302
+      },
+      {
+        "regex": "^/padah/?$",
+        "destination": "/maayan/padah-beshalom",
+        "type": 302
       }
     ],
     "rewrites": [
