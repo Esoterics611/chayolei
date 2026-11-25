@@ -37,6 +37,8 @@ export interface MaayanLiveEvents {
   session(s: { uid: string; email: string; name: string; member: MaayanMember | null } | null): void;
   wellsprings(ws: Wellspring[]): void;
   questions(qs: Question[]): void;
+  /** The member's own profile as it changes (the teacher letting a question through, the teacher flag). */
+  member?(m: MaayanMember): void;
 }
 
 export class ApiError extends Error {
@@ -90,6 +92,12 @@ export class MaayanLive {
         }, () => { /* a refused listener reads nothing */ }));
       listen('public', query(col, where('status', 'in', ['published', 'answered'])));
       if (member) listen('mine', query(col, where('authorId', '==', member.uid)));
+      if (member) {
+        const { doc } = await import('firebase/firestore');
+        this.subs.push(onSnapshot(doc(db, 'maayanMembers', member.uid), d => {
+          if (d.exists()) this.events.member?.({ ...(d.data() as MaayanMember), uid: d.id });
+        }, () => { /* signed out meanwhile */ }));
+      }
       if (member?.teacher) listen('desk', query(col, where('status', 'in', ['pending', 'hidden'])));
     })();
   }

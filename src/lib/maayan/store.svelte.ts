@@ -91,6 +91,13 @@ class MaayanStore {
             this.status = 'ready';
           },
           wellsprings: ws => { if (ws.length) this.wellsprings = ws; },
+          member: m => {
+            // Only the signed-in member's own profile; a teacher flag that appears re-listens for the desk.
+            if (!this.me || this.me.uid !== m.uid) return;
+            const becameTeacher = !this.me.teacher && m.teacher;
+            this.me = m;
+            if (becameTeacher) this.client?.watch(m);
+          },
           questions: qs => { this.questions = qs; },
         }, MODE as MaayanMode, () => ({ me: this.me, questions: this.questions, wellsprings: this.wellsprings }));
         void this.client.start();

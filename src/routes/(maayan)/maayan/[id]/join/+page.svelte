@@ -106,7 +106,7 @@
           <button type="submit" class="btn btn-primary btn-xl btn-block" disabled={sending}>
             <Mail size={18} />{sending ? t('maayan.join.sending') : t('maayan.join.send')}
           </button>
-          <p class="hint">{t('maayan.join.returning')}</p>
+          <p class="hint">{t('maayan.signin.already')} <a class="signin" href={href(`/maayan/login?next=/maayan/${id}`)}>{t('maayan.nav.signIn')}</a></p>
           <p class="hint"><a href={href('/maayan/privacy')}>{t('maayan.join.privacyLink')}</a></p>
         </form>
       {:else if step === 'check'}
@@ -164,6 +164,7 @@
   @media (max-width: 820px) { .join .grid { grid-template-columns: minmax(0, 1fr); gap: var(--s6); } }
   .m-cover.small { width: 96px; margin-block-end: 6px; }
   .holding { font-size: var(--fs-xs); color: var(--ink-3); margin-block-end: var(--s4); }
+  .signin { color: var(--accent-text); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
   .linklike { color: var(--accent-text); text-decoration: underline; text-underline-offset: 2px; margin-inline-start: 6px; }
   .facts { display: flex; flex-direction: column; gap: var(--s3); margin-block-start: var(--s6); color: var(--ink-2); font-size: var(--fs-md); line-height: 1.55; }
   .facts li { display: grid; grid-template-columns: auto 1fr; gap: 10px; }
