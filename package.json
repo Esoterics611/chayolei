@@ -8,7 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-    "test:unit": "vitest run src/lib/team",
+    "test:unit": "vitest run src/lib/team src/lib/maayan",
     "test": "firebase emulators:exec --only firestore --project demo-chayolei \"vitest run\"",
     "test:watch": "firebase emulators:exec --only firestore --project demo-chayolei \"vitest\""
   },

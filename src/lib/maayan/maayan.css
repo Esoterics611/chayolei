@@ -1,0 +1,131 @@
+/* The wellsprings' pages (src/routes/(maayan)): reading-size type, the
+   document serif for the discourses' own words, a water-ring motif drawn
+   from the name. Built phone first: most readers arrive by scanning a QR. */
+
+body:has(.maayan) { margin: 0; }
+
+.maayan {
+  --m-measure: 40rem;
+  --m-title: clamp(2rem, 7vw, 3.1rem);
+  font-size: var(--fs-lg);
+  display: flex;
+  flex-direction: column;
+}
+
+.maayan .m-wrap { width: 100%; max-width: 60rem; margin-inline: auto; padding-inline: 16px; }
+.maayan .m-narrow { max-width: var(--m-measure); }
+.maayan .doc { font-family: var(--font-doc); }
+
+/* Top bar */
+.maayan .m-top { border-block-end: 1px solid var(--rule); background: var(--surface-raised); position: sticky; inset-block-start: 0; z-index: 20; }
+.maayan .m-top .m-wrap { display: flex; align-items: center; gap: var(--s3); min-height: 56px; }
+.maayan .m-brand { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; color: var(--accent-text); font-size: var(--fs-md); }
+.maayan .m-brand .full { display: inline; }
+.maayan .m-brand .short { display: none; }
+.maayan .m-nav { display: flex; align-items: center; gap: 2px; margin-inline-start: auto; flex-wrap: wrap; justify-content: flex-end; }
+.maayan .m-nav a, .maayan .m-nav button {
+  min-height: 36px; padding: 6px 10px; border-radius: var(--r-sm); font-size: var(--fs-sm);
+  color: var(--ink-2); display: inline-flex; align-items: center; gap: 6px;
+}
+.maayan .m-nav a:hover, .maayan .m-nav button:hover { background: var(--surface-2); color: var(--ink); }
+.maayan .m-nav a[aria-current='page'] { color: var(--accent-text); background: var(--accent-weak); }
+.maayan .m-nav .m-join { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.maayan .m-nav .m-join:hover { background: var(--accent-hover); color: var(--accent-ink); }
+@media (max-width: 560px) {
+  .maayan .m-brand .full { display: none; }
+  .maayan .m-brand .short { display: inline; }
+  .maayan .m-nav .hide-sm { display: none; }
+}
+
+.maayan .m-demo {
+  background: var(--st-progress-bg); color: var(--st-progress); font-size: var(--fs-sm);
+  text-align: center; padding: 6px 16px;
+}
+.maayan main { flex: 1; outline: none; }
+.maayan .m-foot { border-block-start: 1px solid var(--rule); color: var(--ink-3); font-size: var(--fs-sm); padding-block: var(--s6); margin-block-start: var(--s12); }
+.maayan .m-foot a { text-decoration: underline; text-underline-offset: 2px; }
+
+/* Hero */
+.maayan .m-hero { position: relative; overflow: hidden; padding-block: var(--s10) var(--s8); }
+.maayan .m-rings { position: absolute; inset-block-start: -150px; inset-inline-start: -260px; width: 760px; height: 520px; color: var(--accent); opacity: 0.13; pointer-events: none; }
+.maayan .m-hero > .m-wrap { position: relative; }
+.maayan .m-eyebrow { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-sm); font-weight: 600; color: var(--accent-text); letter-spacing: 0.02em; }
+.maayan .m-h1 { font-family: var(--font-doc); font-size: var(--m-title); line-height: 1.12; font-weight: 500; margin-block: var(--s3) var(--s2); text-wrap: balance; }
+.maayan .m-sub { color: var(--ink-2); font-size: var(--fs-md); }
+.maayan .m-slogan { font-family: var(--font-doc); font-size: clamp(1.2rem, 3.6vw, 1.5rem); line-height: 1.4; margin-block-start: var(--s5); color: var(--ink); text-wrap: balance; }
+.maayan .m-lead { font-size: clamp(1.05rem, 3vw, 1.2rem); line-height: 1.65; color: var(--ink-2); max-width: var(--m-measure); margin-block-start: var(--s4); }
+
+.maayan .m-cta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s3); margin-block-start: var(--s6); }
+.maayan .btn-xl { min-height: 52px; padding-inline: var(--s6); font-size: var(--fs-lg); font-weight: 600; border-radius: var(--r-md); }
+.maayan .m-cta .m-note { font-size: var(--fs-sm); color: var(--ink-3); }
+
+.maayan .m-stats { display: flex; flex-wrap: wrap; gap: var(--s2) var(--s5); margin-block-start: var(--s5); color: var(--ink-2); font-size: var(--fs-sm); }
+.maayan .m-stats span { display: inline-flex; align-items: center; gap: 6px; }
+
+/* "Came from the booklet?" */
+.maayan .m-booklet { display: grid; grid-template-columns: auto 1fr; gap: var(--s3) var(--s4); align-items: start; padding: var(--s5); border-radius: var(--r-lg); background: var(--accent-weak); margin-block-start: var(--s8); }
+.maayan .m-booklet .ic { color: var(--accent-text); margin-block-start: 3px; }
+.maayan .m-booklet h2 { font-weight: 600; font-size: var(--fs-lg); }
+.maayan .m-booklet p { color: var(--ink-2); line-height: 1.6; margin-block-start: 2px; }
+
+/* Promises */
+.maayan .m-promises { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s4); margin-block: var(--s8); }
+@media (max-width: 720px) { .maayan .m-promises { grid-template-columns: minmax(0, 1fr); } }
+.maayan .m-promise { padding: var(--s4) var(--s5); border: 1px solid var(--rule); border-radius: var(--r-md); background: var(--surface-raised); }
+.maayan .m-promise .ic { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-weak); color: var(--accent-text); margin-block-end: var(--s3); }
+.maayan .m-promise h3 { font-weight: 600; }
+.maayan .m-promise p { color: var(--ink-2); font-size: var(--fs-md); line-height: 1.55; margin-block-start: 4px; }
+
+/* Sections */
+.maayan .m-section { margin-block-start: var(--s10); }
+.maayan .m-h2 { font-family: var(--font-doc); font-size: clamp(1.4rem, 4vw, 1.75rem); font-weight: 500; margin-block-end: var(--s4); }
+
+/* Tabs */
+.maayan .m-tabs { display: flex; gap: 4px; border-block-end: 1px solid var(--rule); margin-block-end: var(--s4); overflow-x: auto; }
+.maayan .m-tabs button { padding: 10px 12px; font-size: var(--fs-md); color: var(--ink-3); border-block-end: 2px solid transparent; margin-block-end: -1px; white-space: nowrap; }
+.maayan .m-tabs button[aria-selected='true'] { color: var(--ink); border-color: var(--accent); font-weight: 600; }
+.maayan .m-tabs .n { font-size: var(--fs-xs); color: var(--ink-3); margin-inline-start: 4px; font-variant-numeric: tabular-nums; }
+
+/* Asking */
+.maayan .m-ask { padding: var(--s5); border-radius: var(--r-lg); border: 1px solid var(--rule-strong); background: var(--surface-raised); margin-block-end: var(--s6); }
+.maayan .m-ask textarea { min-height: 7.5rem; font-size: var(--fs-lg); line-height: 1.6; }
+.maayan .m-ask .row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s3); margin-block-start: var(--s3); }
+.maayan .m-ask .hint { max-width: 32rem; }
+.maayan .m-gate { text-align: center; padding: var(--s6) var(--s5); border: 1px dashed var(--rule-strong); border-radius: var(--r-lg); margin-block-end: var(--s6); }
+.maayan .m-gate p { color: var(--ink-2); margin-block: var(--s2) var(--s4); }
+
+.maayan .m-list { display: flex; flex-direction: column; gap: var(--s4); }
+.maayan .m-empty { color: var(--ink-3); padding: var(--s6); text-align: center; border: 1px dashed var(--rule); border-radius: var(--r-md); }
+
+/* Cards of wellsprings */
+.maayan .m-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(16.5rem, 1fr)); gap: var(--s4); }
+.maayan .m-card { display: flex; flex-direction: column; gap: var(--s2); padding: var(--s5); border: 1px solid var(--rule); border-radius: var(--r-lg); background: var(--surface-raised); transition: border-color var(--fast) var(--ease), transform var(--fast) var(--ease); }
+.maayan a.m-card:hover { border-color: var(--accent); transform: translateY(-1px); }
+.maayan .m-card h3 { font-family: var(--font-doc); font-size: 1.35rem; font-weight: 500; line-height: 1.25; }
+.maayan .m-card .sub { color: var(--ink-3); font-size: var(--fs-sm); }
+.maayan .m-card .slogan { color: var(--ink-2); font-size: var(--fs-md); line-height: 1.5; }
+.maayan .m-card .foot { margin-block-start: auto; padding-block-start: var(--s3); display: flex; flex-wrap: wrap; gap: var(--s2) var(--s4); align-items: center; font-size: var(--fs-sm); color: var(--ink-3); }
+.maayan .m-chip { display: inline-flex; align-items: center; gap: 5px; font-size: var(--fs-xs); font-weight: 600; padding: 3px 9px; border-radius: 999px; }
+.maayan .m-chip.open { background: var(--st-accepted-bg); color: var(--st-accepted); }
+.maayan .m-chip.upcoming { background: var(--st-review-bg); color: var(--st-review); }
+.maayan .m-chip.sample { background: var(--surface-3); color: var(--ink-2); }
+
+/* The ladder */
+.maayan .m-ladder { padding: var(--s6) var(--s5); border-radius: var(--r-lg); background: var(--surface-2); }
+.maayan .m-ladder > p { color: var(--ink-2); line-height: 1.65; max-width: var(--m-measure); }
+.maayan .m-steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--s3); margin-block: var(--s5); counter-reset: step; }
+@media (max-width: 720px) { .maayan .m-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.maayan .m-steps li { padding: var(--s4); border-radius: var(--r-md); background: var(--surface-raised); border: 1px solid var(--rule); }
+.maayan .m-steps li.here { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.maayan .m-steps li::before { counter-increment: step; content: counter(step); display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--accent-weak); color: var(--accent-text); font-size: var(--fs-xs); font-weight: 700; margin-block-end: var(--s2); }
+.maayan .m-steps b { display: block; font-weight: 600; }
+.maayan .m-steps span { display: block; color: var(--ink-3); font-size: var(--fs-sm); line-height: 1.45; margin-block-start: 2px; }
+
+/* Forms on the join and profile pages */
+.maayan .m-form-card { padding: var(--s6) var(--s5); border-radius: var(--r-lg); background: var(--surface-raised); border: 1px solid var(--rule); box-shadow: var(--shadow-pop); }
+.maayan .m-form-card .input { min-height: 48px; font-size: var(--fs-lg); }
+.maayan .m-check { display: flex; gap: 10px; align-items: flex-start; line-height: 1.5; cursor: pointer; }
+.maayan .m-check input { width: 18px; height: 18px; margin-block-start: 3px; accent-color: var(--accent); flex: none; }
+.maayan .m-follow-list { display: flex; flex-direction: column; gap: var(--s2); }
+.maayan .m-follow-list .m-check { padding: 10px 12px; border: 1px solid var(--rule); border-radius: var(--r-sm); }
+.maayan .m-follow-list .m-check small { display: block; color: var(--ink-3); font-size: var(--fs-sm); }

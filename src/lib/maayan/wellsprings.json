@@ -1,0 +1,114 @@
+[
+  {
+    "id": "padah-beshalom",
+    "status": "open",
+    "order": 1,
+    "title": {
+      "he": "פדה בשלום נפשי",
+      "en": "Padah Beshalom Nafshi"
+    },
+    "subtitle": {
+      "he": "מאמר כ\"ק אדמו\"ר האמצעי · שערי תשובה, שער התפלה · עם ביאור",
+      "en": "A discourse of the Mitteler Rebbe · Sha’arei Teshuvah, Sha’ar HaTefillah · with an explanation"
+    },
+    "slogan": {
+      "he": "גילוי היחידה: הדרך והמפתח של חסידות חב\"ד",
+      "en": "The revealing of the yechidah: the way and the key of Chabad Chassidus"
+    },
+    "about": {
+      "he": "המאמר נכתב אחרי שאדמו\"ר הזקן נגאל ממאסרו בי\"ט כסלו, ומבאר מהי גאולה \"בשלום\": דרכה של חסידות חב\"ד בעבודת התפילה. קראתם את החוברת? כאן שואלים עליה, והמלמד עונה.",
+      "en": "Written after the Alter Rebbe was freed from prison on 19 Kislev, it explains what a redemption \"in peace\" is: the way of Chabad Chassidus in the service of prayer. Read the booklet? Ask about it here, and the teacher answers."
+    },
+    "link": {
+      "label": {
+        "he": "החוברת והביאור",
+        "en": "The booklet and its explanation"
+      },
+      "url": "https://esoterics611.github.io/he/library.html"
+    }
+  },
+  {
+    "id": "shaar-hayichud",
+    "status": "open",
+    "order": 2,
+    "title": {
+      "he": "שער היחוד",
+      "en": "Sha’ar HaYichud"
+    },
+    "subtitle": {
+      "he": "לאדמו\"ר האמצעי · עם פירושים",
+      "en": "By the Mitteler Rebbe · with commentaries"
+    },
+    "slogan": {
+      "he": "פרק אחר פרק, עם ביאור",
+      "en": "Chapter by chapter, with an explanation"
+    },
+    "about": {
+      "he": "שיעורים על שער היחוד, פרק אחר פרק, והביאור שנכתב עליהם. שאלה על פרק? שואלים כאן.",
+      "en": "Lessons on Sha’ar HaYichud, chapter by chapter, and the explanation written on them. A question on a chapter? Ask it here."
+    },
+    "link": {
+      "label": {
+        "he": "השיעורים והביאור",
+        "en": "The lessons and the explanation"
+      },
+      "url": "https://esoterics611.github.io/he/library.html"
+    }
+  },
+  {
+    "id": "levushei-haneshama",
+    "status": "open",
+    "order": 3,
+    "title": {
+      "he": "לבושי הנשמה",
+      "en": "The Garments of the Soul"
+    },
+    "subtitle": {
+      "he": "לשון אדמו\"ר נ\"ע בעצמו · עם ביאור",
+      "en": "In the Rebbe Rashab’s own words · with an explanation"
+    },
+    "slogan": {
+      "he": "הנשמה ולבושיה",
+      "en": "The soul and its garments"
+    },
+    "about": {
+      "he": "ביאור על לבושי הנשמה, בלשון אדמו\"ר נ\"ע בעצמו. שאלות על הביאור נשאלות כאן.",
+      "en": "An explanation of the garments of the soul, in the Rebbe Rashab’s own words. Questions on it are asked here."
+    },
+    "link": {
+      "label": {
+        "he": "הביאור",
+        "en": "The explanation"
+      },
+      "url": "https://esoterics611.github.io/he/library.html"
+    }
+  },
+  {
+    "id": "kavanot-shacharit",
+    "status": "upcoming",
+    "order": 4,
+    "title": {
+      "he": "כוונות תפילת השחר",
+      "en": "The Intentions of the Morning Prayer"
+    },
+    "subtitle": {
+      "he": "ביאור תפילת השחר על פי דא\"ח",
+      "en": "The morning prayer explained by Chassidus"
+    },
+    "slogan": {
+      "he": "המעיין הבא",
+      "en": "The next wellspring"
+    },
+    "about": {
+      "he": "הביאור על תפילת השחר נכתב עכשיו. עקבו אחרי המעיין, ותקבלו מייל אחד כשהוא נפתח.",
+      "en": "The explanation of the morning prayer is being written now. Follow it and you’ll get one email when it opens."
+    },
+    "link": {
+      "label": {
+        "he": "הדפים שנכתבו",
+        "en": "The pages so far"
+      },
+      "url": "https://esoterics611.github.io/he/"
+    }
+  }
+]

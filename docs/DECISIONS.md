@@ -9,6 +9,8 @@
 | 2026-10-25 | **Crypto only, in TMIM.** No fiat, ramps, institutional connection or donations in the platform; TMIM minted only for participation. | `CLAUDE.md` |
 | 2026-10-25 | **Positioning:** three parallel systems (banking, corporate organization, workforce) on one ledger, for any small team; propose → decide → record. | `CLAUDE.md`, `MARKETING_BRIEF.md` |
 | 2026-10-25 | **Redemption** (TMIM → USDC) is decided later; until then no UI around USDC or redemption. | `CLAUDE.md` |
+| 2026-11-25 | **One sign-in, by email only**, for readers and members: Firebase email link, which confirms the address; no password, no wallet to join. The platform stays crypto-only in TMIM; a member links a wallet later, when they come to hold TMIM. A wallet kept for members until they ask for it is set aside for now. Wallet sign-in stays for the team app. | `MAAYAN.md` §2 |
+| 2026-11-25 | **Wellsprings:** each discourse a place where its readers ask and the teacher answers; a member's first question waits for the teacher. | `MAAYAN.md` |
 
 ## Open
 

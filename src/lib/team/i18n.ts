@@ -4,6 +4,7 @@
 
 import type { Locale, Text } from './types';
 import { ui } from './ui.svelte';
+import { en as maayanEn, he as maayanHe } from '$lib/maayan/strings';
 
 type Dict = Record<string, string>;
 
@@ -1511,7 +1512,7 @@ const he: Dict = {
   'shell.tmimOnlyHint': 'קריפטו בלבד, במטבע של הפלטפורמה. בלי כסף פיאט ובלי המרות.',
 };
 
-export const DICTS: Record<Locale, Dict> = { en, he };
+export const DICTS: Record<Locale, Dict> = { en: { ...en, ...maayanEn }, he: { ...he, ...maayanHe } };
 
 // In right-to-left text every interpolated value (a name, an amount, a version)
 // is a bidi isolate, so Latin and numbers inside Hebrew sentences keep their order.

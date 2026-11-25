@@ -27,6 +27,7 @@ Chayolei is **not** a bank, an employer, a legal entity or an investment. TMIM p
 - ✅ **The chain bridge**: with the team contracts configured, each settled action is signed by the member, relayed by the platform (which pays the fee) and recorded with its transaction. Tested end to end in the browser on a local chain.
 - ✅ The original app's pages, at their old URLs, with on-chain governance votes counted once.
 - 🔄 Deploying the team contracts to Base Sepolia; redeploying the governance contracts with audit fixes L-1, L-2, M-2.
+- ✅ **Wellsprings** (`docs/MAAYAN.md`): a Hebrew page per discourse where readers who join by email ask and the teacher answers; in the demo and the live app.
 - ✅ **Notifications** in the app; an **accessibility audit** (WCAG 2.2 A/AA, every screen, both languages and themes, desktop and phone) and a size budget, in CI.
 - ✅ **The AI planner:** suggests a breakdown of an objective that a lead edits and adds; what is added shows as AI-assisted. Needs `ANTHROPIC_API_KEY` on the server ([`docs/TEAM_BACKEND.md`](docs/TEAM_BACKEND.md) §6a); the demo shows a labelled sample.
 - ⬜ Passkey sign-in and fee-free contributions (every other action is already sponsored); these wait on the owner's choice of wallet strategy ([`docs/WALLETS.md`](docs/WALLETS.md)).

@@ -125,6 +125,29 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // ── Wellsprings (docs/MAAYAN.md) — the server writes ───────
+    // Anyone may read a wellspring and its published or answered questions
+    // (signed in or not); a waiting or declined question only its author and
+    // the teacher. A member's profile, with their email, only they read.
+    function isMaayanTeacher() {
+      return isAuthenticated()
+        && get(/databases/$(database)/documents/maayanMembers/$(request.auth.uid)).data.get('teacher', false) == true;
+    }
+    match /wellsprings/{wellspringId} {
+      allow read:  if true;
+      allow write: if false;
+    }
+    match /maayanQuestions/{questionId} {
+      allow read:  if resource.data.status in ['published', 'answered']
+        || (isAuthenticated() && resource.data.authorId == request.auth.uid)
+        || isMaayanTeacher();
+      allow write: if false;
+    }
+    match /maayanMembers/{uid} {
+      allow read:  if isAuthenticated() && request.auth.uid == uid;
+      allow write: if false;
+    }
+
     // ── Payment Streams ────────────────────────────────────────
     match /paymentStreams/{streamId} {
       allow read:  if isAuthenticated();
