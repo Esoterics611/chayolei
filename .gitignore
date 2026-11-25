@@ -48,3 +48,4 @@ tmpclaude-*
 
 # Static demo build (scripts/build-demo.sh)
 demo-build/
+spark-build/

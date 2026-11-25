@@ -1,0 +1,138 @@
+[
+  {
+    "id": "padah-beshalom",
+    "status": "open",
+    "order": 1,
+    "title": {
+      "he": "פדה בשלום נפשי",
+      "en": "Padah Beshalom Nafshi"
+    },
+    "subtitle": {
+      "he": "מאמר כ\"ק אדמו\"ר האמצעי · שערי תשובה, שער התפלה · עם ביאור",
+      "en": "A discourse of the Mitteler Rebbe · Sha’arei Teshuvah, Sha’ar HaTefillah · with an explanation"
+    },
+    "slogan": {
+      "he": "גילוי היחידה: הדרך והמפתח של חסידות חב\"ד",
+      "en": "The revealing of the yechidah: the way and the key of Chabad Chassidus"
+    },
+    "about": {
+      "he": "המאמר נכתב אחרי שאדמו\"ר הזקן נגאל ממאסרו בי\"ט כסלו, ומבאר מהי גאולה \"בשלום\": דרכה של חסידות חב\"ד בעבודת התפילה. קראתם את החוברת? כאן שואלים עליה, והמלמד עונה.",
+      "en": "Written after the Alter Rebbe was freed from prison on 19 Kislev, it explains what a redemption \"in peace\" is: the way of Chabad Chassidus in the service of prayer. Read the booklet? Ask about it here, and the teacher answers."
+    },
+    "link": {
+      "label": {
+        "he": "החוברת והביאור",
+        "en": "The booklet and its explanation"
+      },
+      "url": "https://esoterics611.github.io/he/library.html#padah"
+    },
+    "dedicate": "https://esoterics611.github.io/he/dedicate.html#padah-beshalom",
+    "cover": "https://esoterics611.github.io/samples/padah-beshalom/booklet-01.webp",
+    "pdf": "https://esoterics611.github.io/samples/padah-beshalom/padah-beshalom.pdf",
+    "printed": true,
+    "pdfLabel": {
+      "he": "החוברת כולה, 72 עמודים",
+      "en": "The whole booklet, 72 pages"
+    }
+  },
+  {
+    "id": "shaar-hayichud",
+    "status": "open",
+    "order": 2,
+    "title": {
+      "he": "שער היחוד",
+      "en": "Sha’ar HaYichud"
+    },
+    "subtitle": {
+      "he": "מאמר כ\"ק אדמו\"ר האמצעי · נר מצוה ותורה אור · עם ביאור, פרק אחר פרק",
+      "en": "By the Mitteler Rebbe · Ner Mitzvah veTorah Or · explained chapter by chapter"
+    },
+    "slogan": {
+      "he": "\"מה היא בעצם ובמה יתבונן\": עבודת ההתבוננות",
+      "en": "\"What it is in essence, and on what to contemplate\": the work of contemplation"
+    },
+    "about": {
+      "he": "שער היחוד הוא קונטרס של כ\"ק אדמו\"ר האמצעי על עבודת ההתבוננות. הוא פותח במה שקודם להתפעלות ומוליד אותה, ההתבוננות עצמה. הפרק הראשון עונה על \"מה היא בעצם\": ההתבוננות היא עיון, עמידה ממושכת על דבר מושכל עד שמגיעים לעומקו. למדתם את הפרק? כאן שואלים עליו, והמלמד עונה.",
+      "en": "Sha’ar HaYichud is the Mitteler Rebbe’s treatise on the work of contemplation. It opens with what comes before feeling and gives birth to it: contemplation itself. The first chapter answers “what it is in essence”: contemplation is iyun, dwelling on a concept until one reaches its depth. Studied the chapter? Ask about it here, and the teacher answers."
+    },
+    "link": {
+      "label": {
+        "he": "פרק א עם ביאור, והשיעורים",
+        "en": "Chapter 1 explained, and the lessons"
+      },
+      "url": "https://esoterics611.github.io/he/library.html#shaar-hayichud"
+    },
+    "dedicate": "https://esoterics611.github.io/he/dedicate.html#shaar-hayichud",
+    "cover": "https://esoterics611.github.io/samples/shaar-hayichud/perek-01-01.webp",
+    "pdf": "https://esoterics611.github.io/samples/shaar-hayichud/shaar-hayichud-perek-01.pdf",
+    "pdfLabel": {
+      "he": "פרק א עם ביאור, 11 עמודים",
+      "en": "Chapter 1 explained, 11 pages"
+    }
+  },
+  {
+    "id": "levushei-haneshama",
+    "status": "open",
+    "order": 3,
+    "title": {
+      "he": "לבושי הנשמה",
+      "en": "The Garments of the Soul"
+    },
+    "subtitle": {
+      "he": "לשון אדמו\"ר נ\"ע בעצמו · הגהה בתורה אור, מבוארת הערה אחר הערה",
+      "en": "In the Alter Rebbe’s own words · a gloss in Torah Or, explained note by note"
+    },
+    "slogan": {
+      "he": "הנשמה ולבושיה, וסוד התורה והמצוות",
+      "en": "The soul and its garments, and the secret of Torah and mitzvot"
+    },
+    "about": {
+      "he": "\"יפה שעה אחת בתשובה ומעשים טובים בעולם הזה מכל חיי העולם הבא.\" אדמו\"ר הזקן עונה על השאלה במאמר שבתורה אור, ומוסיף עליו הגהה בכתב ידו, שבה הוא פותח את המפה הפנימית של הנשמה: לנשמה יש לבושים, והתורה והמצוות הן המלאכה שבה הם נארגים. למדתם את החוברת או את דף הלימוד? כאן שואלים עליהם.",
+      "en": "“Better is one hour of repentance and good deeds in this world than all the life of the world to come.” The Alter Rebbe answers the question in a discourse in Torah Or, adding a gloss in his own hand that opens the inner map of the soul: the soul has garments, and Torah and mitzvot are the craft in which they are woven. Studied the pamphlet or the handout? Ask about them here."
+    },
+    "link": {
+      "label": {
+        "he": "החוברת, חוברת המקורות ודף הלימוד",
+        "en": "The pamphlet, the reading pack and the handout"
+      },
+      "url": "https://esoterics611.github.io/he/library.html#levushei-haneshama"
+    },
+    "dedicate": "https://esoterics611.github.io/he/dedicate.html#levushei-haneshama",
+    "cover": "https://esoterics611.github.io/samples/levushei-haneshama/pamphlet-01.webp",
+    "pdf": "https://esoterics611.github.io/samples/levushei-haneshama/levushei-haneshama-pamphlet.pdf",
+    "pdfLabel": {
+      "he": "החוברת, 24 עמודים",
+      "en": "The pamphlet, 24 pages"
+    }
+  },
+  {
+    "id": "kavanot-shacharit",
+    "status": "upcoming",
+    "order": 4,
+    "title": {
+      "he": "ביאור תפילת השחר על פי האר\"י",
+      "en": "The morning prayer explained after the Arizal"
+    },
+    "subtitle": {
+      "he": "כוונות תפילת השחר על פי האר\"י ז\"ל · 8 מתוך 13 פרקיו כבר כתובים",
+      "en": "The Arizal’s intentions of the morning prayer · 8 of its 13 chapters written"
+    },
+    "slogan": {
+      "he": "מה פועל כל חלק של התפילה, ומה הוא בנפש המתפלל",
+      "en": "What each part of the prayer does, and what it is in the one who prays"
+    },
+    "about": {
+      "he": "ביאור על כל חלק של תפילת השחר על פי האר\"י: מה הוא פועל, ישר מתוך שער הכוונות ופרי עץ חיים, ומה הוא בנפש המתפלל. 8 מתוך 13 פרקיו כבר כתובים. המעיין ייפתח כשהביאור יושלם; עקבו אחריו, והוא יופיע אצלכם כשייפתח.",
+      "en": "An explanation of every part of the morning prayer after the Arizal: what it does, straight from Sha’ar HaKavanot and Pri Etz Chaim, and what it is in the one who prays. 8 of its 13 chapters are written. The wellspring opens when the explanation is complete; follow it, and it will be on your page when it opens."
+    },
+    "link": {
+      "label": {
+        "he": "עמודים מן הביאור",
+        "en": "Pages of the explanation"
+      },
+      "url": "https://esoterics611.github.io/he/library.html#kavanot-shacharit"
+    },
+    "dedicate": "https://esoterics611.github.io/he/dedicate.html#kavanot-shacharit",
+    "cover": "https://esoterics611.github.io/samples/kavanot-shacharit/biur-01.webp"
+  }
+]

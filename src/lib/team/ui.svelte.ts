@@ -55,11 +55,11 @@ class UiState {
 
   dir = $derived<'rtl' | 'ltr'>(this.locale === 'he' ? 'rtl' : 'ltr');
 
-  /** Read saved preferences, falling back to the browser's language. */
-  init(): void {
+  /** Read saved preferences, falling back to `fallback` or else the browser's language. */
+  init(fallback?: Locale): void {
     if (typeof window === 'undefined') return;
     const prefs = readPrefs();
-    this.locale = prefs.locale ?? (navigator.language?.startsWith('he') ? 'he' : 'en');
+    this.locale = prefs.locale ?? fallback ?? (navigator.language?.startsWith('he') ? 'he' : 'en');
     this.theme = prefs.theme ?? 'system';
     this.apply();
   }
