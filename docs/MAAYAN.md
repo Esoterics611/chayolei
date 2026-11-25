@@ -77,7 +77,8 @@ Kept ready, nothing to rebuild (owner, 2026-11-25: "keep all our plans for the n
 2. `bash chayolei/scripts/gcp-bootstrap.sh <project-id>` again, without `--spark`: it adds Cloud Run, Cloud Build, the registry and their accounts.
 3. `DEPLOY_MODE=server` in `deploy.env`, and a `[deploy]` commit: the app runs on Cloud Run behind the same domain (§6), the team app goes live, the wellsprings' writes go through the server (`/api/maayan`), the follower counts and the daily limit are kept there.
 4. Answer emails: a Resend account with a sending domain, `resend-api-key` and `maayan-secret` in Secret Manager, `MAIL=1` and `MAIL_FROM` in `deploy.env` (§5).
-5. Then the open items of §8 that wait for the live app (the "join the discussion" banner on the Sefer Forge home page) and the ladder into the team app.
+5. Our own sign-in email: Firebase's email-link message can't be reworded (only its app name, sender name, reply-to and language, set in the console: Project settings → Public-facing name "ספר פורג' · מעיינות"; Authentication → Templates → sender "ספר פורג'", reply-to esoterics611@gmail.com). With the server, the link is made by the Admin SDK (`generateSignInWithEmailLink`) and sent by Resend in our own Hebrew, with the wellspring's name and a button, from a Sefer Forge address (needs a sending domain). Until then, "Continue with Google" skips the email for Google accounts.
+6. Then the open items of §8 that wait for the live app (the "join the discussion" banner on the Sefer Forge home page) and the ladder into the team app.
 
 ## 7. The demo
 
