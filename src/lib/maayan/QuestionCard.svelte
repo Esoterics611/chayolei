@@ -3,6 +3,7 @@
   // teacher's desk passes its actions as `actions`.
   import type { Snippet } from 'svelte';
   import type { Question } from './types';
+  import { DEMO_TEACHER } from './seed';
   import { t, fmtRelative } from '$lib/team/i18n';
   import GraduationCap from '@lucide/svelte/icons/graduation-cap';
   import Hourglass from '@lucide/svelte/icons/hourglass';
@@ -22,7 +23,7 @@
   <p class="text" dir="auto">{q.text}</p>
   {#if q.answer}
     <div class="ans">
-      <p class="by"><GraduationCap size={15} />{t('maayan.q.teacher')} · {q.answer.byName}</p>
+      <p class="by"><GraduationCap size={15} />{t('maayan.q.teacher')}{#if q.answer.byName !== DEMO_TEACHER.name} · {q.answer.byName}{/if}</p>
       <p class="atext doc" dir="auto">{q.answer.text}</p>
     </div>
   {/if}
