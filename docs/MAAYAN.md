@@ -61,6 +61,24 @@ Firebase sends the sign-in links itself (template language: Hebrew, set by `auth
 7. The teacher signs in once on `/maayan`, then `node scripts/maayan-setup.mjs teacher <their email>`.
 8. For answer emails: a Resend account with the sending domain verified; `RESEND_API_KEY`, `MAIL_FROM`, `MAAYAN_SECRET`, `PUBLIC_ORIGIN` on Cloud Run (the key and secret through Secret Manager).
 
+## 6a. The free version (Spark plan, no billing) — live first, 2026-11-25
+
+Until the project has billing (a partner is to add it), the wellsprings run with **no server**: `DEPLOY_MODE=spark` in `deploy.env`.
+
+- **What runs:** static pages on Firebase Hosting (`scripts/build-spark.sh` → `spark-build/`, `firebase.spark.json`: `/` opens `/maayan`, every path serves the app); Firebase Auth's email link (free; Firebase sends the sign-in emails); Firestore. The wellsprings are live (`VITE_MAAYAN_BACKEND=direct`): the browser runs the engine and writes to Firestore itself (`src/lib/maayan/live.ts`), and `firestore.rules` holds every write to the same rules: a profile only for one's own confirmed email and never with `teacher` or a head start; a first question waits; only the teacher publishes, declines and answers (and counts the asker's approval, one at a time); only the asker withdraws, before the answer; no one reads another's email. Tests: `src/lib/server/maayan-direct-rules.test.ts`. The team app rides along as its demo.
+- **What waits for the server version:** the "the teacher answered" email (members see the new-answer mark when they come back); the daily limit of ten questions is kept by the browser only; the follower count is not kept (the pages hide it while it is 0).
+- **Set-up:** `bash chayolei/scripts/gcp-bootstrap.sh <project-id> --spark` in Cloud Shell (free services only), the Web app's config in `deploy.env`, Email link sign-in enabled; a commit with `[deploy]` publishes. The teacher signs in once at `/maayan`, then in the Firebase console (Firestore → `maayanMembers` → their document) adds the field `teacher` = `true` (boolean); or `node scripts/maayan-setup.mjs teacher <email>` where admin credentials are at hand.
+
+## 6b. Near future: the server version (once there's billing)
+
+Kept ready, nothing to rebuild (owner, 2026-11-25: "keep all our plans for the near future"):
+
+1. The project on the Blaze plan (a partner adds the billing account), with a budget alert.
+2. `bash chayolei/scripts/gcp-bootstrap.sh <project-id>` again, without `--spark`: it adds Cloud Run, Cloud Build, the registry and their accounts.
+3. `DEPLOY_MODE=server` in `deploy.env`, and a `[deploy]` commit: the app runs on Cloud Run behind the same domain (§6), the team app goes live, the wellsprings' writes go through the server (`/api/maayan`), the follower counts and the daily limit are kept there.
+4. Answer emails: a Resend account with a sending domain, `resend-api-key` and `maayan-secret` in Secret Manager, `MAIL=1` and `MAIL_FROM` in `deploy.env` (§5).
+5. Then the open items of §8 that wait for the live app (the "join the discussion" banner on the Sefer Forge home page) and the ladder into the team app.
+
 ## 7. The demo
 
 `bash scripts/build-demo.sh` includes the wellsprings: sample questions (marked "לדוגמה"; their answers are the printed booklet's own words), simulated email sign-in ("Demo: open the link"), and "view as the teacher" on the member's page, so one person can walk the whole way. `bash scripts/publish-demo.sh` publishes it at https://esoterics611.github.io/chayolei/ (the wellspring: `#/maayan/padah-beshalom`).

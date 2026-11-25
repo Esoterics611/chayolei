@@ -11,9 +11,15 @@ import { t } from '$lib/team/i18n';
 import * as M from './engine';
 import { DEMO_TEACHER, SAMPLE_STUDYING, WELLSPRINGS, sampleQuestions } from './seed';
 import type { MaayanMember, Question, Wellspring } from './types';
-import type { MaayanLive } from './live';
+import type { MaayanLive, MaayanMode } from './live';
 
-export const LIVE = import.meta.env.VITE_TEAM_BACKEND === 'firestore';
+/** How the wellsprings run: 'demo' in this browser; 'server' through the API
+ *  (Cloud Run, with answer emails); 'direct' (the free version) writing to
+ *  Firestore itself under firestore.rules. VITE_MAAYAN_BACKEND chooses; by
+ *  default the live team app means 'server'. */
+export const MODE: 'demo' | MaayanMode = (import.meta.env.VITE_MAAYAN_BACKEND as MaayanMode | undefined)
+  ?? (import.meta.env.VITE_TEAM_BACKEND === 'firestore' ? 'server' : 'demo');
+export const LIVE = MODE !== 'demo';
 
 const DEMO_KEY = 'chayolei-maayan-demo-v1';
 /** Answers this browser has shown the member, so new ones can be marked. */
@@ -32,6 +38,7 @@ const uid = () => `m${Date.now().toString(36)}${Math.random().toString(36).slice
 
 class MaayanStore {
   readonly live = LIVE;
+  readonly mode = MODE;
   wellsprings = $state<Wellspring[]>([...WELLSPRINGS]);
   questions = $state<Question[]>([]);
   /** The signed-in member's profile (null: signed out, or signed in without a profile yet). */
@@ -76,7 +83,7 @@ class MaayanStore {
           },
           wellsprings: ws => { if (ws.length) this.wellsprings = ws; },
           questions: qs => { this.questions = qs; },
-        });
+        }, MODE as MaayanMode, () => ({ me: this.me, questions: this.questions, wellsprings: this.wellsprings }));
         void this.client.start();
       });
       return;
@@ -148,7 +155,7 @@ class MaayanStore {
     const done = await this.run(async () => {
       const name = M.checkName(p.name);
       if (LIVE) {
-        this.me = await this.client!.post<MaayanMember>('/api/maayan/me', { ...p, name });
+        this.me = await this.client!.saveProfile({ ...p, name });
         this.verifiedEmail = '';
         this.client!.watch(this.me);
         return true;
@@ -170,7 +177,7 @@ class MaayanStore {
     const done = await this.run(async () => {
       const next = { ...me, ...p, ...(p.name !== undefined ? { name: M.checkName(p.name) } : {}) };
       if (LIVE) {
-        this.me = await this.client!.post<MaayanMember>('/api/maayan/me', {
+        this.me = await this.client!.saveProfile({
           name: next.name, follows: next.follows, notify: next.notify, quoteOk: next.quoteOk,
         });
       } else {
@@ -205,7 +212,7 @@ class MaayanStore {
 
   async ask(wellspringId: string, text: string, opts: { ref?: string; parentId?: string } = {}): Promise<Question | null> {
     return this.run(async () => {
-      if (LIVE) return this.client!.post<Question>('/api/maayan/questions', { wellspringId, text, ...opts });
+      if (LIVE) return this.client!.ask(wellspringId, text, opts);
       const now = new Date().toISOString();
       const parent = opts.parentId ? this.questions.find(q => q.id === opts.parentId) : undefined;
       const askedToday = this.me ? M.askedSince(this.questions, this.me.uid, now) : 0;
@@ -220,7 +227,7 @@ class MaayanStore {
   async withdraw(id: string): Promise<boolean> {
     const done = await this.run(async () => {
       if (LIVE) {
-        await this.client!.post(`/api/maayan/questions/${encodeURIComponent(id)}`, { action: 'withdraw' });
+        await this.client!.withdraw(id);
         this.questions = this.questions.filter(q => q.id !== id);
         return true;
       }
@@ -244,7 +251,7 @@ class MaayanStore {
   private async teacherAct(id: string, action: 'approve' | 'hide' | 'answer', text = ''): Promise<boolean> {
     const done = await this.run(async () => {
       if (LIVE) {
-        await this.client!.post(`/api/maayan/questions/${encodeURIComponent(id)}`, { action, text });
+        await this.client!.act(id, action, text);
         return true;
       }
       const before = this.questions.find(q => q.id === id);

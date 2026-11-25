@@ -1,7 +1,10 @@
 name: Deploy
 
-# Builds the app with Cloud Build, deploys it to Cloud Run, then Firebase
-# Hosting (the domain), the Firestore rules and indexes, and the wellsprings.
+# DEPLOY_MODE in deploy.env chooses (docs/MAAYAN.md §6, §6a):
+#   spark  (the free version): static pages to Firebase Hosting, the wellsprings
+#          writing to Firestore themselves; no server, no billing.
+#   server: Cloud Build → Cloud Run, then Hosting in front of it (needs billing).
+# Then the Firestore rules and indexes, and the wellsprings.
 # Runs on a push to main, or on any branch when the commit message says [deploy].
 # Signs in to Google with no stored key (Workload Identity Federation, set up
 # once by scripts/gcp-bootstrap.sh); the values it needs are in deploy.env.
@@ -41,9 +44,17 @@ jobs:
           cache: npm
       - run: npm ci --no-audit --no-fund
       - name: Build and deploy to Cloud Run
+        if: env.DEPLOY_MODE != 'spark'
         run: bash scripts/deploy.sh
       - name: Hosting, Firestore rules and indexes
+        if: env.DEPLOY_MODE != 'spark'
         run: npx firebase deploy --only hosting,firestore --project "$FIREBASE_PROJECT_ID" --non-interactive --force
+      - name: Build the free version
+        if: env.DEPLOY_MODE == 'spark'
+        run: bash scripts/build-spark.sh
+      - name: Hosting (the free version), Firestore rules and indexes
+        if: env.DEPLOY_MODE == 'spark'
+        run: npx firebase deploy --config firebase.spark.json --only hosting,firestore --project "$FIREBASE_PROJECT_ID" --non-interactive --force
       - name: The wellsprings
         run: node scripts/maayan-setup.mjs wellsprings
         env:

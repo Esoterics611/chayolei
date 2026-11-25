@@ -132,7 +132,7 @@
       </div>
 
       <p class="m-stats">
-        <span><Users size={15} />{t('maayan.studying', { n: fmtNum(maayan.studying(id)) })}</span>
+        {#if maayan.studying(id)}<span><Users size={15} />{t('maayan.studying', { n: fmtNum(maayan.studying(id)) })}</span>{/if}
         {#if c.answered}<span><MessageCircleQuestionMark size={15} />{t('maayan.answeredCount', { n: fmtNum(c.answered) })}</span>{/if}
       </p>
 
@@ -246,7 +246,7 @@
               <span><span class="m-chip {o.status}">{t(`maayan.status.${o.status}`)}</span></span>
               <h3>{lt(o.title)}</h3>
               <p class="slogan">{lt(o.slogan)}</p>
-              <p class="foot"><span>{t('maayan.studying', { n: fmtNum(maayan.studying(o.id)) })}</span></p>
+              {#if maayan.studying(o.id)}<p class="foot"><span>{t('maayan.studying', { n: fmtNum(maayan.studying(o.id)) })}</span></p>{/if}
             </a>
           {/each}
         </div>

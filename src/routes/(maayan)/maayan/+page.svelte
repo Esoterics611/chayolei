@@ -30,7 +30,7 @@
         <p class="sub">{lt(w.subtitle)}</p>
         <p class="slogan">{lt(w.slogan)}</p>
         <p class="foot">
-          <span><Users size={14} style="display:inline;vertical-align:-2px" /> {t('maayan.studying', { n: fmtNum(maayan.studying(w.id)) })}</span>
+          {#if maayan.studying(w.id)}<span><Users size={14} style="display:inline;vertical-align:-2px" /> {t('maayan.studying', { n: fmtNum(maayan.studying(w.id)) })}</span>{/if}
           {#if c.answered}<span><MessageCircleQuestionMark size={14} style="display:inline;vertical-align:-2px" /> {t('maayan.answeredCount', { n: fmtNum(c.answered) })}</span>{/if}
         </p>
       </a>

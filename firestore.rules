@@ -125,14 +125,46 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
-    // ── Wellsprings (docs/MAAYAN.md) — the server writes ───────
+    // ── Wellsprings (docs/MAAYAN.md) ───────────────────────────
     // Anyone may read a wellspring and its published or answered questions
     // (signed in or not); a waiting or declined question only its author and
     // the teacher. A member's profile, with their email, only they read.
-    function isMaayanTeacher() {
-      return isAuthenticated()
-        && get(/databases/$(database)/documents/maayanMembers/$(request.auth.uid)).data.get('teacher', false) == true;
+    //
+    // Writes: the server (Admin SDK, rules don't apply) in the server version;
+    // the browser itself in the free version (VITE_MAAYAN_BACKEND=direct, §6a),
+    // held here to the engine's rules (src/lib/maayan/engine.ts): a profile
+    // only for a confirmed email and never with `teacher` or a head start; a
+    // first question waits for the teacher; only the teacher publishes,
+    // declines and answers; only the asker withdraws, before the answer.
+    function maayanMemberPath(uid) {
+      return /databases/$(database)/documents/maayanMembers/$(uid);
     }
+    function isMaayanMember() {
+      return isAuthenticated() && exists(maayanMemberPath(request.auth.uid));
+    }
+    function isMaayanTeacher() {
+      return isMaayanMember()
+        && get(maayanMemberPath(request.auth.uid)).data.get('teacher', false) == true;
+    }
+    function emailConfirmed() {
+      return isAuthenticated() && request.auth.token.email_verified == true
+        && request.auth.token.email is string;
+    }
+    function goodName(n) {
+      return n is string && n.trim().size() >= 2 && n.size() <= 60;
+    }
+    function goodChoices(d) {
+      return d.follows is list && d.follows.size() <= 50 && d.notify is bool && d.quoteOk is bool;
+    }
+    function openWellspring(id) {
+      return exists(/databases/$(database)/documents/wellsprings/$(id))
+        && get(/databases/$(database)/documents/wellsprings/$(id)).data.status == 'open';
+    }
+    function answeredIn(parentId, wellspringId) {
+      let p = get(/databases/$(database)/documents/maayanQuestions/$(parentId)).data;
+      return p.status == 'answered' && p.wellspringId == wellspringId;
+    }
+
     match /wellsprings/{wellspringId} {
       allow read:  if true;
       allow write: if false;
@@ -141,11 +173,65 @@ service cloud.firestore {
       allow read:  if resource.data.status in ['published', 'answered']
         || (isAuthenticated() && resource.data.authorId == request.auth.uid)
         || isMaayanTeacher();
-      allow write: if false;
+
+      // A member asks: in their own name, on an open wellspring; pending
+      // unless the teacher has already let one of theirs through.
+      allow create: if emailConfirmed() && isMaayanMember()
+        && request.resource.data.keys().hasOnly(['id', 'wellspringId', 'authorId', 'authorName', 'text', 'status', 'createdAt', 'ref', 'parentId'])
+        && request.resource.data.id == questionId
+        && request.resource.data.authorId == request.auth.uid
+        && request.resource.data.authorName == get(maayanMemberPath(request.auth.uid)).data.name
+        && request.resource.data.text is string
+        && request.resource.data.text.trim().size() >= 8 && request.resource.data.text.size() <= 2000
+        && request.resource.data.createdAt is string
+        && (!('ref' in request.resource.data) || (request.resource.data.ref is string && request.resource.data.ref.size() <= 80))
+        && openWellspring(request.resource.data.wellspringId)
+        && (request.resource.data.status == 'pending'
+            || (request.resource.data.status == 'published'
+                && (get(maayanMemberPath(request.auth.uid)).data.approved > 0 || isMaayanTeacher())))
+        && (!('parentId' in request.resource.data)
+            || answeredIn(request.resource.data.parentId, request.resource.data.wellspringId));
+
+      // The teacher publishes, declines or answers; nothing else changes.
+      allow update: if isMaayanTeacher()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'answer'])
+        && (
+          (request.resource.data.status == 'published' && resource.data.status in ['pending', 'hidden']
+            && !('answer' in request.resource.data))
+          || (request.resource.data.status == 'hidden' && resource.data.status in ['pending', 'published'])
+          || (request.resource.data.status == 'answered' && resource.data.status in ['pending', 'published', 'answered']
+            && request.resource.data.answer.keys().hasOnly(['text', 'byId', 'byName', 'at'])
+            && request.resource.data.answer.byId == request.auth.uid
+            && request.resource.data.answer.text is string
+            && request.resource.data.answer.text.size() >= 1 && request.resource.data.answer.text.size() <= 12000)
+        );
+
+      // The asker withdraws a question not yet answered.
+      allow delete: if isAuthenticated() && resource.data.authorId == request.auth.uid
+        && resource.data.status != 'answered';
     }
     match /maayanMembers/{uid} {
       allow read:  if isAuthenticated() && request.auth.uid == uid;
-      allow write: if false;
+
+      // Joining: one's own profile, for one's confirmed email, starting from nothing.
+      allow create: if emailConfirmed() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['uid', 'name', 'email', 'follows', 'notify', 'quoteOk', 'joinedFrom', 'joinedAt', 'approved'])
+        && request.resource.data.uid == uid
+        && request.resource.data.email == request.auth.token.email.lower()
+        && request.resource.data.approved == 0
+        && goodName(request.resource.data.name) && goodChoices(request.resource.data)
+        && request.resource.data.joinedFrom is string && request.resource.data.joinedFrom.size() <= 80
+        && request.resource.data.joinedAt is string;
+
+      // The member changes their name and choices; the teacher counts a
+      // question let through (one at a time), without reading the profile.
+      allow update: if (request.auth.uid == uid && emailConfirmed()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'follows', 'notify', 'quoteOk'])
+          && goodName(request.resource.data.name) && goodChoices(request.resource.data))
+        || (isMaayanTeacher()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['approved'])
+          && request.resource.data.approved == resource.data.approved + 1);
+      allow delete: if false;
     }
 
     // ── Payment Streams ────────────────────────────────────────

@@ -11,6 +11,7 @@
 | 2026-10-25 | **Redemption** (TMIM → USDC) is decided later; until then no UI around USDC or redemption. | `CLAUDE.md` |
 | 2026-11-25 | **One sign-in, by email only**, for readers and members: Firebase email link, which confirms the address; no password, no wallet to join. The platform stays crypto-only in TMIM; a member links a wallet later, when they come to hold TMIM. A wallet kept for members until they ask for it is set aside for now. Wallet sign-in stays for the team app. | `MAAYAN.md` §2 |
 | 2026-11-25 | **Wellsprings:** each discourse a place where its readers ask and the teacher answers; a member's first question waits for the teacher. | `MAAYAN.md` |
+| 2026-11-25 | **Live first on the free plan:** until a partner adds billing, the wellsprings run with no server (Firebase Spark: Hosting, Auth, Firestore; the browser writes under `firestore.rules`); the server version, answer emails included, is kept ready for then. | `MAAYAN.md` §6a, §6b |
 
 ## Open
 
