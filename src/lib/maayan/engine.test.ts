@@ -74,3 +74,32 @@ describe('email and name', () => {
     expect(M.follow(m, upcoming.id, false).follows).not.toContain(upcoming.id);
   });
 });
+
+describe('what a student needs around a question', () => {
+  it('keeps a place in the text and a follow-up to an answered question', () => {
+    const parent = sampleQuestions().find(q => q.status === 'answered')!;
+    const q = M.ask(open, reader({ approved: 1 }), 'ומה עם הנשמה?', 'q2', NOW, { ref: ' עמ׳ 12 ', parent });
+    expect(q).toMatchObject({ ref: 'עמ׳ 12', parentId: parent.id });
+    const waiting = sampleQuestions().find(q => q.status === 'published')!;
+    expect(refusal(() => M.ask(open, reader(), 'ומה עם הנשמה?', 'q3', NOW, { parent: waiting }))).toBe('maayan.err.state');
+  });
+
+  it('limits a member to a number of questions a day, not the teacher', () => {
+    expect(refusal(() => M.ask(open, reader(), 'מהי היחידה בנפש?', 'q', NOW, { askedToday: M.DAILY_QUESTIONS }))).toBe('maayan.err.limit');
+    expect(M.ask(open, DEMO_TEACHER, 'מהי היחידה בנפש?', 'q', NOW, { askedToday: 99 }).status).toBe('published');
+  });
+
+  it('lets only the asker withdraw, and only before the answer', () => {
+    const q = M.ask(open, reader(), 'מהי היחידה בנפש?', 'q1', NOW);
+    expect(() => M.checkWithdraw(q, reader())).not.toThrow();
+    expect(refusal(() => M.checkWithdraw(q, reader({ uid: 'u2' })))).toBe('maayan.err.notYours');
+    expect(refusal(() => M.checkWithdraw(M.answer(q, DEMO_TEACHER, 'א', NOW), reader()))).toBe('maayan.err.state');
+  });
+
+  it('finds questions by every word, in the question or the answer', () => {
+    const qs = sampleQuestions();
+    expect(M.search(qs, 'היחידה').length).toBeGreaterThan(0);
+    expect(M.search(qs, 'היחידה צרכי').map(q => q.id)).toEqual(['s3']);
+    expect(M.search(qs, '').length).toBe(qs.length);
+  });
+});

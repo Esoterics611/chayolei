@@ -63,12 +63,35 @@ export async function saveMember(decoded: DecodedIdToken, input: Record<string, 
 
 export async function askQuestion(uid: string, input: Record<string, unknown>): Promise<Question> {
   const wid = String(input.wellspringId ?? '');
-  const [w, m] = await Promise.all([wellsprings().doc(wid).get(), getMember(uid)]);
+  const parentId = typeof input.parentId === 'string' && input.parentId ? input.parentId : '';
+  const now = new Date().toISOString();
+  const [w, m, own, parent] = await Promise.all([
+    wellsprings().doc(wid).get(),
+    getMember(uid),
+    questions().where('authorId', '==', uid).get(),
+    parentId ? questions().doc(parentId).get() : Promise.resolve(null),
+  ]);
+  if (parentId && !parent?.exists) throw new DomainError('maayan.err.state');
   const ref = questions().doc();
   const q = M.ask(w.exists ? ({ ...(w.data() as Wellspring), id: w.id }) : undefined, m ?? undefined,
-    String(input.text ?? ''), ref.id, new Date().toISOString());
+    String(input.text ?? ''), ref.id, now, {
+      ref: typeof input.ref === 'string' ? input.ref : '',
+      parent: parent?.exists ? ({ ...(parent.data() as Question), id: parent.id }) : undefined,
+      askedToday: M.askedSince(own.docs.map(d => d.data() as Question), uid, now),
+    });
   await ref.set(q);
   return q;
+}
+
+/** The asker withdraws a question not yet answered: it is deleted. */
+export async function withdrawQuestion(uid: string, qid: string): Promise<void> {
+  await adminDb.runTransaction(async tx => {
+    const ref = questions().doc(qid);
+    const snap = await tx.get(ref);
+    if (!snap.exists) throw new DomainError('maayan.err.state');
+    M.checkWithdraw({ ...(snap.data() as Question), id: qid }, (await getMember(uid)) ?? undefined);
+    tx.delete(ref);
+  });
 }
 
 /** The teacher's actions; an answer mails the asker if they asked for email. */

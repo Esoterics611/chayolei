@@ -16,6 +16,8 @@ import type { MaayanLive } from './live';
 export const LIVE = import.meta.env.VITE_TEAM_BACKEND === 'firestore';
 
 const DEMO_KEY = 'chayolei-maayan-demo-v1';
+/** Answers this browser has shown the member, so new ones can be marked. */
+const SEEN_KEY = 'chayolei-maayan-seen';
 
 interface DemoSaved {
   questions: Question[];
@@ -43,7 +45,12 @@ class MaayanStore {
   private started = false;
   private client: MaayanLive | null = null;
 
+  /** Ids of the member's answered questions already seen in this browser. */
+  seen = $state<string[]>([]);
+
   sorted = $derived([...this.wellsprings].sort((a, b) => a.order - b.order));
+  /** The member's answered questions not yet seen. */
+  unseen = $derived(this.me ? this.questions.filter(q => q.authorId === this.me!.uid && q.status === 'answered' && !this.seen.includes(q.id)) : []);
   signedIn = $derived(!!this.me || !!this.verifiedEmail);
 
   wellspring(id: string): Wellspring | undefined {
@@ -58,6 +65,7 @@ class MaayanStore {
   init(): void {
     if (this.started || typeof window === 'undefined') return;
     this.started = true;
+    try { this.seen = JSON.parse(localStorage.getItem(SEEN_KEY) ?? '[]'); } catch { /* none seen */ }
     if (LIVE) {
       void import('./live').then(({ MaayanLive }) => {
         this.client = new MaayanLive({
@@ -195,14 +203,42 @@ class MaayanStore {
     return M.visible(this.questions, id, this.me ?? undefined);
   }
 
-  async ask(wellspringId: string, text: string): Promise<Question | null> {
+  async ask(wellspringId: string, text: string, opts: { ref?: string; parentId?: string } = {}): Promise<Question | null> {
     return this.run(async () => {
-      if (LIVE) return this.client!.post<Question>('/api/maayan/questions', { wellspringId, text });
-      const q = M.ask(this.wellspring(wellspringId), this.me ?? undefined, text, uid(), new Date().toISOString());
+      if (LIVE) return this.client!.post<Question>('/api/maayan/questions', { wellspringId, text, ...opts });
+      const now = new Date().toISOString();
+      const parent = opts.parentId ? this.questions.find(q => q.id === opts.parentId) : undefined;
+      const askedToday = this.me ? M.askedSince(this.questions, this.me.uid, now) : 0;
+      const q = M.ask(this.wellspring(wellspringId), this.me ?? undefined, text, uid(), now, { ref: opts.ref, parent, askedToday });
       this.questions = [q, ...this.questions];
       this.save();
       return q;
     });
+  }
+
+  /** The asker takes back a question not yet answered; it is deleted. */
+  async withdraw(id: string): Promise<boolean> {
+    const done = await this.run(async () => {
+      if (LIVE) {
+        await this.client!.post(`/api/maayan/questions/${encodeURIComponent(id)}`, { action: 'withdraw' });
+        this.questions = this.questions.filter(q => q.id !== id);
+        return true;
+      }
+      const q = this.questions.find(x => x.id === id);
+      if (!q) throw new DomainError('maayan.err.state');
+      M.checkWithdraw(q, this.me ?? undefined);
+      this.questions = this.questions.filter(x => x.id !== id);
+      this.save();
+      return true;
+    });
+    return !!done;
+  }
+
+  /** The member has seen their answers: the marks of new ones go. */
+  markSeen(): void {
+    if (!this.unseen.length) return;
+    this.seen = [...this.seen, ...this.unseen.map(q => q.id)];
+    try { localStorage.setItem(SEEN_KEY, JSON.stringify(this.seen)); } catch { /* marks last this visit */ }
   }
 
   private async teacherAct(id: string, action: 'approve' | 'hide' | 'answer', text = ''): Promise<boolean> {
@@ -249,7 +285,8 @@ class MaayanStore {
 
   demoReset(): void {
     if (LIVE) return;
-    try { localStorage.removeItem(DEMO_KEY); } catch { /* nothing saved */ }
+    try { localStorage.removeItem(DEMO_KEY); localStorage.removeItem(SEEN_KEY); } catch { /* nothing saved */ }
+    this.seen = [];
     this.questions = sampleQuestions();
     this.me = null;
     this.reader = null;

@@ -49,6 +49,10 @@ export interface Question {
   status: QuestionStatus;
   createdAt: string;
   answer?: Answer;
+  /** Where in the text it asks about, as the asker wrote it (a page, a passage). */
+  ref?: string;
+  /** The answered question this one follows up. */
+  parentId?: string;
   /** Sample content of the demo, marked as such where it shows. */
   sample?: boolean;
 }

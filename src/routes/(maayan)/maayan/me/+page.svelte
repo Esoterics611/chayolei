@@ -16,6 +16,15 @@
   let quoteOk = $state(maayan.me?.quoteOk ?? false);
   const mine = $derived(me ? maayan.questions.filter(q => q.authorId === me.uid).sort((a, b) => b.createdAt.localeCompare(a.createdAt)) : []);
   const titleOf = (id: string) => lt(maayan.wellspring(id)?.title);
+  const byId = (qid?: string) => (qid ? maayan.questions.find(q => q.id === qid) : undefined);
+  // Answers new while this page is open keep their mark for the visit; they then count as seen.
+  let fresh = $state<string[]>([]);
+  $effect(() => {
+    const ids = maayan.unseen.map(q => q.id);
+    if (!ids.length) return;
+    fresh = [...new Set([...fresh, ...ids])];
+    maayan.markSeen();
+  });
 
   $effect(() => {
     if (!maayan.me && !maayan.verifiedEmail) void go('/maayan');
@@ -26,9 +35,10 @@
     if (await maayan.saveProfile({ name, notify, quoteOk })) ui.toast('success', t('maayan.me.saved'));
   }
 
-  function asTeacher(on: boolean) {
+  // Switching leaves this page first, so the reader's new answers stay new for the wellspring page.
+  async function asTeacher(on: boolean) {
+    await go(on ? '/maayan/teacher' : '/maayan/padah-beshalom');
     maayan.demoTeacher(on);
-    if (on) void go('/maayan/teacher');
   }
 </script>
 
@@ -78,7 +88,7 @@
       <h2 class="m-h2">{t('maayan.qa.tab.mine')}</h2>
       <div class="m-list">
         {#each mine as q (q.id)}
-          <QuestionCard {q} context={titleOf(q.wellspringId)} />
+          <QuestionCard {q} context={titleOf(q.wellspringId)} parent={byId(q.parentId)} fresh={fresh.includes(q.id)} />
         {:else}
           <p class="m-empty">{t('maayan.qa.empty.mine')}</p>
         {/each}

@@ -2,11 +2,13 @@
   // One wellspring: its discourse, the reader who came from the booklet, the
   // questions and the teacher's answers, the ask box, and the way on.
   import { page } from '$app/state';
+  import { tick } from 'svelte';
   import { t, lt, fmtNum } from '$lib/team/i18n';
   import { href } from '$lib/team/nav';
   import { ui } from '$lib/team/ui.svelte';
   import { maayan } from '$lib/maayan/store.svelte';
-  import { counts } from '$lib/maayan/engine';
+  import { counts, search } from '$lib/maayan/engine';
+  import type { Question } from '$lib/maayan/types';
   import Rings from '$lib/maayan/Rings.svelte';
   import QuestionCard from '$lib/maayan/QuestionCard.svelte';
   import ScanLine from '@lucide/svelte/icons/scan-line';
@@ -20,6 +22,13 @@
   import FileText from '@lucide/svelte/icons/file-text';
   import ArrowRight from '@lucide/svelte/icons/arrow-right';
   import Send from '@lucide/svelte/icons/send';
+  import Search from '@lucide/svelte/icons/search';
+  import Link from '@lucide/svelte/icons/link';
+  import Reply from '@lucide/svelte/icons/reply';
+  import Undo2 from '@lucide/svelte/icons/undo-2';
+  import X from '@lucide/svelte/icons/x';
+
+  const HASH = import.meta.env.VITE_HASH_ROUTER === '1';
 
   const id = $derived(page.params.id ?? '');
   const w = $derived(maayan.wellspring(id));
@@ -28,26 +37,64 @@
   const mine = $derived(maayan.me ? all.filter(q => q.authorId === maayan.me!.uid) : []);
   const others = $derived(maayan.sorted.filter(x => x.id !== id));
   const following = $derived(!!maayan.me?.follows.includes(id));
+  const byId = (qid?: string) => (qid ? maayan.questions.find(q => q.id === qid) : undefined);
 
   type Tab = 'answered' | 'waiting' | 'mine';
   let tab = $state<Tab>('answered');
-  const shown = $derived(tab === 'answered' ? all.filter(q => q.status === 'answered')
+  let words = $state('');
+  const inTab = $derived(tab === 'answered' ? all.filter(q => q.status === 'answered')
     : tab === 'waiting' ? all.filter(q => q.status === 'published')
     : mine);
+  const shown = $derived(search(inTab, words));
 
   let text = $state('');
+  let ref = $state('');
+  let followUp = $state<Question | null>(null);
   let sending = $state(false);
   const joinHref = $derived(href(`/maayan/${id}/join`));
+
+  // A shared link (…/maayan/<id>?q=<question>) opens on that question.
+  const linked = $derived(new URLSearchParams(HASH ? (page.url.hash.split('?')[1] ?? '') : page.url.search).get('q') ?? '');
+  $effect(() => {
+    const q = byId(linked);
+    if (!q) return;
+    tab = q.status === 'answered' ? 'answered' : q.status === 'published' ? 'waiting' : 'mine';
+    void tick().then(() => document.getElementById(`q-${q.id}`)?.scrollIntoView({ block: 'start' }));
+  });
 
   async function ask(e: SubmitEvent) {
     e.preventDefault();
     sending = true;
-    const q = await maayan.ask(id, text);
+    const q = await maayan.ask(id, text, { ref, parentId: followUp?.id });
     sending = false;
     if (!q) return;
     text = '';
+    ref = '';
+    followUp = null;
     ui.toast('success', t(q.status === 'pending' ? 'maayan.ask.sentPending' : 'maayan.ask.sent'), 6000);
     tab = q.status === 'pending' ? 'mine' : 'waiting';
+  }
+
+  async function startFollowUp(q: Question) {
+    followUp = q;
+    await tick();
+    document.getElementById('ask-text')?.focus();
+    document.getElementById('ask')?.scrollIntoView({ block: 'start' });
+  }
+
+  async function copyLink(q: Question) {
+    const url = new URL(href(`/maayan/${id}?q=${q.id}`), location.href).toString();
+    try {
+      await navigator.clipboard.writeText(url);
+      ui.toast('info', t('maayan.q.copied'));
+    } catch {
+      ui.toast('info', url, 8000);
+    }
+  }
+
+  async function withdraw(q: Question) {
+    if (!confirm(t('maayan.q.confirmWithdraw'))) return;
+    if (await maayan.withdraw(q.id)) ui.toast('info', t('maayan.q.withdrawn'));
   }
 </script>
 
@@ -114,10 +161,20 @@
       {#if w.status !== 'open'}
         <p class="m-gate">{t('maayan.ask.closed')}</p>
       {:else if maayan.me}
-        <form class="m-ask" onsubmit={ask}>
+        <form class="m-ask" id="ask" onsubmit={ask}>
+          {#if followUp}
+            <p class="follow-note">
+              <Reply size={15} class="flip-rtl" /><span>{t('maayan.ask.followUp', { text: followUp.text.length > 80 ? `${followUp.text.slice(0, 78)}…` : followUp.text })}</span>
+              <button type="button" class="btn btn-ghost btn-sm" onclick={() => (followUp = null)}><X size={14} />{t('maayan.ask.cancelFollowUp')}</button>
+            </p>
+          {/if}
           <label class="field">
             <span class="label">{t('maayan.ask.title')}</span>
-            <textarea class="input" bind:value={text} required minlength="8" maxlength="2000" dir="auto" placeholder={t('maayan.ask.placeholder')}></textarea>
+            <textarea id="ask-text" class="input" bind:value={text} required minlength="8" maxlength="2000" dir="auto" placeholder={t('maayan.ask.placeholder')}></textarea>
+          </label>
+          <label class="field" style="margin-block-start: 12px">
+            <span class="label">{t('maayan.ask.ref')}</span>
+            <input class="input" bind:value={ref} maxlength="80" dir="auto" placeholder={t('maayan.ask.refPh')} />
           </label>
           <div class="row">
             <span class="hint">{#if !maayan.me.teacher && maayan.me.approved === 0}{t('maayan.ask.firstNote')}{/if}</span>
@@ -132,6 +189,10 @@
         </div>
       {/if}
 
+      <label class="m-search">
+        <Search size={16} />
+        <input type="search" class="input" bind:value={words} aria-label={t('maayan.qa.search')} placeholder={t('maayan.qa.searchPh')} dir="auto" />
+      </label>
       <div class="m-tabs" role="tablist" aria-label={t('maayan.qa.title')}>
         <button type="button" role="tab" aria-selected={tab === 'answered'} onclick={() => (tab = 'answered')}>{t('maayan.qa.tab.answered')}<span class="n">{fmtNum(c.answered)}</span></button>
         <button type="button" role="tab" aria-selected={tab === 'waiting'} onclick={() => (tab = 'waiting')}>{t('maayan.qa.tab.waiting')}<span class="n">{fmtNum(c.waiting)}</span></button>
@@ -139,9 +200,23 @@
       </div>
       <div class="m-list" role="tabpanel">
         {#each shown as q (q.id)}
-          <QuestionCard {q} />
+          <QuestionCard {q} parent={byId(q.parentId)} highlight={q.id === linked} fresh={maayan.unseen.some(x => x.id === q.id)}>
+            {#snippet actions()}
+              <div class="q-actions">
+                {#if maayan.me && q.status === 'answered' && w.status === 'open'}
+                  <button type="button" class="btn btn-sm" onclick={() => startFollowUp(q)}><Reply size={14} class="flip-rtl" />{t('maayan.q.followUp')}</button>
+                {/if}
+                {#if q.status === 'answered' || q.status === 'published'}
+                  <button type="button" class="btn btn-sm btn-ghost" onclick={() => copyLink(q)}><Link size={14} />{t('maayan.q.copy')}</button>
+                {/if}
+                {#if maayan.me && q.authorId === maayan.me.uid && q.status !== 'answered' && !q.sample}
+                  <button type="button" class="btn btn-sm btn-ghost" onclick={() => withdraw(q)}><Undo2 size={14} />{t('maayan.q.withdraw')}</button>
+                {/if}
+              </div>
+            {/snippet}
+          </QuestionCard>
         {:else}
-          <p class="m-empty">{t(`maayan.qa.empty.${tab}`)}</p>
+          <p class="m-empty">{words.trim() ? t('maayan.qa.noMatch') : t(`maayan.qa.empty.${tab}`)}</p>
         {/each}
       </div>
     </section>
@@ -177,3 +252,10 @@
     {/if}
   </div>
 {/if}
+
+<style>
+  .follow-note { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 12px; margin-block-end: 12px; border-radius: var(--r-sm); background: var(--accent-weak); color: var(--accent-text); font-size: var(--fs-sm); }
+  .follow-note span { flex: 1; min-width: 12rem; }
+  .q-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+  .q-actions:empty { display: none; }
+</style>

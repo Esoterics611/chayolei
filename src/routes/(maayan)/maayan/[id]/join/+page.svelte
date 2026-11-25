@@ -88,7 +88,8 @@
           <button type="submit" class="btn btn-primary btn-xl btn-block" disabled={sending}>
             <Mail size={18} />{sending ? t('maayan.join.sending') : t('maayan.join.send')}
           </button>
-          <p class="hint">{t('maayan.joinNote')}</p>
+          <p class="hint">{t('maayan.join.returning')}</p>
+          <p class="hint"><a href={href('/maayan/privacy')}>{t('maayan.join.privacyLink')}</a></p>
         </form>
       {:else if step === 'check'}
         <div class="form">

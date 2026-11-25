@@ -40,7 +40,7 @@
           <a href={href('/maayan/teacher')} aria-current={current('/maayan/teacher')}><GraduationCap size={16} />{t('maayan.nav.teacher')}</a>
         {/if}
         {#if maayan.me}
-          <a href={href('/maayan/me')} aria-current={current('/maayan/me')}><CircleUserRound size={16} />{t('maayan.nav.me')}</a>
+          <a href={href('/maayan/me')} aria-current={current('/maayan/me')}><CircleUserRound size={16} />{t('maayan.nav.me')}{#if maayan.unseen.length}<span class="m-badge" aria-label={t('maayan.me.newAnswers', { n: maayan.unseen.length })}>{maayan.unseen.length}</span>{/if}</a>
         {:else if maayan.status === 'ready'}
           <a class="m-join" href={href(`/maayan/${joinTo}/join`)}>{t('maayan.nav.join')}</a>
         {/if}
@@ -61,7 +61,7 @@
   </main>
 
   <footer class="m-foot">
-    <div class="m-wrap"><a href="https://esoterics611.github.io/he/">{t('maayan.foot')}</a></div>
+    <div class="m-wrap m-foot-row"><a href="https://esoterics611.github.io/he/">{t('maayan.foot')}</a><a href={href('/maayan/privacy')}>{t('maayan.foot.privacy')}</a></div>
   </footer>
   <Toasts />
 </div>

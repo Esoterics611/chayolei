@@ -9,6 +9,9 @@ export const QUESTION_MIN = 8;
 export const QUESTION_MAX = 2000;
 export const ANSWER_MAX = 12000;
 export const NAME_MAX = 60;
+export const REF_MAX = 80;
+/** Questions one member may ask in a day. */
+export const DAILY_QUESTIONS = 10;
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
@@ -32,6 +35,7 @@ export function ask(
   text: string,
   id: string,
   now: string,
+  extra: { ref?: string; parent?: Question; askedToday?: number } = {},
 ): Question {
   if (!w) throw new DomainError('maayan.err.noWellspring');
   if (w.status !== 'open') throw new DomainError('maayan.err.notOpen');
@@ -39,6 +43,11 @@ export function ask(
   const body = text.trim();
   if (body.length < QUESTION_MIN) throw new DomainError('maayan.err.short');
   if (body.length > QUESTION_MAX) throw new DomainError('maayan.err.long', { n: QUESTION_MAX });
+  if (!m.teacher && (extra.askedToday ?? 0) >= DAILY_QUESTIONS) throw new DomainError('maayan.err.limit', { n: DAILY_QUESTIONS });
+  const ref = (extra.ref ?? '').trim().replace(/\s+/g, ' ');
+  if (ref.length > REF_MAX) throw new DomainError('maayan.err.long', { n: REF_MAX });
+  const p = extra.parent;
+  if (p && (p.wellspringId !== w.id || p.status !== 'answered')) throw new DomainError('maayan.err.state');
   return {
     id,
     wellspringId: w.id,
@@ -47,7 +56,29 @@ export function ask(
     text: body,
     status: m.teacher || m.approved > 0 ? 'published' : 'pending',
     createdAt: now,
+    ...(ref ? { ref } : {}),
+    ...(p ? { parentId: p.id } : {}),
   };
+}
+
+/** How many questions a member asked in the 24 hours before `now`. */
+export const askedSince = (qs: Question[], uid: string, now: string) =>
+  qs.filter(q => q.authorId === uid && Date.parse(now) - Date.parse(q.createdAt) < 86_400_000).length;
+
+/** A member takes back their own question while it is still unanswered. */
+export function checkWithdraw(q: Question, m: MaayanMember | undefined): void {
+  if (!m || q.authorId !== m.uid) throw new DomainError('maayan.err.notYours');
+  if (q.status === 'answered') throw new DomainError('maayan.err.state');
+}
+
+/** Questions matching every word of a search, in the question, its place or its answer. */
+export function search(qs: Question[], words: string): Question[] {
+  const terms = words.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  if (!terms.length) return qs;
+  return qs.filter(q => {
+    const hay = `${q.text} ${q.ref ?? ''} ${q.answer?.text ?? ''}`.toLowerCase();
+    return terms.every(t => hay.includes(t));
+  });
 }
 
 function teacherOnly(m: MaayanMember | undefined): MaayanMember {

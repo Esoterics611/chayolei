@@ -2,7 +2,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { DecodedIdToken } from 'firebase-admin/auth';
 import { adminDb } from '$lib/server/firebase-admin';
-import { askQuestion, getMember, saveMember, teacherAction } from './maayan';
+import { askQuestion, getMember, saveMember, teacherAction, withdrawQuestion } from './maayan';
 import { DomainError } from '$lib/team/types';
 import { WELLSPRINGS } from '$lib/maayan/seed';
 import type { Question } from '$lib/maayan/types';
@@ -59,5 +59,20 @@ describe('wellsprings in Firestore', () => {
     await saveMember(token('r1', 'r@example.org'), { name: 'חנה', follows: [] });
     expect(await errKey(askQuestion('r1', { wellspringId: 'kavanot-shacharit', text: 'מתי זה נפתח?' }))).toBe('maayan.err.notOpen');
     expect(await errKey(askQuestion('nobody', { wellspringId: 'padah-beshalom', text: 'מהי היחידה בנפש?' }))).toBe('maayan.err.signIn');
+  });
+
+  it('keeps a follow-up and a place, withdraws only the asker’s unanswered question, and limits a day', async () => {
+    await saveMember(token('r1', 'r@example.org'), { name: 'חנה', follows: [] });
+    await saveMember(token('r2', 's@example.org'), { name: 'שרה', follows: [] });
+    const first = await askQuestion('r1', { wellspringId: 'padah-beshalom', text: 'מהי היחידה בנפש?' });
+    await teacherAction('teacher', first.id, { action: 'answer', text: 'הנקודה הפנימית.' });
+    const follow = await askQuestion('r1', { wellspringId: 'padah-beshalom', text: 'ואיך היא מתגלה?', parentId: first.id, ref: 'עמ׳ 4' });
+    expect(follow).toMatchObject({ parentId: first.id, ref: 'עמ׳ 4', status: 'published' });
+    expect(await errKey(withdrawQuestion('r2', follow.id))).toBe('maayan.err.notYours');
+    expect(await errKey(withdrawQuestion('r1', first.id))).toBe('maayan.err.state');
+    await withdrawQuestion('r1', follow.id);
+    expect((await adminDb.collection('maayanQuestions').doc(follow.id).get()).exists).toBe(false);
+    for (let i = 0; i < 9; i++) await askQuestion('r1', { wellspringId: 'padah-beshalom', text: `שאלה מספר ${i} על המאמר` });
+    expect(await errKey(askQuestion('r1', { wellspringId: 'padah-beshalom', text: 'עוד שאלה על המאמר' }))).toBe('maayan.err.limit');
   });
 });

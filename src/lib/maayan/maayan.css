@@ -129,3 +129,11 @@ body:has(.maayan) { margin: 0; }
 .maayan .m-follow-list { display: flex; flex-direction: column; gap: var(--s2); }
 .maayan .m-follow-list .m-check { padding: 10px 12px; border: 1px solid var(--rule); border-radius: var(--r-sm); }
 .maayan .m-follow-list .m-check small { display: block; color: var(--ink-3); font-size: var(--fs-sm); }
+
+/* Searching the questions */
+.maayan .m-search { position: relative; display: block; margin-block-end: var(--s3); }
+.maayan .m-search :global(svg), .maayan .m-search svg { position: absolute; inset-inline-start: 12px; inset-block-start: 50%; transform: translateY(-50%); color: var(--ink-3); pointer-events: none; }
+.maayan .m-search .input { width: 100%; min-height: 44px; padding-inline-start: 38px; font-size: var(--fs-md); }
+
+.maayan .m-badge { min-width: 18px; height: 18px; padding-inline: 5px; border-radius: 999px; background: var(--accent); color: var(--accent-ink); font-size: 11px; font-weight: 700; display: inline-grid; place-items: center; font-variant-numeric: tabular-nums; }
+.maayan .m-foot-row { display: flex; flex-wrap: wrap; gap: var(--s2) var(--s5); justify-content: space-between; }

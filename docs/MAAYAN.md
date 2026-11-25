@@ -12,6 +12,7 @@
 | `/maayan/auth` | Where the emailed link lands (live app); completes sign-in and goes on |
 | `/maayan/me` | The member's page: name, follows, email choices, their questions, the wallet they may link one day |
 | `/maayan/teacher` | The teacher's desk: first questions to read, published ones to answer, answers to correct |
+| `/maayan/privacy` | What is kept, who sees it, how to leave (contact: esoterics611@gmail.com) |
 
 Hebrew unless the reader chose English (`ui.init('he')`); every string in both dictionaries (`src/lib/maayan/strings.ts`, merged into `src/lib/team/i18n.ts`). Built phone first: most readers arrive by scanning a QR.
 
@@ -30,6 +31,10 @@ Wallet sign-in (`/api/auth/*`, uids `wallet_<address>`) is unchanged for the tea
 - Only the teacher publishes, declines (the author still sees it) or answers; answering a waiting question publishes it with its answer. Correcting an answer keeps its first time.
 - Readers see answered and published questions, answered first; an author also sees their own waiting ones, the teacher all.
 - A member's email is never shown; their chosen name is.
+- A question may say where in the text it asks about (`ref`, up to 80 characters) and may follow up an answered question (`parentId`).
+- The asker may withdraw a question until it is answered; it is deleted.
+- Up to 10 questions a day per member (not the teacher).
+- Readers can search the questions and answers before asking, copy a link that opens one question (`?q=<id>`), and see a mark on new answers to their questions (kept per browser).
 
 ## 4. Data (live)
 
@@ -59,3 +64,16 @@ Firebase sends the sign-in links itself (template language: Hebrew, set by `auth
 ## 7. The demo
 
 `bash scripts/build-demo.sh` includes the wellsprings: sample questions (marked "לדוגמה"; their answers are the printed booklet's own words), simulated email sign-in ("Demo: open the link"), and "view as the teacher" on the member's page, so one person can walk the whole way. `bash scripts/publish-demo.sh` publishes it at https://esoterics611.github.io/chayolei/ (the wellspring: `#/maayan/padah-beshalom`).
+
+## 8. Open items (student pass, 2026-11-25)
+
+A walk through the wellspring as a student arriving from the booklet found what was missing; most of it is done (§3). Still open:
+
+| Item | Waits for |
+|---|---|
+| The Sefer Forge home page sends booklet readers here ("join the discussion") | The live app: the demo keeps questions in one browser, so a real reader would be asking no one |
+| The פדה בשלום booklet itself online, linked from its wellspring | The owner's word: a ביאור is published only in a form he names (sefer-forge CLAUDE.md); until then the link says "the books, lessons and glossary" |
+| Answers recorded as voice notes, transcribed and posted | sefer-forge's Whisper pipeline (task "Connect wellsprings to the sefer-forge pipeline") |
+| A discourse's own editorial team for the ladder's "contributor" step | The ladder task; the demo shows a sample team |
+| Terms in answers linked to the glossary (מילון) | The glossary published on the site |
+| A dedication shown on each wellspring, and the way to dedicate one | The dedications store on the Sefer Forge site (Chayolei takes no money) |
