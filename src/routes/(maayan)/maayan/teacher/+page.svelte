@@ -4,7 +4,7 @@
   import { t, lt, fmtNum } from '$lib/team/i18n';
   import { href } from '$lib/team/nav';
   import { ui } from '$lib/team/ui.svelte';
-  import { maayan } from '$lib/maayan/store.svelte';
+  import { maayan, MAILS } from '$lib/maayan/store.svelte';
   import QuestionCard from '$lib/maayan/QuestionCard.svelte';
   import type { Question } from '$lib/maayan/types';
   import Check from '@lucide/svelte/icons/check';
@@ -21,7 +21,7 @@
   async function send(q: Question) {
     if (await maayan.answer(q.id, drafts[q.id] ?? '')) {
       delete drafts[q.id];
-      ui.toast('success', t('maayan.t.sent'));
+      ui.toast('success', t(MAILS ? 'maayan.t.sent' : 'maayan.t.sentNoMail'));
     }
   }
   async function approve(q: Question) {

@@ -55,7 +55,9 @@ jobs:
       - name: Hosting (the free version), Firestore rules and indexes
         if: env.DEPLOY_MODE == 'spark'
         run: npx firebase deploy --config firebase.spark.json --only hosting,firestore --project "$FIREBASE_PROJECT_ID" --non-interactive --force
-      - name: The wellsprings
-        run: node scripts/maayan-setup.mjs wellsprings
+      - name: The wellsprings, and their teachers (MAAYAN_TEACHERS)
+        run: |
+          node scripts/maayan-setup.mjs wellsprings
+          node scripts/maayan-setup.mjs teachers
         env:
           GCLOUD_PROJECT: ${{ env.FIREBASE_PROJECT_ID }}

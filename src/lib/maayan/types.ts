@@ -20,6 +20,8 @@ export interface Wellspring {
   about: Text;
   /** The printed edition or the text online. */
   link?: { label: Text; url: string };
+  /** Readers hold it in print (its QR leads here): the pages greet them as coming from the booklet. */
+  printed?: boolean;
   /** The printed edition's first page, as an image (the Sefer Forge site). */
   cover?: string;
   /** The printed edition as a PDF. */

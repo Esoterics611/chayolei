@@ -28,7 +28,8 @@
     },
     "dedicate": "https://esoterics611.github.io/he/dedicate.html#padah-beshalom",
     "cover": "https://esoterics611.github.io/samples/padah-beshalom/booklet-01.webp",
-    "pdf": "https://esoterics611.github.io/samples/padah-beshalom/padah-beshalom.pdf"
+    "pdf": "https://esoterics611.github.io/samples/padah-beshalom/padah-beshalom.pdf",
+    "printed": true
   },
   {
     "id": "shaar-hayichud",
@@ -39,16 +40,16 @@
       "en": "Sha’ar HaYichud"
     },
     "subtitle": {
-      "he": "לאדמו\"ר האמצעי · עם פירושים",
-      "en": "By the Mitteler Rebbe · with commentaries"
+      "he": "מאמר כ\"ק אדמו\"ר האמצעי · נר מצוה ותורה אור · עם ביאור, פרק אחר פרק",
+      "en": "By the Mitteler Rebbe · Ner Mitzvah veTorah Or · explained chapter by chapter"
     },
     "slogan": {
-      "he": "פרק אחר פרק, עם ביאור",
-      "en": "Chapter by chapter, with an explanation"
+      "he": "\"מה היא בעצם ובמה יתבונן\": עבודת ההתבוננות",
+      "en": "\"What it is in essence, and on what to contemplate\": the work of contemplation"
     },
     "about": {
-      "he": "שיעורים על שער היחוד, פרק אחר פרק, והביאור שנכתב עליהם. שאלה על פרק? שואלים כאן.",
-      "en": "Lessons on Sha’ar HaYichud, chapter by chapter, and the explanation written on them. A question on a chapter? Ask it here."
+      "he": "שער היחוד הוא קונטרס של כ\"ק אדמו\"ר האמצעי על עבודת ההתבוננות. הוא פותח במה שקודם להתפעלות ומוליד אותה, ההתבוננות עצמה. הפרק הראשון עונה על \"מה היא בעצם\": ההתבוננות היא עיון, עמידה ממושכת על דבר מושכל עד שמגיעים לעומקו. למדתם את הפרק? כאן שואלים עליו, והמלמד עונה.",
+      "en": "Sha’ar HaYichud is the Mitteler Rebbe’s treatise on the work of contemplation. It opens with what comes before feeling and gives birth to it: contemplation itself. The first chapter answers “what it is in essence”: contemplation is iyun, dwelling on a concept until one reaches its depth. Studied the chapter? Ask about it here, and the teacher answers."
     },
     "link": {
       "label": {
@@ -70,53 +71,56 @@
       "en": "The Garments of the Soul"
     },
     "subtitle": {
-      "he": "לשון אדמו\"ר נ\"ע בעצמו · עם ביאור",
-      "en": "In the Rebbe Rashab’s own words · with an explanation"
+      "he": "לשון אדמו\"ר נ\"ע בעצמו · הגהה בתורה אור, מבוארת הערה אחר הערה",
+      "en": "In the Alter Rebbe’s own words · a gloss in Torah Or, explained note by note"
     },
     "slogan": {
-      "he": "הנשמה ולבושיה",
-      "en": "The soul and its garments"
+      "he": "הנשמה ולבושיה, וסוד התורה והמצוות",
+      "en": "The soul and its garments, and the secret of Torah and mitzvot"
     },
     "about": {
-      "he": "ביאור על לבושי הנשמה, בלשון אדמו\"ר נ\"ע בעצמו. שאלות על הביאור נשאלות כאן.",
-      "en": "An explanation of the garments of the soul, in the Rebbe Rashab’s own words. Questions on it are asked here."
+      "he": "\"יפה שעה אחת בתשובה ומעשים טובים בעולם הזה מכל חיי העולם הבא.\" אדמו\"ר הזקן עונה על השאלה במאמר שבתורה אור, ומוסיף עליו הגהה בכתב ידו, שבה הוא פותח את המפה הפנימית של הנשמה: לנשמה יש לבושים, והתורה והמצוות הן המלאכה שבה הם נארגים. למדתם את החוברת או את דף הלימוד? כאן שואלים עליהם.",
+      "en": "“Better is one hour of repentance and good deeds in this world than all the life of the world to come.” The Alter Rebbe answers the question in a discourse in Torah Or, adding a gloss in his own hand that opens the inner map of the soul: the soul has garments, and Torah and mitzvot are the craft in which they are woven. Studied the pamphlet or the handout? Ask about them here."
     },
     "link": {
       "label": {
-        "he": "הביאור",
-        "en": "The explanation"
+        "he": "החוברת, חוברת המקורות ודף הלימוד",
+        "en": "The pamphlet, the reading pack and the handout"
       },
-      "url": "https://esoterics611.github.io/he/library.html"
+      "url": "https://esoterics611.github.io/he/library.html#levushei-haneshama"
     },
-    "dedicate": "https://esoterics611.github.io/he/dedicate.html#levushei-haneshama"
+    "dedicate": "https://esoterics611.github.io/he/dedicate.html#levushei-haneshama",
+    "cover": "https://esoterics611.github.io/samples/levushei-haneshama/pamphlet-01.webp",
+    "pdf": "https://esoterics611.github.io/samples/levushei-haneshama/levushei-haneshama-pamphlet.pdf"
   },
   {
     "id": "kavanot-shacharit",
     "status": "upcoming",
     "order": 4,
     "title": {
-      "he": "כוונות תפילת השחר",
-      "en": "The Intentions of the Morning Prayer"
+      "he": "ביאור תפילת השחר על פי האר\"י",
+      "en": "The morning prayer explained after the Arizal"
     },
     "subtitle": {
-      "he": "ביאור תפילת השחר על פי דא\"ח",
-      "en": "The morning prayer explained by Chassidus"
+      "he": "כוונות תפילת השחר על פי האר\"י ז\"ל · 8 מתוך 13 פרקיו כבר כתובים",
+      "en": "The Arizal’s intentions of the morning prayer · 8 of its 13 chapters written"
     },
     "slogan": {
-      "he": "המעיין הבא",
-      "en": "The next wellspring"
+      "he": "מה פועל כל חלק של התפילה, ומה הוא בנפש המתפלל",
+      "en": "What each part of the prayer does, and what it is in the one who prays"
     },
     "about": {
-      "he": "הביאור על תפילת השחר נכתב עכשיו. עקבו אחרי המעיין, ותקבלו מייל אחד כשהוא נפתח.",
-      "en": "The explanation of the morning prayer is being written now. Follow it and you’ll get one email when it opens."
+      "he": "ביאור על כל חלק של תפילת השחר על פי האר\"י: מה הוא פועל, ישר מתוך שער הכוונות ופרי עץ חיים, ומה הוא בנפש המתפלל. 8 מתוך 13 פרקיו כבר כתובים. המעיין ייפתח כשהביאור יושלם; עקבו אחריו, והוא יופיע אצלכם כשייפתח.",
+      "en": "An explanation of every part of the morning prayer after the Arizal: what it does, straight from Sha’ar HaKavanot and Pri Etz Chaim, and what it is in the one who prays. 8 of its 13 chapters are written. The wellspring opens when the explanation is complete; follow it, and it will be on your page when it opens."
     },
     "link": {
       "label": {
-        "he": "הדפים שנכתבו",
-        "en": "The pages so far"
+        "he": "עמודים מן הביאור",
+        "en": "Pages of the explanation"
       },
-      "url": "https://esoterics611.github.io/he/"
+      "url": "https://esoterics611.github.io/he/library.html#kavanot-shacharit"
     },
-    "dedicate": "https://esoterics611.github.io/he/dedicate.html#kavanot-shacharit"
+    "dedicate": "https://esoterics611.github.io/he/dedicate.html#kavanot-shacharit",
+    "cover": "https://esoterics611.github.io/samples/kavanot-shacharit/biur-01.webp"
   }
 ]

@@ -4,7 +4,7 @@
   import { t, lt } from '$lib/team/i18n';
   import { href, go } from '$lib/team/nav';
   import { ui } from '$lib/team/ui.svelte';
-  import { maayan } from '$lib/maayan/store.svelte';
+  import { maayan, MAILS } from '$lib/maayan/store.svelte';
   import QuestionCard from '$lib/maayan/QuestionCard.svelte';
   import Wallet from '@lucide/svelte/icons/wallet';
   import LogOut from '@lucide/svelte/icons/log-out';
@@ -65,7 +65,7 @@
           {/each}
         </div>
       </fieldset>
-      <label class="m-check"><input type="checkbox" bind:checked={notify} /><span>{t('maayan.join.notify')}</span></label>
+      <label class="m-check"><input type="checkbox" bind:checked={notify} /><span>{t(MAILS ? 'maayan.join.notify' : 'maayan.join.notifySoon')}</span></label>
       <label class="m-check"><input type="checkbox" bind:checked={quoteOk} /><span>{t('maayan.join.quote')}</span></label>
       <div class="form-actions"><button type="submit" class="btn btn-primary">{t('maayan.me.save')}</button></div>
     </form>

@@ -20,6 +20,8 @@ import type { MaayanLive, MaayanMode } from './live';
 export const MODE: 'demo' | MaayanMode = (import.meta.env.VITE_MAAYAN_BACKEND as MaayanMode | undefined)
   ?? (import.meta.env.VITE_TEAM_BACKEND === 'firestore' ? 'server' : 'demo');
 export const LIVE = MODE !== 'demo';
+/** Whether answers are emailed: only the server version sends mail (docs/MAAYAN.md §5, §6b). */
+export const MAILS = MODE === 'server';
 
 /** Where the team app is: in the free version it isn't live, so its links go
  *  to the published demo, in a tab of its own; elsewhere, this app's own. */

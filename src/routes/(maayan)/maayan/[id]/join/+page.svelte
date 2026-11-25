@@ -5,7 +5,7 @@
   import { t, lt } from '$lib/team/i18n';
   import { href, go } from '$lib/team/nav';
   import { ui } from '$lib/team/ui.svelte';
-  import { maayan } from '$lib/maayan/store.svelte';
+  import { maayan, MAILS } from '$lib/maayan/store.svelte';
   import Rings from '$lib/maayan/Rings.svelte';
   import QuestionCard from '$lib/maayan/QuestionCard.svelte';
   import Mail from '@lucide/svelte/icons/mail';
@@ -77,7 +77,7 @@
         <a class="m-cover small" href={w.pdf ?? href(`/maayan/${id}`)} aria-label={t('maayan.cover', { title: lt(w.title) })}>
           <img src={w.cover} alt={t('maayan.cover', { title: lt(w.title) })} width="420" height="595" />
         </a>
-        <p class="holding">{t('maayan.join.holding')}</p>
+        {#if w.printed}<p class="holding">{t('maayan.join.holding')}</p>{/if}
       {/if}
       {#if w}<a class="m-eyebrow" href={href(`/maayan/${id}`)}>{t('maayan.hero.eyebrow')} · {lt(w.title)}</a>{/if}
       <h1 class="m-h1">{w ? t('maayan.join.title', { title: lt(w.title) }) : t('maayan.join')}</h1>
@@ -142,7 +142,7 @@
               {/each}
             </div>
           </fieldset>
-          <label class="m-check"><input type="checkbox" bind:checked={notify} /><span>{t('maayan.join.notify')}</span></label>
+          <label class="m-check"><input type="checkbox" bind:checked={notify} /><span>{t(MAILS ? 'maayan.join.notify' : 'maayan.join.notifySoon')}</span></label>
           <label class="m-check"><input type="checkbox" bind:checked={quoteOk} /><span>{t('maayan.join.quote')}</span></label>
           <button type="submit" class="btn btn-primary btn-xl btn-block" disabled={saving}>{t('maayan.join.done')}<ArrowRight size={18} class="flip-rtl" /></button>
         </form>

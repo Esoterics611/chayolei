@@ -6,7 +6,7 @@
   import { t, lt, fmtNum } from '$lib/team/i18n';
   import { href } from '$lib/team/nav';
   import { ui } from '$lib/team/ui.svelte';
-  import { maayan, TEAMS_DEMO } from '$lib/maayan/store.svelte';
+  import { maayan, TEAMS_DEMO, MAILS } from '$lib/maayan/store.svelte';
   import { counts, search } from '$lib/maayan/engine';
   import type { Question } from '$lib/maayan/types';
   import Rings from '$lib/maayan/Rings.svelte';
@@ -80,7 +80,9 @@
     text = '';
     ref = '';
     followUp = null;
-    ui.toast('success', t(q.status === 'pending' ? 'maayan.ask.sentPending' : 'maayan.ask.sent'), 6000);
+    ui.toast('success', t(q.status === 'pending'
+      ? (MAILS ? 'maayan.ask.sentPending' : 'maayan.ask.sentPendingNoMail')
+      : (MAILS ? 'maayan.ask.sent' : 'maayan.ask.sentNoMail')), 6000);
     tab = q.status === 'pending' ? 'mine' : 'waiting';
   }
 
@@ -160,10 +162,14 @@
 
       {#if !maayan.me && w.status === 'open'}
         <div class="m-booklet">
-          <span class="ic"><ScanLine size={22} /></span>
+          <span class="ic">{#if w.printed}<ScanLine size={22} />{:else}<MessageCircleQuestionMark size={22} />{/if}</span>
           <div>
-            <h2>{t('maayan.hero.fromBooklet')}</h2>
-            <p>{t('maayan.hero.fromBookletBody')}</p>
+            {#if w.printed}
+              <h2>{t('maayan.hero.fromBooklet')}</h2>
+              <p>{t('maayan.hero.fromBookletBody')}</p>
+            {:else}
+              <p>{t('maayan.hero.studyBody')}</p>
+            {/if}
           </div>
         </div>
       {/if}
@@ -175,7 +181,11 @@
       <div class="m-promises">
         <div class="m-promise"><span class="ic"><Feather size={18} /></span><h3>{t('maayan.promise.ask.t')}</h3><p>{t('maayan.promise.ask.d')}</p></div>
         <div class="m-promise"><span class="ic"><GraduationCap size={18} /></span><h3>{t('maayan.promise.answer.t')}</h3><p>{t('maayan.promise.answer.d')}</p></div>
-        <div class="m-promise"><span class="ic"><MailCheck size={18} /></span><h3>{t('maayan.promise.mail.t')}</h3><p>{t('maayan.promise.mail.d')}</p></div>
+        {#if MAILS}
+          <div class="m-promise"><span class="ic"><MailCheck size={18} /></span><h3>{t('maayan.promise.mail.t')}</h3><p>{t('maayan.promise.mail.d')}</p></div>
+        {:else}
+          <div class="m-promise"><span class="ic"><MailCheck size={18} /></span><h3>{t('maayan.promise.mark.t')}</h3><p>{t('maayan.promise.mark.d')}</p></div>
+        {/if}
       </div>
     {/if}
 

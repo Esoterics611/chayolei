@@ -5,6 +5,9 @@
 //                                                      (keeps each one's follower count)
 //   node scripts/maayan-setup.mjs teacher <email>      make the member with this email the teacher
 //                                                      (they sign in once first, so their profile exists)
+//   node scripts/maayan-setup.mjs teachers             the same for every address in MAAYAN_TEACHERS
+//                                                      (deploy.env, comma-separated; run by each deploy);
+//                                                      one not signed up yet is reported, not an error
 //
 // Credentials as the app's: FIREBASE_PROJECT_ID with FIREBASE_CLIENT_EMAIL and
 // FIREBASE_PRIVATE_KEY in .env, or Application Default Credentials (gcloud auth
@@ -34,12 +37,20 @@ if (cmd === 'wellsprings') {
     await ref.set({ ...w, followers: before.data()?.followers ?? 0 });
     console.log(`wellspring ${w.id}: ${w.status}`);
   }
+} else if (cmd === 'teachers') {
+  const list = (process.env.MAAYAN_TEACHERS ?? '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
+  for (const email of list) {
+    const snap = await db.collection('maayanMembers').where('email', '==', email).limit(1).get();
+    if (snap.empty) { console.log(`teacher ${email}: not signed up yet (sign in once at /maayan, then deploy again)`); continue; }
+    await snap.docs[0].ref.update({ teacher: true });
+    console.log(`teacher ${email}: yes`);
+  }
 } else if (cmd === 'teacher' && arg) {
   const snap = await db.collection('maayanMembers').where('email', '==', arg.trim().toLowerCase()).limit(1).get();
   if (snap.empty) { console.error(`No member with ${arg}: sign in once on /maayan first.`); process.exit(1); }
   await snap.docs[0].ref.update({ teacher: true });
   console.log(`${arg} is the teacher.`);
 } else {
-  console.error('usage: node scripts/maayan-setup.mjs wellsprings | teacher <email>');
+  console.error('usage: node scripts/maayan-setup.mjs wellsprings | teachers | teacher <email>');
   process.exit(2);
 }
