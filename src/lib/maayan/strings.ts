@@ -197,6 +197,12 @@ export const he: Record<string, string> = {
   'maayan.downloadOf': 'להורדה: {what}',
   'maayan.join.notYou': 'לא הכתובת שלכם? כניסה בכתובת אחרת',
   'maayan.join.mismatch': 'הקישור נשלח לכתובת אחרת מזו שהדפדפן הזה זוכר. הקלידו את הכתובת שאליה נשלח הקישור.',
+  'maayan.nav.signIn': 'כניסה',
+  'maayan.signin.title': 'ברוכים השבים',
+  'maayan.signin.lead': 'היכנסו כמו שהצטרפתם: עם Google, או בקישור שנשלח למייל.',
+  'maayan.signin.new': 'עוד לא חברים?',
+  'maayan.signin.join': 'הצטרפו לשיחה',
+  'maayan.signin.already': 'כבר חברים?',
 };
 
 export const en: Record<string, string> = {
@@ -395,4 +401,10 @@ export const en: Record<string, string> = {
   'maayan.downloadOf': 'Download: {what}',
   'maayan.join.notYou': 'Not your address? Sign in with another',
   'maayan.join.mismatch': 'The link was sent to a different address from the one this browser remembers. Type the address it was sent to.',
+  'maayan.nav.signIn': 'Sign in',
+  'maayan.signin.title': 'Welcome back',
+  'maayan.signin.lead': 'Sign in the way you joined: with Google, or by a link sent to your email.',
+  'maayan.signin.new': 'Not a member yet?',
+  'maayan.signin.join': 'Join the conversation',
+  'maayan.signin.already': 'Already a member?',
 };

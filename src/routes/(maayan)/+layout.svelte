@@ -46,6 +46,7 @@
         {#if maayan.me}
           <a href={href('/maayan/me')} aria-current={current('/maayan/me')}><MemberAvatar id={maayan.me.uid} name={maayan.me.name} teacher={!!maayan.me.teacher} size="xs" />{t('maayan.nav.me')}{#if maayan.unseen.length}<span class="m-badge" aria-label={t('maayan.me.newAnswers', { n: maayan.unseen.length })}>{maayan.unseen.length}</span>{/if}</a>
         {:else if maayan.status === 'ready'}
+          <a href={href(`/maayan/login?next=${encodeURIComponent(path.startsWith('/maayan/login') ? '/maayan' : path)}`)} aria-current={current('/maayan/login')}>{t('maayan.nav.signIn')}</a>
           <a class="m-join" href={href(`/maayan/${joinTo}/join`)}>{t('maayan.nav.join')}</a>
         {/if}
         <button type="button" onclick={() => ui.setLocale(ui.locale === 'he' ? 'en' : 'he')} lang={ui.locale === 'he' ? 'en' : 'he'}>

@@ -134,7 +134,7 @@
       <div class="m-cta">
         {#if !maayan.me}
           <a class="btn btn-primary btn-xl" href={joinHref}>{t('maayan.join')}<ArrowRight size={18} class="flip-rtl" /></a>
-          <span class="m-note">{t('maayan.joinNote')}</span>
+          <span class="m-note">{t('maayan.joinNote')}<br />{t('maayan.signin.already')} <a class="m-signin" href={href(`/maayan/login?next=/maayan/${id}`)}>{t('maayan.nav.signIn')}</a></span>
         {:else}
           <button type="button" class="btn" aria-pressed={following} onclick={() => maayan.setFollow(id, !following)}>
             {#if following}<BellRing size={16} />{t('maayan.following')}{:else}<Bell size={16} />{t('maayan.follow')}{/if}
@@ -305,6 +305,7 @@
   .follow-note { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 12px; margin-block-end: 12px; border-radius: var(--r-sm); background: var(--accent-weak); color: var(--accent-text); font-size: var(--fs-sm); }
   .follow-note span { flex: 1; min-width: 12rem; }
   .q-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+  .m-signin { color: var(--accent-text); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
   .m-booklet :global(.dl) { margin-block-start: 12px; }
   .q-actions:empty { display: none; }
 </style>
