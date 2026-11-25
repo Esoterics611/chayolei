@@ -127,8 +127,10 @@ export class MaayanLive {
     }
   }
 
-  /** Complete sign-in from the link: 'ok', 'needEmail' (opened on another device) or 'bad'. */
-  async completeLink(href: string, typed?: string): Promise<'ok' | 'needEmail' | 'bad' | 'none'> {
+  /** Complete sign-in from the link: 'ok'; 'needEmail' (opened where no address
+   *  was typed); 'mismatch' (this browser remembers another address than the one
+   *  the link was sent to); 'bad' (expired or used); 'none' (not a sign-in link). */
+  async completeLink(href: string, typed?: string): Promise<'ok' | 'needEmail' | 'mismatch' | 'bad' | 'none'> {
     const { auth } = await import('$lib/firebase');
     const { isSignInWithEmailLink, signInWithEmailLink } = await import('firebase/auth');
     if (!isSignInWithEmailLink(auth, href)) return 'none';
@@ -139,10 +141,12 @@ export class MaayanLive {
       await signInWithEmailLink(auth, email, href);
       try { localStorage.removeItem(EMAIL_KEY); } catch { /* nothing to clear */ }
       return 'ok';
-    } catch {
-      return 'bad';
+    } catch (e) {
+      const code = (e as { code?: string }).code ?? '';
+      return code === 'auth/invalid-email' || code === 'auth/user-mismatch' ? 'mismatch' : 'bad';
     }
   }
+
 
   // ── Actions, in either mode ───────────────────────────────────
 

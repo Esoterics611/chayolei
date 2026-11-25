@@ -29,7 +29,11 @@
     "dedicate": "https://esoterics611.github.io/he/dedicate.html#padah-beshalom",
     "cover": "https://esoterics611.github.io/samples/padah-beshalom/booklet-01.webp",
     "pdf": "https://esoterics611.github.io/samples/padah-beshalom/padah-beshalom.pdf",
-    "printed": true
+    "printed": true,
+    "pdfLabel": {
+      "he": "החוברת כולה, 72 עמודים",
+      "en": "The whole booklet, 72 pages"
+    }
   },
   {
     "id": "shaar-hayichud",
@@ -60,7 +64,11 @@
     },
     "dedicate": "https://esoterics611.github.io/he/dedicate.html#shaar-hayichud",
     "cover": "https://esoterics611.github.io/samples/shaar-hayichud/perek-01-01.webp",
-    "pdf": "https://esoterics611.github.io/samples/shaar-hayichud/shaar-hayichud-perek-01.pdf"
+    "pdf": "https://esoterics611.github.io/samples/shaar-hayichud/shaar-hayichud-perek-01.pdf",
+    "pdfLabel": {
+      "he": "פרק א עם ביאור, 11 עמודים",
+      "en": "Chapter 1 explained, 11 pages"
+    }
   },
   {
     "id": "levushei-haneshama",
@@ -91,7 +99,11 @@
     },
     "dedicate": "https://esoterics611.github.io/he/dedicate.html#levushei-haneshama",
     "cover": "https://esoterics611.github.io/samples/levushei-haneshama/pamphlet-01.webp",
-    "pdf": "https://esoterics611.github.io/samples/levushei-haneshama/levushei-haneshama-pamphlet.pdf"
+    "pdf": "https://esoterics611.github.io/samples/levushei-haneshama/levushei-haneshama-pamphlet.pdf",
+    "pdfLabel": {
+      "he": "החוברת, 24 עמודים",
+      "en": "The pamphlet, 24 pages"
+    }
   },
   {
     "id": "kavanot-shacharit",

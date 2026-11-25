@@ -168,6 +168,16 @@ class MaayanStore {
     if (r === 'failed') ui.toast('error', t('maayan.err.google'), 7000);
   }
 
+  /** Signed in with the wrong address: out, and back to choosing one. */
+  async switchAccount(): Promise<void> {
+    if (LIVE) await this.client?.signOut();
+    this.me = null;
+    this.verifiedEmail = '';
+    this.accountName = '';
+    this.linkSentTo = '';
+    this.save();
+  }
+
   cancelLink(): void {
     this.linkSentTo = '';
     this.save();

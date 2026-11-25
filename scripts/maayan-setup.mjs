@@ -13,6 +13,7 @@
 // FIREBASE_PRIVATE_KEY in .env, or Application Default Credentials (gcloud auth
 // application-default login), or the emulator (FIRESTORE_EMULATOR_HOST).
 import { readFileSync, existsSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { initializeApp, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 
@@ -38,12 +39,24 @@ if (cmd === 'wellsprings') {
     console.log(`wellspring ${w.id}: ${w.status}`);
   }
 } else if (cmd === 'teachers') {
-  const list = (process.env.MAAYAN_TEACHERS ?? '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
-  for (const email of list) {
-    const snap = await db.collection('maayanMembers').where('email', '==', email).limit(1).get();
-    if (snap.empty) { console.log(`teacher ${email}: not signed up yet (sign in once at /maayan, then deploy again)`); continue; }
-    await snap.docs[0].ref.update({ teacher: true });
-    console.log(`teacher ${email}: yes`);
+  // MAAYAN_TEACHERS: addresses, or "sha256:<hex>" of an address that should not
+  // be published (deploy.env and the Actions logs are public). Every one must be
+  // a member: one that isn't fails the run (after the deploy itself is done),
+  // so a wrong or unfinished sign-up is seen, not passed over.
+  const sha = e => createHash('sha256').update(e.trim().toLowerCase()).digest('hex');
+  const wanted = (process.env.MAAYAN_TEACHERS ?? '').split(',').map(e => e.trim()).filter(Boolean)
+    .map(e => (e.startsWith('sha256:') ? { hash: e.slice(7).toLowerCase(), label: `sha256:${e.slice(7, 19)}…` } : { hash: sha(e), label: e.toLowerCase() }));
+  const members = (await db.collection('maayanMembers').get()).docs;
+  const missing = [];
+  for (const t of wanted) {
+    const doc = members.find(d => sha(String(d.data().email ?? '')) === t.hash);
+    if (!doc) { missing.push(t.label); continue; }
+    if (doc.data().teacher !== true) await doc.ref.update({ teacher: true });
+    console.log(`teacher ${t.label}: yes`);
+  }
+  if (missing.length) {
+    for (const m of missing) console.log(`::error title=Teacher not found::${m} has no member profile. Sign in at /maayan with that address and finish joining ("כניסה למעיין"), then deploy again.`);
+    process.exit(1);
   }
 } else if (cmd === 'teacher' && arg) {
   const snap = await db.collection('maayanMembers').where('email', '==', arg.trim().toLowerCase()).limit(1).get();

@@ -7,6 +7,7 @@
   import Rings from '$lib/maayan/Rings.svelte';
   import Users from '@lucide/svelte/icons/users';
   import MessageCircleQuestionMark from '@lucide/svelte/icons/message-circle-question-mark';
+  import Download from '@lucide/svelte/icons/download';
 </script>
 
 <svelte:head><title>{t('maayan.index.title')} · {t('maayan.brand')}</title></svelte:head>
@@ -24,16 +25,17 @@
   <div class="m-cards">
     {#each maayan.sorted as w (w.id)}
       {@const c = counts(maayan.questions, w.id)}
-      <a class="m-card" href={href(`/maayan/${w.id}`)}>
+      <article class="m-card m-card-link">
         <span><span class="m-chip {w.status}">{t(`maayan.status.${w.status}`)}</span></span>
-        <h3>{lt(w.title)}</h3>
+        <h3><a class="stretch" href={href(`/maayan/${w.id}`)}>{lt(w.title)}</a></h3>
         <p class="sub">{lt(w.subtitle)}</p>
         <p class="slogan">{lt(w.slogan)}</p>
         <p class="foot">
           {#if maayan.studying(w.id)}<span><Users size={14} style="display:inline;vertical-align:-2px" /> {t('maayan.studying', { n: fmtNum(maayan.studying(w.id)) })}</span>{/if}
           {#if c.answered}<span><MessageCircleQuestionMark size={14} style="display:inline;vertical-align:-2px" /> {t('maayan.answeredCount', { n: fmtNum(c.answered) })}</span>{/if}
+          {#if w.pdf}<a class="m-dl" href={w.pdf} download><Download size={14} />{w.pdfLabel ? lt(w.pdfLabel) : 'PDF'}</a>{/if}
         </p>
-      </a>
+      </article>
     {/each}
   </div>
 </div>

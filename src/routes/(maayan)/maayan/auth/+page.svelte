@@ -6,7 +6,7 @@
   import { go, href } from '$lib/team/nav';
   import { maayan } from '$lib/maayan/store.svelte';
 
-  let phase = $state<'opening' | 'needEmail' | 'bad'>('opening');
+  let phase = $state<'opening' | 'needEmail' | 'mismatch' | 'bad'>('opening');
   let email = $state('');
   const next = $derived(page.url.searchParams.get('next')?.startsWith('/maayan') ? page.url.searchParams.get('next')! : '/maayan');
 
@@ -27,9 +27,9 @@
   <div class="m-form-card">
     {#if phase === 'opening'}
       <p>{t('maayan.join.opening')}</p>
-    {:else if phase === 'needEmail'}
+    {:else if phase === 'needEmail' || phase === 'mismatch'}
       <form class="form" onsubmit={e => { e.preventDefault(); void complete(email.trim()); }}>
-        <p>{t('maayan.join.otherDevice')}</p>
+        <p>{t(phase === 'mismatch' ? 'maayan.join.mismatch' : 'maayan.join.otherDevice')}</p>
         <input class="input" type="email" dir="ltr" required autocomplete="email" bind:value={email} aria-label={t('maayan.join.email')} />
         <button type="submit" class="btn btn-primary btn-block">{t('maayan.join.confirm')}</button>
       </form>

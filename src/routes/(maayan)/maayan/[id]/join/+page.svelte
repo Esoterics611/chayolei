@@ -125,7 +125,8 @@
         <form class="form" onsubmit={finish}>
           <div>
             <h2 class="m-h2" style="margin: 0">{t('maayan.join.profileTitle')}</h2>
-            <p class="hint">{t('maayan.join.confirmed', { email: maayan.verifiedEmail })}</p>
+            <p class="hint">{t('maayan.join.confirmed', { email: maayan.verifiedEmail })}
+              <button type="button" class="linklike" onclick={() => maayan.switchAccount()}>{t('maayan.join.notYou')}</button></p>
           </div>
           <label class="field">
             <span class="label">{t('maayan.join.name')}</span>
@@ -163,6 +164,7 @@
   @media (max-width: 820px) { .join .grid { grid-template-columns: minmax(0, 1fr); gap: var(--s6); } }
   .m-cover.small { width: 96px; margin-block-end: 6px; }
   .holding { font-size: var(--fs-xs); color: var(--ink-3); margin-block-end: var(--s4); }
+  .linklike { color: var(--accent-text); text-decoration: underline; text-underline-offset: 2px; margin-inline-start: 6px; }
   .facts { display: flex; flex-direction: column; gap: var(--s3); margin-block-start: var(--s6); color: var(--ink-2); font-size: var(--fs-md); line-height: 1.55; }
   .facts li { display: grid; grid-template-columns: auto 1fr; gap: 10px; }
   .facts :global(svg) { color: var(--accent-text); margin-block-start: 3px; }

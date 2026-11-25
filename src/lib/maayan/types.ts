@@ -24,8 +24,9 @@ export interface Wellspring {
   printed?: boolean;
   /** The printed edition's first page, as an image (the Sefer Forge site). */
   cover?: string;
-  /** The printed edition as a PDF. */
+  /** The printed edition as a PDF, and what it holds (e.g. "the whole booklet, 72 pages"). */
   pdf?: string;
+  pdfLabel?: Text;
   /** Where its parts can be dedicated: the Sefer Forge site's store (Chayolei takes no money). */
   dedicate?: string;
   /** The editorial team working on it (the team app), if there is one. */

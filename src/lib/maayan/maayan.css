@@ -152,3 +152,11 @@ body:has(.maayan) { margin: 0; }
 }
 .maayan .m-links { display: flex; flex-wrap: wrap; gap: var(--s2) var(--s3); margin-block-start: var(--s4); }
 .maayan .m-links a { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-sm); color: var(--accent-text); text-decoration: underline; text-underline-offset: 3px; }
+
+/* A card that is one link (the title stretched over it), with its own download link on top */
+.maayan .m-card-link { position: relative; transition: border-color var(--fast) var(--ease), transform var(--fast) var(--ease); }
+.maayan .m-card-link:hover { border-color: var(--accent); transform: translateY(-1px); }
+.maayan .m-card-link .stretch::after { content: ''; position: absolute; inset: 0; border-radius: inherit; }
+.maayan .m-card-link .stretch:focus-visible { outline: none; }
+.maayan .m-card-link:has(.stretch:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+.maayan .m-dl { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 5px; color: var(--accent-text); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }

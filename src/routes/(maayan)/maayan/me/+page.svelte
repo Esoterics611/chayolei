@@ -47,7 +47,8 @@
 {#if me}
   <div class="m-wrap" style="max-width: 46rem; padding-block: 40px">
     <h1 class="m-h1" style="font-size: 2rem">{t('maayan.me.title')}</h1>
-    <p class="muted">{t('maayan.me.email', { email: me.email })}</p>
+    <p class="muted">{t('maayan.me.email', { email: me.email })} ·
+      <button type="button" style="text-decoration: underline; color: var(--accent-text)" onclick={async () => { await maayan.switchAccount(); void go('/maayan'); }}>{t('maayan.join.notYou')}</button></p>
 
     <form class="m-form-card form" style="margin-block-start: 24px; box-shadow: none" onsubmit={save}>
       <label class="field">

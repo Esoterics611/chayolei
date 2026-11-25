@@ -193,6 +193,10 @@ export const he: Record<string, string> = {
   'maayan.join.notifySoon': 'שלחו לי מייל כשהמלמד עונה לי, או כשנפתח מעיין שבמעקב שלי (המיילים יתחילו בקרוב)',
   'maayan.hero.studyBody': 'כאן הלימוד ממשיך. שאלו את מה שנשאר פתוח אצלכם, וקראו מה שאחרים שאלו ומה נענה להם.',
   'maayan.t.sentNoMail': 'נענתה. התשובה מסומנת אצל השואל בדף שלו.',
+  'maayan.download': 'להורדה (PDF)',
+  'maayan.downloadOf': 'להורדה: {what}',
+  'maayan.join.notYou': 'לא הכתובת שלכם? כניסה בכתובת אחרת',
+  'maayan.join.mismatch': 'הקישור נשלח לכתובת אחרת מזו שהדפדפן הזה זוכר. הקלידו את הכתובת שאליה נשלח הקישור.',
 };
 
 export const en: Record<string, string> = {
@@ -387,4 +391,8 @@ export const en: Record<string, string> = {
   'maayan.join.notifySoon': 'Email me when the teacher answers me, or a wellspring I follow opens (emails start soon)',
   'maayan.hero.studyBody': 'Here the study goes on. Ask what was left open for you, and read what others asked and how they were answered.',
   'maayan.t.sentNoMail': 'Answered. It is marked on the asker’s page.',
+  'maayan.download': 'Download (PDF)',
+  'maayan.downloadOf': 'Download: {what}',
+  'maayan.join.notYou': 'Not your address? Sign in with another',
+  'maayan.join.mismatch': 'The link was sent to a different address from the one this browser remembers. Type the address it was sent to.',
 };

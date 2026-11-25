@@ -29,6 +29,7 @@
   import X from '@lucide/svelte/icons/x';
   import BookOpen from '@lucide/svelte/icons/book-open';
   import Share2 from '@lucide/svelte/icons/share-2';
+  import Download from '@lucide/svelte/icons/download';
   import HeartHandshake from '@lucide/svelte/icons/heart-handshake';
 
   const HASH = import.meta.env.VITE_HASH_ROUTER === '1';
@@ -143,7 +144,6 @@
       </div>
 
       <p class="m-links">
-        {#if w.pdf}<a href={w.pdf}><FileText size={15} />{t('maayan.link.pdf')}</a>{/if}
         {#if w.link}<a href={w.link.url}><BookOpen size={15} />{lt(w.link.label)}</a>{/if}
         <a href={shareHref} target="_blank" rel="noopener"><Share2 size={15} />{t('maayan.link.share')}</a>
       </p>
@@ -160,15 +160,22 @@
         {#if c.answered}<span><MessageCircleQuestionMark size={15} />{t('maayan.answeredCount', { n: fmtNum(c.answered) })}</span>{/if}
       </p>
 
-      {#if !maayan.me && w.status === 'open'}
+      {#if (!maayan.me && w.status === 'open') || w.pdf}
         <div class="m-booklet">
-          <span class="ic">{#if w.printed}<ScanLine size={22} />{:else}<MessageCircleQuestionMark size={22} />{/if}</span>
+          <span class="ic">{#if w.printed}<ScanLine size={22} />{:else if w.pdf}<FileText size={22} />{:else}<MessageCircleQuestionMark size={22} />{/if}</span>
           <div>
-            {#if w.printed}
-              <h2>{t('maayan.hero.fromBooklet')}</h2>
-              <p>{t('maayan.hero.fromBookletBody')}</p>
-            {:else}
-              <p>{t('maayan.hero.studyBody')}</p>
+            {#if !maayan.me && w.status === 'open'}
+              {#if w.printed}
+                <h2>{t('maayan.hero.fromBooklet')}</h2>
+                <p>{t('maayan.hero.fromBookletBody')}</p>
+              {:else}
+                <p>{t('maayan.hero.studyBody')}</p>
+              {/if}
+            {/if}
+            {#if w.pdf}
+              <a class="btn btn-primary dl" href={w.pdf} download>
+                <Download size={17} />{w.pdfLabel ? t('maayan.downloadOf', { what: lt(w.pdfLabel) }) : t('maayan.download')}
+              </a>
             {/if}
           </div>
         </div>
@@ -278,12 +285,15 @@
         <h2 class="m-h2" id="more">{t('maayan.next.title')}</h2>
         <div class="m-cards">
           {#each others as o (o.id)}
-            <a class="m-card" href={href(`/maayan/${o.id}`)}>
+            <article class="m-card m-card-link">
               <span><span class="m-chip {o.status}">{t(`maayan.status.${o.status}`)}</span></span>
-              <h3>{lt(o.title)}</h3>
+              <h3><a class="stretch" href={href(`/maayan/${o.id}`)}>{lt(o.title)}</a></h3>
               <p class="slogan">{lt(o.slogan)}</p>
-              {#if maayan.studying(o.id)}<p class="foot"><span>{t('maayan.studying', { n: fmtNum(maayan.studying(o.id)) })}</span></p>{/if}
-            </a>
+              <p class="foot">
+                {#if maayan.studying(o.id)}<span>{t('maayan.studying', { n: fmtNum(maayan.studying(o.id)) })}</span>{/if}
+                {#if o.pdf}<a class="m-dl" href={o.pdf} download><Download size={14} />{o.pdfLabel ? lt(o.pdfLabel) : 'PDF'}</a>{/if}
+              </p>
+            </article>
           {/each}
         </div>
       </section>
@@ -295,5 +305,6 @@
   .follow-note { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 12px; margin-block-end: 12px; border-radius: var(--r-sm); background: var(--accent-weak); color: var(--accent-text); font-size: var(--fs-sm); }
   .follow-note span { flex: 1; min-width: 12rem; }
   .q-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+  .m-booklet :global(.dl) { margin-block-start: 12px; }
   .q-actions:empty { display: none; }
 </style>
