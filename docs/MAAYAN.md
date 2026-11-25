@@ -76,4 +76,4 @@ A walk through the wellspring as a student arriving from the booklet found what 
 | Answers recorded as voice notes, transcribed and posted | sefer-forge's Whisper pipeline (task "Connect wellsprings to the sefer-forge pipeline") |
 | A discourse's own editorial team for the ladder's "contributor" step | The ladder task; the demo shows a sample team |
 | Terms in answers linked to the glossary (מילון) | The glossary published on the site |
-| A dedication shown on each wellspring, and the way to dedicate one | The dedications store on the Sefer Forge site (Chayolei takes no money) |
+| A dedication, once taken, shown on its wellspring | The store's `dedicated:` entries read by the app (each wellspring already links to its part of the store, `dedicate` in wellsprings.json; the store is on the Sefer Forge site, since Chayolei takes no money) |

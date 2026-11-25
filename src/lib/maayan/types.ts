@@ -20,6 +20,8 @@ export interface Wellspring {
   about: Text;
   /** The printed edition or the text online. */
   link?: { label: Text; url: string };
+  /** Where its parts can be dedicated: the Sefer Forge site's store (Chayolei takes no money). */
+  dedicate?: string;
   /** The editorial team working on it (the team app), if there is one. */
   teamId?: string;
   order: number;

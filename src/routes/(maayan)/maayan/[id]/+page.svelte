@@ -27,6 +27,7 @@
   import Reply from '@lucide/svelte/icons/reply';
   import Undo2 from '@lucide/svelte/icons/undo-2';
   import X from '@lucide/svelte/icons/x';
+  import HeartHandshake from '@lucide/svelte/icons/heart-handshake';
 
   const HASH = import.meta.env.VITE_HASH_ROUTER === '1';
 
@@ -127,6 +128,7 @@
           </button>
         {/if}
         {#if w.link}<a class="btn btn-ghost" href={w.link.url}><FileText size={16} />{lt(w.link.label)}</a>{/if}
+        {#if w.dedicate}<a class="btn btn-ghost" href={w.dedicate}><HeartHandshake size={16} />{t('maayan.dedicate')}</a>{/if}
       </div>
 
       <p class="m-stats">

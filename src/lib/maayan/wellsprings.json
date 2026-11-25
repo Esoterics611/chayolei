@@ -25,7 +25,8 @@
         "en": "The books, lessons and glossary"
       },
       "url": "https://esoterics611.github.io/he/library.html"
-    }
+    },
+    "dedicate": "https://esoterics611.github.io/he/dedicate.html#padah-beshalom"
   },
   {
     "id": "shaar-hayichud",
@@ -53,7 +54,8 @@
         "en": "The lessons and the explanation"
       },
       "url": "https://esoterics611.github.io/he/library.html"
-    }
+    },
+    "dedicate": "https://esoterics611.github.io/he/dedicate.html#shaar-hayichud"
   },
   {
     "id": "levushei-haneshama",
@@ -81,7 +83,8 @@
         "en": "The explanation"
       },
       "url": "https://esoterics611.github.io/he/library.html"
-    }
+    },
+    "dedicate": "https://esoterics611.github.io/he/dedicate.html#levushei-haneshama"
   },
   {
     "id": "kavanot-shacharit",
@@ -109,6 +112,7 @@
         "en": "The pages so far"
       },
       "url": "https://esoterics611.github.io/he/"
-    }
+    },
+    "dedicate": "https://esoterics611.github.io/he/dedicate.html#kavanot-shacharit"
   }
 ]
