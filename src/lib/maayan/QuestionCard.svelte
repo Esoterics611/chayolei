@@ -5,8 +5,8 @@
   import type { Snippet } from 'svelte';
   import type { Question } from './types';
   import { DEMO_TEACHER } from './seed';
+  import MemberAvatar from './MemberAvatar.svelte';
   import { t, fmtRelative } from '$lib/team/i18n';
-  import GraduationCap from '@lucide/svelte/icons/graduation-cap';
   import Hourglass from '@lucide/svelte/icons/hourglass';
   import MapPin from '@lucide/svelte/icons/map-pin';
   import CornerDownLeft from '@lucide/svelte/icons/corner-down-left';
@@ -27,7 +27,7 @@
 
 <article class="qc" class:answered={q.status === 'answered'} class:highlight id={`q-${q.id}`}>
   <header>
-    <span class="who">{t('maayan.q.by', { name: q.authorName, when: fmtRelative(q.createdAt) })}</span>
+    <span class="who"><MemberAvatar id={q.authorId} name={q.authorName} size="xs" />{t('maayan.q.by', { name: q.authorName, when: fmtRelative(q.createdAt) })}</span>
     {#if context}<span class="ctx">{context}</span>{/if}
     {#if q.sample}<span class="m-chip sample">{t('maayan.sample')}</span>{/if}
     {#if fresh}<span class="m-chip open">{t('maayan.me.new')}</span>{/if}
@@ -41,7 +41,7 @@
   {#if q.answer}
     <div class="ans">
       <p class="by">
-        <GraduationCap size={15} />{t('maayan.q.teacher')}{#if q.answer.byName !== DEMO_TEACHER.name} · {q.answer.byName}{/if}
+        <MemberAvatar id={q.answer.byId} name={q.answer.byName} teacher size="xs" />{t('maayan.q.teacher')}{#if q.answer.byName !== DEMO_TEACHER.name} · {q.answer.byName}{/if}
         <span class="when">· {t('maayan.q.answeredAt', { when: fmtRelative(q.answer.at) })}</span>
       </p>
       <p class="atext doc" dir="auto">{q.answer.text}</p>
@@ -54,6 +54,7 @@
   .qc { padding: var(--s5); border: 1px solid var(--rule); border-radius: var(--r-lg); background: var(--surface-raised); scroll-margin-block-start: 80px; }
   .qc.answered { border-color: var(--rule-strong); }
   .qc.highlight { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-weak); }
+  .who { display: inline-flex; align-items: center; gap: 8px; color: var(--ink-2); }
   header { display: flex; flex-wrap: wrap; align-items: center; gap: 6px var(--s3); font-size: var(--fs-sm); color: var(--ink-3); }
   .ctx { color: var(--accent-text); }
   .state { display: inline-flex; align-items: center; gap: 4px; color: var(--st-progress); }

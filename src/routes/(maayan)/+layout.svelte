@@ -7,13 +7,13 @@
   import { ui } from '$lib/team/ui.svelte';
   import { t } from '$lib/team/i18n';
   import { href, currentPath } from '$lib/team/nav';
-  import { maayan } from '$lib/maayan/store.svelte';
+  import { maayan, TEAMS_DEMO } from '$lib/maayan/store.svelte';
   import Toasts from '$lib/ui/Toasts.svelte';
   import Droplets from '@lucide/svelte/icons/droplets';
-  import CircleUserRound from '@lucide/svelte/icons/circle-user-round';
   import GraduationCap from '@lucide/svelte/icons/graduation-cap';
   import LayoutDashboard from '@lucide/svelte/icons/layout-dashboard';
   import Languages from '@lucide/svelte/icons/languages';
+  import MemberAvatar from '$lib/maayan/MemberAvatar.svelte';
 
   let { children } = $props();
 
@@ -35,12 +35,16 @@
         <span class="full">{t('maayan.brand')}</span><span class="short">{t('maayan.name')}</span>
       </a>
       <nav class="m-nav" aria-label={t('maayan.name')}>
-        <a class="hide-sm" href={href('/')} title={t('maayan.nav.teams')}><LayoutDashboard size={16} />{t('maayan.nav.teams')}</a>
+        {#if TEAMS_DEMO}
+          <a class="hide-sm" href={TEAMS_DEMO} target="_blank" rel="noopener"><LayoutDashboard size={16} />{t('maayan.nav.teamsDemo')}</a>
+        {:else}
+          <a class="hide-sm" href={href('/')}><LayoutDashboard size={16} />{t('maayan.nav.teams')}</a>
+        {/if}
         {#if maayan.me?.teacher}
           <a href={href('/maayan/teacher')} aria-current={current('/maayan/teacher')}><GraduationCap size={16} />{t('maayan.nav.teacher')}</a>
         {/if}
         {#if maayan.me}
-          <a href={href('/maayan/me')} aria-current={current('/maayan/me')}><CircleUserRound size={16} />{t('maayan.nav.me')}{#if maayan.unseen.length}<span class="m-badge" aria-label={t('maayan.me.newAnswers', { n: maayan.unseen.length })}>{maayan.unseen.length}</span>{/if}</a>
+          <a href={href('/maayan/me')} aria-current={current('/maayan/me')}><MemberAvatar id={maayan.me.uid} name={maayan.me.name} teacher={!!maayan.me.teacher} size="xs" />{t('maayan.nav.me')}{#if maayan.unseen.length}<span class="m-badge" aria-label={t('maayan.me.newAnswers', { n: maayan.unseen.length })}>{maayan.unseen.length}</span>{/if}</a>
         {:else if maayan.status === 'ready'}
           <a class="m-join" href={href(`/maayan/${joinTo}/join`)}>{t('maayan.nav.join')}</a>
         {/if}
@@ -61,7 +65,15 @@
   </main>
 
   <footer class="m-foot">
-    <div class="m-wrap m-foot-row"><a href="https://esoterics611.github.io/he/">{t('maayan.foot')}</a><a href={href('/maayan/privacy')}>{t('maayan.foot.privacy')}</a></div>
+    <div class="m-wrap m-foot-row">
+      <a href="https://esoterics611.github.io/he/">{t('maayan.foot')}</a>
+      <nav class="m-foot-links" aria-label={t('maayan.foot')}>
+        <a href="https://esoterics611.github.io/he/library.html">{t('maayan.foot.library')}</a>
+        <a href="https://esoterics611.github.io/he/dedicate.html">{t('maayan.foot.dedicate')}</a>
+        <a href={href('/maayan/privacy')}>{t('maayan.foot.privacy')}</a>
+        <a href="mailto:esoterics611@gmail.com">{t('maayan.foot.contact')}</a>
+      </nav>
+    </div>
   </footer>
   <Toasts />
 </div>

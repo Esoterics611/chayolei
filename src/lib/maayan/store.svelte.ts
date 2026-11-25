@@ -21,6 +21,10 @@ export const MODE: 'demo' | MaayanMode = (import.meta.env.VITE_MAAYAN_BACKEND as
   ?? (import.meta.env.VITE_TEAM_BACKEND === 'firestore' ? 'server' : 'demo');
 export const LIVE = MODE !== 'demo';
 
+/** Where the team app is: in the free version it isn't live, so its links go
+ *  to the published demo, in a tab of its own; elsewhere, this app's own. */
+export const TEAMS_DEMO = MODE === 'direct' ? 'https://esoterics611.github.io/chayolei/' : '';
+
 const DEMO_KEY = 'chayolei-maayan-demo-v1';
 /** Answers this browser has shown the member, so new ones can be marked. */
 const SEEN_KEY = 'chayolei-maayan-seen';
@@ -47,6 +51,8 @@ class MaayanStore {
   linkSentTo = $state('');
   /** Signed in with a confirmed email, before the profile is made. */
   verifiedEmail = $state('');
+  /** The name the sign-in account carries (Google), offered as the name to show. */
+  accountName = $state('');
   status = $state<'loading' | 'ready'>(LIVE ? 'loading' : 'ready');
   private reader: MaayanMember | null = null;
   private started = false;
@@ -79,6 +85,7 @@ class MaayanStore {
           session: s => {
             this.me = s?.member ?? null;
             this.verifiedEmail = s && !s.member ? s.email : '';
+            this.accountName = s?.name ?? '';
             this.status = 'ready';
           },
           wellsprings: ws => { if (ws.length) this.wellsprings = ws; },
@@ -144,6 +151,19 @@ class MaayanStore {
 
   completeLink(href: string, typed?: string) {
     return this.client ? this.client.completeLink(href, typed) : Promise.resolve('none' as const);
+  }
+
+  /** Sign in with Google: in the demo, a stand-in account. */
+  async signInWithGoogle(): Promise<void> {
+    if (!LIVE) {
+      this.verifiedEmail = 'reader@gmail.com';
+      this.accountName = 'חנה לוי';
+      this.linkSentTo = '';
+      this.save();
+      return;
+    }
+    const r = await this.client!.signInWithGoogle();
+    if (r === 'failed') ui.toast('error', t('maayan.err.google'), 7000);
   }
 
   cancelLink(): void {

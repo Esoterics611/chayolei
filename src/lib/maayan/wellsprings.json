@@ -26,7 +26,9 @@
       },
       "url": "https://esoterics611.github.io/he/library.html#padah"
     },
-    "dedicate": "https://esoterics611.github.io/he/dedicate.html#padah-beshalom"
+    "dedicate": "https://esoterics611.github.io/he/dedicate.html#padah-beshalom",
+    "cover": "https://esoterics611.github.io/samples/padah-beshalom/booklet-01.webp",
+    "pdf": "https://esoterics611.github.io/samples/padah-beshalom/padah-beshalom.pdf"
   },
   {
     "id": "shaar-hayichud",
@@ -55,7 +57,9 @@
       },
       "url": "https://esoterics611.github.io/he/library.html#shaar-hayichud"
     },
-    "dedicate": "https://esoterics611.github.io/he/dedicate.html#shaar-hayichud"
+    "dedicate": "https://esoterics611.github.io/he/dedicate.html#shaar-hayichud",
+    "cover": "https://esoterics611.github.io/samples/shaar-hayichud/perek-01-01.webp",
+    "pdf": "https://esoterics611.github.io/samples/shaar-hayichud/shaar-hayichud-perek-01.pdf"
   },
   {
     "id": "levushei-haneshama",

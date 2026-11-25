@@ -10,7 +10,7 @@
   <h1 class="m-h1" style="font-size: 2rem">{t('maayan.privacy.title')}</h1>
   <div class="body">
     {#if !maayan.live}<p class="note">{t('maayan.privacy.demo')}</p>{/if}
-    {#each ['p1', 'p2', 'p3', 'p4', 'p5', 'p6'] as k (k)}<p>{t(`maayan.privacy.${k}`)}</p>{/each}
+    {#each ['p1', 'google', 'p2', 'p3', 'p4', 'p5', 'p6'] as k (k)}<p>{t(`maayan.privacy.${k}`)}</p>{/each}
   </div>
 </div>
 

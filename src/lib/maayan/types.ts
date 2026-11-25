@@ -20,6 +20,10 @@ export interface Wellspring {
   about: Text;
   /** The printed edition or the text online. */
   link?: { label: Text; url: string };
+  /** The printed edition's first page, as an image (the Sefer Forge site). */
+  cover?: string;
+  /** The printed edition as a PDF. */
+  pdf?: string;
   /** Where its parts can be dedicated: the Sefer Forge site's store (Chayolei takes no money). */
   dedicate?: string;
   /** The editorial team working on it (the team app), if there is one. */

@@ -6,7 +6,7 @@
   import { t, lt, fmtNum } from '$lib/team/i18n';
   import { href } from '$lib/team/nav';
   import { ui } from '$lib/team/ui.svelte';
-  import { maayan } from '$lib/maayan/store.svelte';
+  import { maayan, TEAMS_DEMO } from '$lib/maayan/store.svelte';
   import { counts, search } from '$lib/maayan/engine';
   import type { Question } from '$lib/maayan/types';
   import Rings from '$lib/maayan/Rings.svelte';
@@ -27,6 +27,8 @@
   import Reply from '@lucide/svelte/icons/reply';
   import Undo2 from '@lucide/svelte/icons/undo-2';
   import X from '@lucide/svelte/icons/x';
+  import BookOpen from '@lucide/svelte/icons/book-open';
+  import Share2 from '@lucide/svelte/icons/share-2';
   import HeartHandshake from '@lucide/svelte/icons/heart-handshake';
 
   const HASH = import.meta.env.VITE_HASH_ROUTER === '1';
@@ -53,6 +55,12 @@
   let followUp = $state<Question | null>(null);
   let sending = $state(false);
   const joinHref = $derived(href(`/maayan/${id}/join`));
+  // Share by WhatsApp: the wellspring's own address and one line, no number.
+  const shareHref = $derived.by(() => {
+    if (!w || typeof location === 'undefined') return '#';
+    const url = new URL(href(`/maayan/${id}`), location.href).toString();
+    return `https://wa.me/?text=${encodeURIComponent(`${t('maayan.shareText', { title: lt(w.title) }).replace(/[\u2068\u2069]/g, '')}\n${url}`)}`;
+  });
 
   // A shared link (…/maayan/<id>?q=<question>) opens on that question.
   const linked = $derived(new URLSearchParams(HASH ? (page.url.hash.split('?')[1] ?? '') : page.url.search).get('q') ?? '');
@@ -112,6 +120,8 @@
   <section class="m-hero">
     <Rings />
     <div class="m-wrap">
+     <div class="m-hero-grid">
+      <div>
       <span class="m-eyebrow">{t('maayan.hero.eyebrow')} · <span class="m-chip {w.status}">{t(`maayan.status.${w.status}`)}</span></span>
       <h1 class="m-h1">{lt(w.title)}</h1>
       <p class="m-sub">{lt(w.subtitle)}</p>
@@ -127,9 +137,21 @@
             {#if following}<BellRing size={16} />{t('maayan.following')}{:else}<Bell size={16} />{t('maayan.follow')}{/if}
           </button>
         {/if}
-        {#if w.link}<a class="btn btn-ghost" href={w.link.url}><FileText size={16} />{lt(w.link.label)}</a>{/if}
         {#if w.dedicate}<a class="btn btn-ghost" href={w.dedicate}><HeartHandshake size={16} />{t('maayan.dedicate')}</a>{/if}
       </div>
+
+      <p class="m-links">
+        {#if w.pdf}<a href={w.pdf}><FileText size={15} />{t('maayan.link.pdf')}</a>{/if}
+        {#if w.link}<a href={w.link.url}><BookOpen size={15} />{lt(w.link.label)}</a>{/if}
+        <a href={shareHref} target="_blank" rel="noopener"><Share2 size={15} />{t('maayan.link.share')}</a>
+      </p>
+      </div>
+      {#if w.cover}
+        <a class="m-cover" href={w.pdf ?? w.link?.url ?? '#'} aria-label={t('maayan.cover', { title: lt(w.title) })}>
+          <img src={w.cover} alt={t('maayan.cover', { title: lt(w.title) })} width="420" height="595" loading="eager" />
+        </a>
+      {/if}
+     </div>
 
       <p class="m-stats">
         {#if maayan.studying(id)}<span><Users size={15} />{t('maayan.studying', { n: fmtNum(maayan.studying(id)) })}</span>{/if}
@@ -233,7 +255,11 @@
           <li><b>{t('maayan.ladder.contributor')}</b><span>{t('maayan.ladder.contributor.d')}</span></li>
           <li><b>{t('maayan.ladder.holder')}</b><span>{t('maayan.ladder.holder.d')}</span></li>
         </ol>
-        <a class="btn" href={href('/')}>{t('maayan.ladder.cta')}<ArrowRight size={15} class="flip-rtl" /></a>
+        {#if TEAMS_DEMO}
+          <a class="btn" href={TEAMS_DEMO} target="_blank" rel="noopener">{t('maayan.ladder.ctaDemo')}<ArrowRight size={15} class="flip-rtl" /></a>
+        {:else}
+          <a class="btn" href={href('/')}>{t('maayan.ladder.cta')}<ArrowRight size={15} class="flip-rtl" /></a>
+        {/if}
       </div>
     </section>
 

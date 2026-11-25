@@ -34,7 +34,7 @@ const EMAIL_KEY = 'chayolei-maayan-email';
 
 export interface MaayanLiveEvents {
   /** Signed out (null), or signed in with a confirmed email and the profile if one was made. */
-  session(s: { uid: string; email: string; member: MaayanMember | null } | null): void;
+  session(s: { uid: string; email: string; name: string; member: MaayanMember | null } | null): void;
   wellsprings(ws: Wellspring[]): void;
   questions(qs: Question[]): void;
 }
@@ -68,7 +68,7 @@ export class MaayanLive {
       }
       const member = await this.loadMe(user.uid).catch(() => null);
       this.watch(member);
-      this.events.session({ uid: user.uid, email: user.email, member });
+      this.events.session({ uid: user.uid, email: user.email, name: user.displayName ?? '', member });
     });
   }
 
@@ -102,6 +102,29 @@ export class MaayanLive {
     url.searchParams.set('next', returnTo);
     await sendSignInLinkToEmail(auth, email, { url: url.toString(), handleCodeInApp: true });
     try { localStorage.setItem(EMAIL_KEY, email); } catch { /* the reader types it again if needed */ }
+  }
+
+  /** Sign in with a Google account (enabled in Firebase Authentication). Google
+   *  confirms the address, so the rules accept it as they do an email link.
+   *  A popup first; where the browser blocks popups, the whole page goes and
+   *  comes back. 'cancelled' when the reader closed the popup. */
+  async signInWithGoogle(): Promise<'ok' | 'cancelled' | 'failed'> {
+    const { auth } = await import('$lib/firebase');
+    const { GoogleAuthProvider, signInWithPopup, signInWithRedirect } = await import('firebase/auth');
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
+    try {
+      await signInWithPopup(auth, provider);
+      return 'ok';
+    } catch (e) {
+      const code = (e as { code?: string }).code ?? '';
+      if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') return 'cancelled';
+      if (code === 'auth/popup-blocked' || code === 'auth/operation-not-supported-in-this-environment') {
+        await signInWithRedirect(auth, provider);
+        return 'ok';
+      }
+      return 'failed';
+    }
   }
 
   /** Complete sign-in from the link: 'ok', 'needEmail' (opened on another device) or 'bad'. */
